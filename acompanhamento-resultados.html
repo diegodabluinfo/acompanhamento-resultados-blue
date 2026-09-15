@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acompanhamento de Resultados</title>
+<style>
+  :root {
+    --azul: #1e5fbf;
+    --azul-escuro: #123d80;
+    --fundo: #f2f5fa;
+    --texto: #1c2733;
+    --texto-suave: #5b6b7c;
+    --borda: #d7deea;
+    --erro: #c0392b;
+    --erro-fundo: #fdecea;
+    --sucesso: #1e8e4a;
+    --sucesso-fundo: #e9f8ef;
+    --verde: #1e8e4a;
+    --verde-fundo: #e9f8ef;
+    --amarelo: #a06c00;
+    --amarelo-fundo: #fff6df;
+    --vermelho: #c0392b;
+    --vermelho-fundo: #fdecea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fundo);
+    color: var(--texto);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .oculto { display: none !important; }
+
+  .caixa-login {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.08), 0 8px 24px rgba(20,40,70,0.06);
+    margin: 0 auto;
+  }
+  .caixa-login h2 { font-size: 1.05rem; margin: 0 0 4px; color: var(--azul-escuro); }
+  .caixa-login p.sub { margin: 0 0 18px; color: var(--texto-suave); font-size: 0.88rem; }
+  .campo { margin-bottom: 14px; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+  input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--borda);
+    border-radius: 9px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #fbfcfe;
+    color: var(--texto);
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--azul);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(30,95,191,0.12);
+  }
+  button {
+    border: none;
+    border-radius: 10px;
+    background: var(--azul);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 12px 16px;
+  }
+  button:active { background: var(--azul-escuro); }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .btn-full { width: 100%; margin-top: 4px; }
+  .aviso {
+    display: none;
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 0.87rem;
+    margin-bottom: 14px;
+  }
+  .aviso.mostrar { display: block; }
+  .aviso.erro { background: var(--erro-fundo); color: var(--erro); }
+  .aviso.sucesso { background: var(--sucesso-fundo); color: var(--sucesso); }
+
+  /* ---------- App ---------- */
+  #app { padding: 20px 16px 56px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .cabecalho {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .cabecalho h1 { font-size: 1.3rem; margin: 0 0 2px; color: var(--azul-escuro); }
+  .cabecalho p { margin: 0; color: var(--texto-suave); font-size: 0.88rem; }
+  .area-conta { display: flex; align-items: center; gap: 10px; }
+  .email-logado { font-size: 0.82rem; color: var(--texto-suave); }
+  .btn-secundario {
+    background: transparent;
+    color: var(--texto-suave);
+    border: 1px solid var(--borda);
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 9px 16px;
+    border-radius: 9px;
+    border: 1px solid var(--borda);
+    background: #fff;
+    color: var(--texto-suave);
+    font-weight: 600;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+  .tab-btn.ativa { background: var(--azul); color: #fff; border-color: var(--azul); }
+
+  .resumo-fornecedores { margin-top: 16px; }
+  .resumo-fornecedores h2 {
+    font-size: 0.95rem;
+    color: var(--azul-escuro);
+    margin: 0 0 10px;
+  }
+
+  .painel-controles {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.06);
+  }
+  .painel-controles label { margin: 0; font-size: 0.82rem; color: var(--texto-suave); }
+  .painel-controles select { width: auto; min-width: 180px; padding: 9px 10px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .badge.automatico { background: var(--sucesso-fundo); color: var(--sucesso); }
+  .badge.manual { background: #eef1f6; color: var(--texto-suave); }
+  .freshness { color: var(--texto-suave); font-size: 0.78rem; margin-left: auto; }
+
+  .card-tabela {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.06);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  thead th {
+    text-align: right;
+    padding: 11px 12px;
+    background: #f6f8fb;
+    color: var(--texto-suave);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--borda);
+    white-space: nowrap;
+  }
+  thead th:first-child { text-align: left; }
+  tbody td {
+    padding: 10px 12px;
+    text-align: right;
+    border-bottom: 1px solid #eef1f6;
+    white-space: nowrap;
+  }
+  tbody td:first-child { text-align: left; font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  tr.total td {
+    font-weight: 700;
+    background: #f6f8fb;
+    border-top: 2px solid var(--borda);
+  }
+  .pct-pill {
+    display: inline-block;
+    min-width: 56px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .pct-vermelho { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .pct-amarelo { background: var(--amarelo-fundo); color: var(--amarelo); }
+  .pct-verde { background: var(--verde-fundo); color: var(--verde); }
+  .tabela-scroll { overflow-x: auto; }
+  .estado-vazio { padding: 40px 16px; text-align: center; color: var(--texto-suave); }
+  .rodape-nota {
+    text-align: center;
+    color: var(--texto-suave);
+    font-size: 0.78rem;
+    margin-top: 18px;
+  }
+
+  .form-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.08), 0 8px 24px rgba(20,40,70,0.06);
+    max-width: 460px;
+    margin-bottom: 20px;
+  }
+  .form-card h2 { font-size: 1.05rem; margin: 0 0 4px; color: var(--azul-escuro); }
+  .form-card p.sub { margin: 0 0 16px; color: var(--texto-suave); font-size: 0.88rem; }
+  .linha-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-excluir {
+    background: transparent;
+    color: var(--erro);
+    border: 1px solid var(--erro-fundo);
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .cabecalho { flex-direction: column; }
+    .freshness { margin-left: 0; width: 100%; }
+    table { font-size: 0.8rem; }
+    thead th, tbody td { padding: 8px 8px; }
+    .linha-dupla { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="wrap">
+      <div class="cabecalho">
+        <div>
+          <h1>Acompanhamento de Resultados</h1>
+          <p>Blue Distribuidora — resultado por vendedor, mês a mês</p>
+        </div>
+        <div class="area-conta">
+          <span id="email-logado" class="email-logado oculto"></span>
+          <button id="btn-sair" class="btn-secundario oculto">Sair</button>
+          <button id="btn-entrar-topo" class="btn-secundario">Entrar</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
+        <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
+        <button class="tab-btn" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
+        <button class="tab-btn" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
+      </div>
+
+      <!-- ===== ABA: Resultados por Vendedor ===== -->
+      <div id="view-resultados">
+        <div class="painel-controles">
+          <div>
+            <label for="seletor-mes">Mês</label>
+            <select id="seletor-mes"></select>
+          </div>
+          <span id="badge-fonte" class="badge manual">Manual</span>
+          <span id="freshness" class="freshness"></span>
+        </div>
+
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Objetivo</th>
+                  <th>Produzido</th>
+                  <th>Créditos</th>
+                  <th>Devoluções</th>
+                  <th>Falta</th>
+                  <th>Final</th>
+                  <th>% Atingido</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-tabela">
+                <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="rodape-nota" id="nota-rodape"></div>
+      </div>
+
+      <!-- ===== ABA: Assistência / Fornecedores ===== -->
+      <div id="view-assistencia" class="oculto">
+        <div class="painel-controles">
+          <div>
+            <label for="seletor-mes-assist">Mês</label>
+            <select id="seletor-mes-assist"></select>
+          </div>
+        </div>
+
+        <div class="card-tabela" style="margin-bottom:16px;">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th style="text-align:left;">Assistência</th>
+                  <th>Meta</th>
+                  <th>Produzido (Serviço)</th>
+                  <th>Custos Fornecedores</th>
+                  <th>Final</th>
+                  <th>% Atingido</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-resumo-assistencia">
+                <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th style="text-align:left;">Data</th>
+                  <th style="text-align:left;">Fornecedor</th>
+                  <th style="text-align:left;">Categoria</th>
+                  <th style="text-align:left;">OS / Descrição</th>
+                  <th>Valor OS</th>
+                  <th>Valor Terceiro</th>
+                  <th>Margem</th>
+                  <th style="text-align:left;">NF</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-tabela-assist">
+                <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="resumo-fornecedores card-tabela">
+          <div style="padding:14px 16px 0;">
+            <h2>Total por fornecedor no mês</h2>
+          </div>
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th style="text-align:left;">Fornecedor</th>
+                  <th>Valor OS</th>
+                  <th>Valor Terceiro</th>
+                  <th>Margem</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-resumo-fornecedores">
+                <tr><td colspan="4" class="estado-vazio">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="rodape-nota" id="nota-rodape-assist">Produzido (Serviço) é automático — soma dos pedidos com "só serviço" no ERP. Custos Fornecedores vêm dos lançamentos manuais acima.</div>
+      </div>
+
+      <!-- ===== ABA: Lançar Devolução (cadastro — exige login) ===== -->
+      <div id="view-devolucao" class="oculto">
+
+        <div id="devolucao-bloqueada">
+          <div class="caixa-login">
+            <h2>Faça login para lançar devoluções</h2>
+            <p class="sub">Essa é uma tela de cadastro — só usuários logados podem lançar ou excluir devoluções.</p>
+            <div id="aviso-login" class="aviso"></div>
+            <form id="form-login" autocomplete="on">
+              <div class="campo">
+                <label for="login-email">E-mail</label>
+                <input type="email" id="login-email" required autocomplete="username">
+              </div>
+              <div class="campo">
+                <label for="login-senha">Senha</label>
+                <input type="password" id="login-senha" required autocomplete="current-password">
+              </div>
+              <button type="submit" id="btn-login" class="btn-full">Entrar</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="devolucao-sem-permissao" class="oculto">
+          <div class="caixa-login">
+            <h2>Sem permissão para esta área</h2>
+            <p class="sub">Sua conta está logada, mas não tem permissão para lançar ou consultar devoluções. Se acha que isso é um engano, fale com o administrador do sistema.</p>
+          </div>
+        </div>
+
+        <div id="devolucao-liberada" class="oculto">
+          <div class="form-card">
+            <h2>Lançar Devolução</h2>
+            <p class="sub">Fica igual à aba "Deduções" da planilha — mas só devoluções.</p>
+            <div id="aviso-devolucao" class="aviso"></div>
+            <form id="form-devolucao" autocomplete="off">
+              <div class="campo">
+                <label for="dev-vendedor">Vendedor</label>
+                <select id="dev-vendedor" required>
+                  <option value="" disabled selected>Carregando...</option>
+                </select>
+              </div>
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="dev-data">Data</label>
+                  <input type="date" id="dev-data" required>
+                </div>
+                <div class="campo">
+                  <label for="dev-valor">Valor (R$)</label>
+                  <input type="number" id="dev-valor" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
+                </div>
+              </div>
+              <div class="campo">
+                <label for="dev-pedido">Pedido <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                <input type="text" id="dev-pedido" placeholder="Número do pedido">
+              </div>
+              <div class="campo">
+                <label for="dev-obs">Observação <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                <textarea id="dev-obs" rows="2" placeholder="Ex: Pedido 1234 - Nome do cliente"></textarea>
+              </div>
+              <button type="submit" id="btn-lancar-devolucao" class="btn-full">Lançar devolução</button>
+            </form>
+          </div>
+
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Data</th>
+                    <th style="text-align:left;">Vendedor</th>
+                    <th>Valor</th>
+                    <th style="text-align:left;">Pedido</th>
+                    <th style="text-align:left;">Observação</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-devolucoes">
+                  <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">Mostrando as devoluções mais recentes lançadas.</div>
+        </div>
+
+      </div>
+
+      <!-- ===== ABA: Cadastro de Metas (cadastro — exige login + permissão exclusiva do Diego) ===== -->
+      <div id="view-metas" class="oculto">
+
+        <div id="metas-bloqueada">
+          <div class="caixa-login">
+            <h2>Faça login para cadastrar metas</h2>
+            <p class="sub">Essa é uma tela de cadastro exclusiva — faça login pra continuar.</p>
+            <button type="button" id="btn-metas-ir-login" class="btn-full">Fazer login</button>
+          </div>
+        </div>
+
+        <div id="metas-sem-permissao" class="oculto">
+          <div class="caixa-login">
+            <h2>Sem permissão para esta área</h2>
+            <p class="sub">Sua conta está logada, mas não tem permissão para cadastrar ou editar metas. Se acha que isso é um engano, fale com o administrador do sistema.</p>
+          </div>
+        </div>
+
+        <div id="metas-liberada" class="oculto">
+          <div class="painel-controles">
+            <div>
+              <label for="metas-mes">Mês</label>
+              <input type="month" id="metas-mes">
+            </div>
+          </div>
+
+          <div class="form-card">
+            <h2>Cadastrar / editar meta</h2>
+            <p class="sub" id="metas-form-sub">Selecione o vendedor pra carregar (ou criar) a meta deste mês.</p>
+            <div id="aviso-metas" class="aviso"></div>
+            <form id="form-metas" autocomplete="off">
+              <div class="campo">
+                <label for="metas-vendedor">Vendedor</label>
+                <select id="metas-vendedor" required>
+                  <option value="" disabled selected>Carregando...</option>
+                </select>
+              </div>
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="metas-objetivo">Objetivo (R$)</label>
+                  <input type="number" id="metas-objetivo" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required>
+                </div>
+                <div class="campo">
+                  <label for="metas-produzido">Produzido manual (R$)</label>
+                  <input type="number" id="metas-produzido" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                </div>
+              </div>
+              <p class="sub" id="metas-nota-automatico" style="margin-top:-10px;"></p>
+              <button type="submit" id="btn-salvar-meta" class="btn-full">Salvar meta</button>
+            </form>
+            <button type="button" id="btn-remover-meta" class="btn-excluir oculto" style="margin-top:10px; width:100%;">Remover meta deste vendedor neste mês</button>
+          </div>
+
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Vendedor</th>
+                    <th>Objetivo</th>
+                    <th>Produzido manual</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-metas">
+                  <tr><td colspan="4" class="estado-vazio">Selecione um mês.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">Clique em "Editar" numa linha da lista pra carregar aquela meta no formulário acima. Em meses automáticos, o campo "Produzido manual" fica só guardado — o relatório usa o valor calculado do ERP.</div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  // --- Configuração Supabase (chave publicável) ---
+  const SUPABASE_URL = "https://hvnglpapgkvruresgclo.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_Om8LYfbkx2-o0WNBX1LC1g_oAArgfxB";
+  const CHAVE_SESSAO = "painel_gastos_sessao"; // mesma chave usada no site de gastos — permite login único entre os dois
+
+  const btnEntrarTopo = document.getElementById("btn-entrar-topo");
+  const btnSair = document.getElementById("btn-sair");
+  const emailLogado = document.getElementById("email-logado");
+
+  const formLogin = document.getElementById("form-login");
+  const btnLogin = document.getElementById("btn-login");
+  const avisoLogin = document.getElementById("aviso-login");
+  const devolucaoBloqueada = document.getElementById("devolucao-bloqueada");
+  const devolucaoSemPermissao = document.getElementById("devolucao-sem-permissao");
+  const devolucaoLiberada = document.getElementById("devolucao-liberada");
+
+  const seletorMes = document.getElementById("seletor-mes");
+  const corpoTabela = document.getElementById("corpo-tabela");
+  const badgeFonte = document.getElementById("badge-fonte");
+  const elFreshness = document.getElementById("freshness");
+  const notaRodape = document.getElementById("nota-rodape");
+
+  const tabBtnResultados = document.getElementById("tab-btn-resultados");
+  const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
+  const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
+  const tabBtnMetas = document.getElementById("tab-btn-metas");
+  const viewResultados = document.getElementById("view-resultados");
+  const viewAssistencia = document.getElementById("view-assistencia");
+  const viewDevolucao = document.getElementById("view-devolucao");
+  const viewMetas = document.getElementById("view-metas");
+  const metasBloqueada = document.getElementById("metas-bloqueada");
+  const metasSemPermissao = document.getElementById("metas-sem-permissao");
+  const metasLiberada = document.getElementById("metas-liberada");
+  const btnMetasIrLogin = document.getElementById("btn-metas-ir-login");
+  const metasMesInput = document.getElementById("metas-mes");
+  const formMetas = document.getElementById("form-metas");
+  const metasVendedorSelect = document.getElementById("metas-vendedor");
+  const metasObjetivoInput = document.getElementById("metas-objetivo");
+  const metasProduzidoInput = document.getElementById("metas-produzido");
+  const metasNotaAutomatico = document.getElementById("metas-nota-automatico");
+  const metasFormSub = document.getElementById("metas-form-sub");
+  const avisoMetas = document.getElementById("aviso-metas");
+  const btnSalvarMeta = document.getElementById("btn-salvar-meta");
+  const btnRemoverMeta = document.getElementById("btn-remover-meta");
+  const corpoMetas = document.getElementById("corpo-metas");
+  const seletorMesAssist = document.getElementById("seletor-mes-assist");
+  const corpoTabelaAssist = document.getElementById("corpo-tabela-assist");
+  const corpoResumoFornecedores = document.getElementById("corpo-resumo-fornecedores");
+  const corpoResumoAssistencia = document.getElementById("corpo-resumo-assistencia");
+
+  const formDevolucao = document.getElementById("form-devolucao");
+  const btnLancarDevolucao = document.getElementById("btn-lancar-devolucao");
+  const avisoDevolucao = document.getElementById("aviso-devolucao");
+  const devVendedor = document.getElementById("dev-vendedor");
+  const devData = document.getElementById("dev-data");
+  const corpoDevolucoes = document.getElementById("corpo-devolucoes");
+
+  let sessao = null;
+  let mesCorteAutomatico = null; // 'YYYY-MM-DD'
+  let todasAsLinhas = [];
+  let todosOsGastos = [];
+  let resumoAssistencia = [];
+  let gastosCarregados = false;
+  let devolucaoInicializada = false;
+  let metasInicializada = false;
+  let metasVendedores = [];
+  let metasLinhasDoMes = [];
+  let metasMesAtual = null; // 'YYYY-MM-01'
+
+  // --- headers de leitura: funciona logado OU anônimo (telas de visualização são públicas) ---
+  function headersLeitura() {
+    const token = (sessao && sessao.access_token) ? sessao.access_token : SUPABASE_KEY;
+    return { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + token };
+  }
+  function headersEscrita() {
+    return {
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + sessao.access_token,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal"
+    };
+  }
+
+  function mostrarAvisoLogin(tipo, texto) {
+    avisoLogin.textContent = texto;
+    avisoLogin.className = "aviso mostrar " + tipo;
+  }
+  function ocultarAvisoLogin() { avisoLogin.className = "aviso"; }
+  function mostrarAvisoDevolucao(tipo, texto) {
+    avisoDevolucao.textContent = texto;
+    avisoDevolucao.className = "aviso mostrar " + tipo;
+  }
+  function ocultarAvisoDevolucao() { avisoDevolucao.className = "aviso"; }
+
+  function carregarSessao() {
+    try {
+      const bruto = localStorage.getItem(CHAVE_SESSAO);
+      if (!bruto) return null;
+      return JSON.parse(bruto);
+    } catch (e) { return null; }
+  }
+  function salvarSessao(s) {
+    localStorage.setItem(CHAVE_SESSAO, JSON.stringify(s));
+  }
+  function limparSessao() {
+    localStorage.removeItem(CHAVE_SESSAO);
+  }
+
+  async function fazerLogin(email, senha) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: senha })
+    });
+    const dados = await res.json();
+    if (!res.ok) throw new Error(dados.error_description || dados.msg || "Falha no login");
+    return {
+      access_token: dados.access_token,
+      refresh_token: dados.refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + (dados.expires_in || 3600),
+      user: dados.user
+    };
+  }
+
+  async function renovarSessao(refresh_token) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token })
+    });
+    const dados = await res.json();
+    if (!res.ok) throw new Error("Sessão expirada");
+    return {
+      access_token: dados.access_token,
+      refresh_token: dados.refresh_token,
+      expires_at: Math.floor(Date.now() / 1000) + (dados.expires_in || 3600),
+      user: dados.user
+    };
+  }
+
+  async function garantirSessaoValida() {
+    let s = carregarSessao();
+    if (!s) return null;
+    const agora = Math.floor(Date.now() / 1000);
+    if (s.expires_at && s.expires_at - agora < 60) {
+      try {
+        s = await renovarSessao(s.refresh_token);
+        salvarSessao(s);
+      } catch (e) {
+        limparSessao();
+        return null;
+      }
+    }
+    return s;
+  }
+
+  function atualizarAreaConta() {
+    if (sessao && sessao.user) {
+      emailLogado.textContent = sessao.user.email || "";
+      emailLogado.classList.remove("oculto");
+      btnSair.classList.remove("oculto");
+      btnEntrarTopo.classList.add("oculto");
+    } else {
+      emailLogado.classList.add("oculto");
+      btnSair.classList.add("oculto");
+      btnEntrarTopo.classList.remove("oculto");
+    }
+  }
+
+  // Só ter uma sessão válida não basta: além de estar logado, a conta precisa do
+  // claim pode_lancar_devolucao (app_metadata) — sem ele, a tela fica bloqueada
+  // mesmo com login correto (ex: conta rma@bluedistribuidora.com.br).
+  function temPermissaoDevolucao() {
+    return !!(sessao && sessao.user && sessao.user.app_metadata && sessao.user.app_metadata.pode_lancar_devolucao === true);
+  }
+
+  function atualizarTelaDevolucao() {
+    if (!sessao) {
+      devolucaoBloqueada.classList.remove("oculto");
+      devolucaoSemPermissao.classList.add("oculto");
+      devolucaoLiberada.classList.add("oculto");
+      return;
+    }
+    if (!temPermissaoDevolucao()) {
+      devolucaoBloqueada.classList.add("oculto");
+      devolucaoSemPermissao.classList.remove("oculto");
+      devolucaoLiberada.classList.add("oculto");
+      return;
+    }
+    devolucaoBloqueada.classList.add("oculto");
+    devolucaoSemPermissao.classList.add("oculto");
+    devolucaoLiberada.classList.remove("oculto");
+    if (!devolucaoInicializada) iniciarDevolucao();
+  }
+
+  // Mesmo padrão do claim de devolução, mas pra cadastro de metas — hoje só o Diego tem.
+  function temPermissaoMetas() {
+    return !!(sessao && sessao.user && sessao.user.app_metadata && sessao.user.app_metadata.pode_editar_metas === true);
+  }
+
+  function atualizarTelaMetas() {
+    if (!sessao) {
+      metasBloqueada.classList.remove("oculto");
+      metasSemPermissao.classList.add("oculto");
+      metasLiberada.classList.add("oculto");
+      return;
+    }
+    if (!temPermissaoMetas()) {
+      metasBloqueada.classList.add("oculto");
+      metasSemPermissao.classList.remove("oculto");
+      metasLiberada.classList.add("oculto");
+      return;
+    }
+    metasBloqueada.classList.add("oculto");
+    metasSemPermissao.classList.add("oculto");
+    metasLiberada.classList.remove("oculto");
+    if (!metasInicializada) iniciarMetas();
+  }
+  btnMetasIrLogin.addEventListener("click", () => mostrarAba("devolucao"));
+
+  formLogin.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    ocultarAvisoLogin();
+    btnLogin.disabled = true;
+    btnLogin.textContent = "Entrando...";
+    try {
+      const email = document.getElementById("login-email").value.trim();
+      const senha = document.getElementById("login-senha").value;
+      sessao = await fazerLogin(email, senha);
+      salvarSessao(sessao);
+      atualizarAreaConta();
+      atualizarTelaDevolucao();
+    } catch (err) {
+      mostrarAvisoLogin("erro", "E-mail ou senha inválidos.");
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = "Entrar";
+    }
+  });
+
+  function sair() {
+    limparSessao();
+    sessao = null;
+    devolucaoInicializada = false;
+    metasInicializada = false;
+    atualizarAreaConta();
+    atualizarTelaDevolucao();
+    atualizarTelaMetas();
+  }
+  btnSair.addEventListener("click", sair);
+  btnEntrarTopo.addEventListener("click", () => mostrarAba("devolucao"));
+
+  // --- formatação ---
+  function fmtMoeda(v) {
+    const n = Number(v || 0);
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+  function fmtPct(v) {
+    return (Number(v || 0) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  }
+  function classePct(v) {
+    const p = Number(v || 0);
+    if (p >= 1) return "pct-verde";
+    if (p >= 0.7) return "pct-amarelo";
+    return "pct-vermelho";
+  }
+  function nomeMes(competenciaISO) {
+    const [ano, mes] = competenciaISO.split("-");
+    const nomes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+    return `${nomes[parseInt(mes,10)-1]} / ${ano}`;
+  }
+  function fmtData(dataISO) {
+    if (!dataISO) return "";
+    const [ano, mes, dia] = dataISO.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+  function hojeISO() {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off * 60000);
+    return local.toISOString().slice(0, 10);
+  }
+
+  // --- dados: Resultados por Vendedor ---
+  async function buscarConfigAutomacao() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/automacao_config?select=mes_inicio_automatico&limit=1`, {
+        headers: headersLeitura()
+      });
+      if (!res.ok) return null;
+      const dados = await res.json();
+      return dados[0] ? dados[0].mes_inicio_automatico : null;
+    } catch (e) { console.error("Erro ao buscar automacao_config:", e); return null; }
+  }
+
+  async function buscarUltimaSincronizacao() {
+    try {
+      const [resSync, resFatura] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=carregado_em&order=carregado_em.desc&limit=1`, { headers: headersLeitura() }),
+        fetch(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=dt_fatura&order=dt_fatura.desc&limit=1`, { headers: headersLeitura() })
+      ]);
+      const carregadoEm = resSync.ok ? (await resSync.json())[0]?.carregado_em : null;
+      const dtFatura = resFatura.ok ? (await resFatura.json())[0]?.dt_fatura : null;
+      return { carregadoEm: carregadoEm || null, dtFatura: dtFatura || null };
+    } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null }; }
+  }
+
+  async function buscarResultados() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/v_metas_mensais_completo?select=*&order=competencia.desc,nome_completo.asc`,
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) {
+      let detalhe = "";
+      try { detalhe = JSON.stringify(await res.json()); } catch (e) { /* corpo não era JSON */ }
+      throw new Error(`HTTP ${res.status} ao buscar resultados. ${detalhe}`);
+    }
+    return await res.json();
+  }
+
+  function preencherSeletorMes(linhas) {
+    const competencias = [...new Set(linhas.map(l => l.competencia))].sort().reverse();
+    seletorMes.innerHTML = "";
+    competencias.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = nomeMes(c);
+      seletorMes.appendChild(opt);
+    });
+    if (competencias.length) seletorMes.value = competencias[0];
+  }
+
+  function renderizarTabela(competencia) {
+    const linhas = todasAsLinhas.filter(l => l.competencia === competencia)
+      .sort((a, b) => {
+        const diff = Number(b.pct_atingido || 0) - Number(a.pct_atingido || 0);
+        if (diff !== 0) return diff;
+        return (a.nome_curto || a.nome_completo).localeCompare(b.nome_curto || b.nome_completo, "pt-BR");
+      });
+
+    if (!linhas.length) {
+      corpoTabela.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhum dado para este mês.</td></tr>';
+      return;
+    }
+
+    let somaObjetivo = 0, somaProduzido = 0, somaCreditos = 0, somaDevolucoes = 0, somaFinal = 0;
+
+    corpoTabela.innerHTML = linhas.map(l => {
+      const objetivo = Number(l.objetivo || 0);
+      const produzido = Number(l.produzido || 0);
+      const creditos = Number(l.creditos || 0);
+      const devolucoes = Number(l.devolucoes || 0);
+      const final = Number(l.final || 0);
+      const falta = Math.max(objetivo - final, 0);
+      somaObjetivo += objetivo;
+      somaProduzido += produzido;
+      somaCreditos += creditos;
+      somaDevolucoes += devolucoes;
+      somaFinal += final;
+      return `<tr>
+        <td title="${l.nome_completo}">${l.nome_curto || l.nome_completo}</td>
+        <td>${fmtMoeda(objetivo)}</td>
+        <td>${fmtMoeda(produzido)}</td>
+        <td>${fmtMoeda(creditos)}</td>
+        <td>${fmtMoeda(devolucoes)}</td>
+        <td>${fmtMoeda(falta)}</td>
+        <td>${fmtMoeda(final)}</td>
+        <td><span class="pct-pill ${classePct(l.pct_atingido)}">${fmtPct(l.pct_atingido)}</span></td>
+      </tr>`;
+    }).join("");
+
+    const faltaTotal = Math.max(somaObjetivo - somaFinal, 0);
+    const pctTotal = somaObjetivo > 0 ? somaFinal / somaObjetivo : 0;
+    corpoTabela.innerHTML += `<tr class="total">
+        <td>TOTAL</td>
+        <td>${fmtMoeda(somaObjetivo)}</td>
+        <td>${fmtMoeda(somaProduzido)}</td>
+        <td>${fmtMoeda(somaCreditos)}</td>
+        <td>${fmtMoeda(somaDevolucoes)}</td>
+        <td>${fmtMoeda(faltaTotal)}</td>
+        <td>${fmtMoeda(somaFinal)}</td>
+        <td><span class="pct-pill ${classePct(pctTotal)}">${fmtPct(pctTotal)}</span></td>
+      </tr>`;
+
+    const ehAutomatico = mesCorteAutomatico && competencia >= mesCorteAutomatico;
+    badgeFonte.textContent = ehAutomatico ? "Automático (dados do ERP)" : "Manual (lançado)";
+    badgeFonte.className = "badge " + (ehAutomatico ? "automatico" : "manual");
+  }
+
+  async function iniciarApp() {
+    corpoTabela.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>';
+    try {
+      const [linhas, cutoff, sincronizacao] = await Promise.all([
+        buscarResultados(),
+        buscarConfigAutomacao(),
+        buscarUltimaSincronizacao()
+      ]);
+      todasAsLinhas = linhas;
+      mesCorteAutomatico = cutoff;
+      preencherSeletorMes(linhas);
+      if (seletorMes.value) renderizarTabela(seletorMes.value);
+
+      const partes = [];
+      if (sincronizacao && sincronizacao.carregadoEm) {
+        const dataHora = new Date(sincronizacao.carregadoEm).toLocaleString("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit"
+        });
+        partes.push(`Última sincronização: ${dataHora}`);
+      }
+      if (sincronizacao && sincronizacao.dtFatura) {
+        const [ano, mes, dia] = sincronizacao.dtFatura.split("-");
+        partes.push(`vendas faturadas até ${dia}/${mes}/${ano}`);
+      }
+      elFreshness.textContent = partes.join(" — ");
+      notaRodape.textContent = "Meses automáticos usam os pedidos faturados no ERP (sincronização noturna). Meses anteriores mantêm os valores lançados manualmente.";
+    } catch (err) {
+      console.error("Erro ao carregar acompanhamento de resultados:", err);
+      const mensagem = (err && err.message) ? err.message : String(err);
+      corpoTabela.innerHTML = `<tr><td colspan="8" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">${mensagem.replace(/</g,"&lt;")}</small></td></tr>`;
+    }
+  }
+
+  seletorMes.addEventListener("change", () => renderizarTabela(seletorMes.value));
+
+  // --- dados: Assistência / Fornecedores ---
+  async function buscarGastosAssistencia() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/fornecedores_gastos?select=*&order=data.desc`,
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) {
+      let detalhe = "";
+      try { detalhe = JSON.stringify(await res.json()); } catch (e) { /* corpo não era JSON */ }
+      throw new Error(`HTTP ${res.status} ao buscar gastos de assistência. ${detalhe}`);
+    }
+    return await res.json();
+  }
+
+  async function buscarResumoAssistencia() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/v_assistencia_resumo?select=*&order=competencia.desc`,
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) {
+      let detalhe = "";
+      try { detalhe = JSON.stringify(await res.json()); } catch (e) { /* corpo não era JSON */ }
+      throw new Error(`HTTP ${res.status} ao buscar resumo de assistência. ${detalhe}`);
+    }
+    return await res.json();
+  }
+
+  function renderResumoAssistencia(competencia) {
+    const linha = resumoAssistencia.find(l => l.competencia === competencia);
+    if (!linha) {
+      corpoResumoAssistencia.innerHTML = '<tr><td colspan="6" class="estado-vazio">Sem dados para este mês.</td></tr>';
+      return;
+    }
+    const meta = Number(linha.meta || 0);
+    const produzido = Number(linha.produzido_servico || 0);
+    const custos = Number(linha.custos_fornecedores || 0);
+    const final = Number(linha.final || 0);
+    corpoResumoAssistencia.innerHTML = `<tr>
+      <td>Só Serviço</td>
+      <td>${fmtMoeda(meta)}</td>
+      <td>${fmtMoeda(produzido)}</td>
+      <td>${fmtMoeda(custos)}</td>
+      <td>${fmtMoeda(final)}</td>
+      <td><span class="pct-pill ${classePct(linha.pct_atingido)}">${fmtPct(linha.pct_atingido)}</span></td>
+    </tr>`;
+  }
+
+  function preencherSeletorMesAssist(competenciasGastos) {
+    const competencias = [...new Set([
+      ...competenciasGastos.map(l => l.competencia),
+      ...resumoAssistencia.map(l => l.competencia)
+    ])].sort().reverse();
+    seletorMesAssist.innerHTML = "";
+    competencias.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = nomeMes(c);
+      seletorMesAssist.appendChild(opt);
+    });
+    if (competencias.length) seletorMesAssist.value = competencias[0];
+  }
+
+  function renderizarTabelaAssistencia(competencia) {
+    const linhas = todosOsGastos.filter(l => l.competencia === competencia)
+      .sort((a, b) => (a.data || "").localeCompare(b.data || ""));
+
+    if (!linhas.length) {
+      corpoTabelaAssist.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhum gasto lançado neste mês.</td></tr>';
+      corpoResumoFornecedores.innerHTML = '<tr><td colspan="4" class="estado-vazio">—</td></tr>';
+      return;
+    }
+
+    let somaOS = 0, somaTerceiro = 0;
+    const porFornecedor = {};
+
+    corpoTabelaAssist.innerHTML = linhas.map(l => {
+      const valorOS = Number(l.valor_os || 0);
+      const valorTerceiro = Number(l.valor_terceiro || 0);
+      const margem = valorOS - valorTerceiro;
+      somaOS += valorOS;
+      somaTerceiro += valorTerceiro;
+
+      const nomeForn = l.fornecedor || "—";
+      if (!porFornecedor[nomeForn]) porFornecedor[nomeForn] = { os: 0, terceiro: 0 };
+      porFornecedor[nomeForn].os += valorOS;
+      porFornecedor[nomeForn].terceiro += valorTerceiro;
+
+      return `<tr>
+        <td>${fmtData(l.data)}</td>
+        <td>${nomeForn}</td>
+        <td>${l.categoria || ""}</td>
+        <td>${l.os_descricao || ""}</td>
+        <td>${fmtMoeda(valorOS)}</td>
+        <td>${fmtMoeda(valorTerceiro)}</td>
+        <td>${fmtMoeda(margem)}</td>
+        <td>${l.nf || ""}</td>
+      </tr>`;
+    }).join("");
+
+    const margemTotal = somaOS - somaTerceiro;
+    corpoTabelaAssist.innerHTML += `<tr class="total">
+        <td>TOTAL DO MÊS</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>${fmtMoeda(somaOS)}</td>
+        <td>${fmtMoeda(somaTerceiro)}</td>
+        <td>${fmtMoeda(margemTotal)}</td>
+        <td></td>
+      </tr>`;
+
+    const fornecedoresOrdenados = Object.keys(porFornecedor).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    corpoResumoFornecedores.innerHTML = fornecedoresOrdenados.map(nome => {
+      const { os, terceiro } = porFornecedor[nome];
+      return `<tr>
+        <td>${nome}</td>
+        <td>${fmtMoeda(os)}</td>
+        <td>${fmtMoeda(terceiro)}</td>
+        <td>${fmtMoeda(os - terceiro)}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function iniciarAssistencia() {
+    if (gastosCarregados) return;
+    corpoTabelaAssist.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>';
+    corpoResumoAssistencia.innerHTML = '<tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>';
+    try {
+      const [gastos, resumo] = await Promise.all([
+        buscarGastosAssistencia(),
+        buscarResumoAssistencia()
+      ]);
+      todosOsGastos = gastos;
+      resumoAssistencia = resumo;
+      gastosCarregados = true;
+      preencherSeletorMesAssist(todosOsGastos);
+      if (seletorMesAssist.value) {
+        renderizarTabelaAssistencia(seletorMesAssist.value);
+        renderResumoAssistencia(seletorMesAssist.value);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar dados de assistência:", err);
+      const mensagem = (err && err.message) ? err.message : String(err);
+      const erroHtml = `<br><small style="color:var(--erro)">${mensagem.replace(/</g,"&lt;")}</small>`;
+      corpoTabelaAssist.innerHTML = `<tr><td colspan="8" class="estado-vazio">Não foi possível carregar os dados.${erroHtml}</td></tr>`;
+      corpoResumoAssistencia.innerHTML = `<tr><td colspan="6" class="estado-vazio">Não foi possível carregar.</td></tr>`;
+    }
+  }
+
+  seletorMesAssist.addEventListener("change", () => {
+    renderizarTabelaAssistencia(seletorMesAssist.value);
+    renderResumoAssistencia(seletorMesAssist.value);
+  });
+
+  // --- Lançar Devolução (cadastro, exige login) ---
+  async function carregarVendedoresDevolucao() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/v_vendedores_status?select=id,nome_completo&ativo=eq.true&order=nome_completo.asc`,
+        { headers: headersEscrita() }
+      );
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const lista = await res.json();
+      devVendedor.innerHTML = "";
+      const optPlaceholder = document.createElement("option");
+      optPlaceholder.value = "";
+      optPlaceholder.disabled = true;
+      optPlaceholder.selected = true;
+      optPlaceholder.textContent = "Selecione...";
+      devVendedor.appendChild(optPlaceholder);
+      lista.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v.id;
+        opt.textContent = v.nome_completo;
+        devVendedor.appendChild(opt);
+      });
+    } catch (err) {
+      devVendedor.innerHTML = '<option value="" disabled selected>Erro ao carregar — recarregue a página</option>';
+    }
+  }
+
+  async function buscarDevolucoesRecentes() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/deducoes?select=id,data,valor,pedido_numero,observacao,vendedores(nome_completo)&tipo=eq.Devolução&order=data.desc&limit=30`,
+      { headers: headersEscrita() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  }
+
+  function renderDevolucoesRecentes(linhas) {
+    if (!linhas.length) {
+      corpoDevolucoes.innerHTML = '<tr><td colspan="6" class="estado-vazio">Nenhuma devolução lançada ainda.</td></tr>';
+      return;
+    }
+    corpoDevolucoes.innerHTML = linhas.map(l => `<tr>
+      <td>${fmtData(l.data)}</td>
+      <td>${l.vendedores ? l.vendedores.nome_completo : ""}</td>
+      <td>${fmtMoeda(l.valor)}</td>
+      <td>${l.pedido_numero || ""}</td>
+      <td>${l.observacao || ""}</td>
+      <td><button type="button" class="btn-excluir" data-id="${l.id}">Excluir</button></td>
+    </tr>`).join("");
+
+    corpoDevolucoes.querySelectorAll(".btn-excluir").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Excluir essa devolução?")) return;
+        const id = btn.getAttribute("data-id");
+        btn.disabled = true;
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/deducoes?id=eq.${id}`, {
+            method: "DELETE",
+            headers: headersEscrita()
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          await recarregarDevolucoesRecentes();
+          gastosCarregados = false; // força recarregar a aba Assistência na próxima visita
+          iniciarApp(); // atualiza a aba Resultados também (devolução muda o Final/% Atingido)
+        } catch (err) {
+          alert("Não foi possível excluir. Tente novamente.");
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  async function recarregarDevolucoesRecentes() {
+    try {
+      const linhas = await buscarDevolucoesRecentes();
+      renderDevolucoesRecentes(linhas);
+    } catch (err) {
+      corpoDevolucoes.innerHTML = '<tr><td colspan="6" class="estado-vazio">Não foi possível carregar.</td></tr>';
+    }
+  }
+
+  function numOrNull(valor) {
+    if (valor === "" || valor === null || valor === undefined) return null;
+    const n = Number(valor);
+    return Number.isFinite(n) ? n : null;
+  }
+  function textOrNull(valor) {
+    const v = (valor || "").trim();
+    return v === "" ? null : v;
+  }
+
+  formDevolucao.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    ocultarAvisoDevolucao();
+
+    const data = devData.value;
+    const vendedorId = devVendedor.value;
+    const valor = numOrNull(document.getElementById("dev-valor").value);
+
+    if (!data || !vendedorId || valor === null) {
+      mostrarAvisoDevolucao("erro", "Preencha vendedor, data e valor.");
+      return;
+    }
+
+    const payload = {
+      vendedor_id: Number(vendedorId),
+      data: data,
+      competencia: data.slice(0, 7) + "-01",
+      tipo: "Devolução",
+      valor: valor,
+      pedido_numero: textOrNull(document.getElementById("dev-pedido").value),
+      observacao: textOrNull(document.getElementById("dev-obs").value)
+    };
+
+    btnLancarDevolucao.disabled = true;
+    btnLancarDevolucao.textContent = "Lançando...";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/deducoes`, {
+        method: "POST",
+        headers: headersEscrita(),
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        let detalhe = "";
+        try { detalhe = (await res.json()).message || ""; } catch (e) {}
+        if (detalhe.includes("deducoes_pedido_unique_idx")) {
+          throw new Error("Já existe uma devolução lançada com esse número de pedido.");
+        }
+        if (res.status === 401 || res.status === 403 || detalhe.toLowerCase().includes("row-level security")) {
+          throw new Error("Sua conta não tem permissão para lançar devoluções.");
+        }
+        throw new Error(detalhe || ("HTTP " + res.status));
+      }
+      mostrarAvisoDevolucao("sucesso", "Devolução lançada com sucesso!");
+      formDevolucao.reset();
+      devData.value = hojeISO();
+      devVendedor.selectedIndex = 0;
+      await recarregarDevolucoesRecentes();
+      gastosCarregados = false; // força recarregar a aba Assistência na próxima visita
+      iniciarApp(); // atualiza a aba Resultados também (devolução muda o Final/% Atingido)
+    } catch (err) {
+      mostrarAvisoDevolucao("erro", (err && err.message) ? err.message : "Não foi possível lançar. Tente novamente.");
+    } finally {
+      btnLancarDevolucao.disabled = false;
+      btnLancarDevolucao.textContent = "Lançar devolução";
+    }
+  });
+
+  async function iniciarDevolucao() {
+    devolucaoInicializada = true;
+    devData.value = hojeISO();
+    await Promise.all([
+      carregarVendedoresDevolucao(),
+      recarregarDevolucoesRecentes()
+    ]);
+  }
+
+  // --- abas ---
+  function mostrarAba(aba) {
+    viewResultados.classList.toggle("oculto", aba !== "resultados");
+    viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
+    viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
+    viewMetas.classList.toggle("oculto", aba !== "metas");
+    tabBtnResultados.classList.toggle("ativa", aba === "resultados");
+    tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
+    tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
+    tabBtnMetas.classList.toggle("ativa", aba === "metas");
+    if (aba === "assistencia") iniciarAssistencia();
+    if (aba === "devolucao") atualizarTelaDevolucao();
+    if (aba === "metas") atualizarTelaMetas();
+  }
+
+  tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
+  tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
+  tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
+  tabBtnMetas.addEventListener("click", () => mostrarAba("metas"));
+
+  // --- SEÇÃO: Cadastro de Metas (login + permissão exclusiva) ---
+  function mostrarAvisoMetas(tipo, texto) { avisoMetas.textContent = texto; avisoMetas.className = "aviso mostrar " + tipo; }
+  function ocultarAvisoMetas() { avisoMetas.className = "aviso"; }
+
+  async function carregarVendedoresMetas() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/v_vendedores_status?select=id,nome_completo,nome_curto,ativo&order=nome_completo.asc`,
+      { headers: headersEscrita() }
+    );
+    metasVendedores = res.ok ? await res.json() : [];
+    metasVendedorSelect.innerHTML = '<option value="" disabled selected>Selecione...</option>' +
+      metasVendedores.map(v => `<option value="${v.id}">${(v.nome_curto || v.nome_completo)}${v.ativo ? "" : " (inativo)"}</option>`).join("");
+  }
+
+  function atualizarNotaAutomatico() {
+    const automatico = !!(mesCorteAutomatico && metasMesAtual && metasMesAtual >= mesCorteAutomatico);
+    metasProduzidoInput.readOnly = automatico;
+    metasNotaAutomatico.textContent = automatico
+      ? "Este mês calcula o Produzido automaticamente a partir do ERP — este campo não afeta o relatório, só fica guardado."
+      : "";
+  }
+
+  function limparFormularioMetas() {
+    metasVendedorSelect.value = "";
+    metasObjetivoInput.value = "";
+    metasProduzidoInput.value = "0";
+    btnRemoverMeta.classList.add("oculto");
+    metasFormSub.textContent = "Selecione o vendedor pra carregar (ou criar) a meta deste mês.";
+  }
+
+  function carregarMetaNoFormulario() {
+    const vendedorId = metasVendedorSelect.value;
+    if (!vendedorId) return;
+    ocultarAvisoMetas();
+    const existente = metasLinhasDoMes.find((l) => String(l.vendedor_id) === String(vendedorId));
+    if (existente) {
+      metasObjetivoInput.value = existente.objetivo;
+      metasProduzidoInput.value = existente.produzido;
+      metasFormSub.textContent = "Editando meta já cadastrada pra este vendedor neste mês.";
+      btnRemoverMeta.classList.remove("oculto");
+    } else {
+      metasObjetivoInput.value = "";
+      metasProduzidoInput.value = "0";
+      metasFormSub.textContent = "Nova meta — ainda não existe cadastro pra este vendedor neste mês.";
+      btnRemoverMeta.classList.add("oculto");
+    }
+    atualizarNotaAutomatico();
+  }
+  metasVendedorSelect.addEventListener("change", carregarMetaNoFormulario);
+
+  function renderizarTabelaMetas() {
+    if (!metasLinhasDoMes.length) {
+      corpoMetas.innerHTML = '<tr><td colspan="4" class="estado-vazio">Nenhuma meta cadastrada pra este mês ainda.</td></tr>';
+      return;
+    }
+    const ordenadas = metasLinhasDoMes.slice().sort((a, b) => {
+      const na = (a.vendedores && (a.vendedores.nome_curto || a.vendedores.nome_completo)) || "";
+      const nb = (b.vendedores && (b.vendedores.nome_curto || b.vendedores.nome_completo)) || "";
+      return na.localeCompare(nb, "pt-BR");
+    });
+    corpoMetas.innerHTML = ordenadas.map((l) => {
+      const nomeCompleto = (l.vendedores && l.vendedores.nome_completo) || "";
+      const nomeExibido = (l.vendedores && (l.vendedores.nome_curto || l.vendedores.nome_completo)) || "—";
+      return `<tr>
+        <td style="text-align:left;" title="${nomeCompleto}">${nomeExibido}</td>
+        <td>${fmtMoeda(l.objetivo)}</td>
+        <td>${fmtMoeda(l.produzido)}</td>
+        <td><button type="button" class="btn-secundario btn-editar-meta" data-vendedor="${l.vendedor_id}">Editar</button></td>
+      </tr>`;
+    }).join("");
+    corpoMetas.querySelectorAll(".btn-editar-meta").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        metasVendedorSelect.value = btn.getAttribute("data-vendedor");
+        carregarMetaNoFormulario();
+      });
+    });
+  }
+
+  async function carregarMetasDoMes(competencia) {
+    corpoMetas.innerHTML = '<tr><td colspan="4" class="estado-vazio">Carregando...</td></tr>';
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/metas_mensais?competencia=eq.${competencia}&select=id,vendedor_id,objetivo,produzido,vendedores(nome_completo,nome_curto)`,
+        { headers: headersEscrita() }
+      );
+      metasLinhasDoMes = res.ok ? await res.json() : [];
+      renderizarTabelaMetas();
+    } catch (err) {
+      corpoMetas.innerHTML = '<tr><td colspan="4" class="estado-vazio">Não foi possível carregar as metas deste mês.</td></tr>';
+    }
+  }
+
+  metasMesInput.addEventListener("change", () => {
+    if (!metasMesInput.value) return;
+    metasMesAtual = metasMesInput.value + "-01";
+    limparFormularioMetas();
+    ocultarAvisoMetas();
+    atualizarNotaAutomatico();
+    carregarMetasDoMes(metasMesAtual);
+  });
+
+  formMetas.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    ocultarAvisoMetas();
+    const vendedorId = metasVendedorSelect.value;
+    if (!vendedorId) { mostrarAvisoMetas("erro", "Selecione um vendedor."); return; }
+    if (!metasMesAtual) { mostrarAvisoMetas("erro", "Selecione um mês."); return; }
+    const payload = {
+      vendedor_id: Number(vendedorId),
+      competencia: metasMesAtual,
+      objetivo: numOrNull(metasObjetivoInput.value) || 0,
+      produzido: numOrNull(metasProduzidoInput.value) || 0
+    };
+    btnSalvarMeta.disabled = true;
+    btnSalvarMeta.textContent = "Salvando...";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/metas_mensais?on_conflict=vendedor_id,competencia`, {
+        method: "POST",
+        headers: { ...headersEscrita(), "Prefer": "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        let detalhe = "";
+        try { detalhe = JSON.stringify(await res.json()); } catch (e) { /* corpo não era JSON */ }
+        if (res.status === 401 || res.status === 403 || detalhe.toLowerCase().includes("row-level security")) {
+          throw new Error("Sua conta não tem permissão para cadastrar metas.");
+        }
+        throw new Error(detalhe || ("HTTP " + res.status));
+      }
+      mostrarAvisoMetas("sucesso", "Meta salva com sucesso!");
+      btnRemoverMeta.classList.remove("oculto");
+      await carregarMetasDoMes(metasMesAtual);
+      iniciarApp(); // a aba Resultados também deve refletir a meta nova/editada
+    } catch (err) {
+      mostrarAvisoMetas("erro", (err && err.message) ? err.message : "Não foi possível salvar. Tente novamente.");
+    } finally {
+      btnSalvarMeta.disabled = false;
+      btnSalvarMeta.textContent = "Salvar meta";
+    }
+  });
+
+  btnRemoverMeta.addEventListener("click", async () => {
+    const vendedorId = metasVendedorSelect.value;
+    if (!vendedorId || !metasMesAtual) return;
+    if (!confirm("Remover a meta deste vendedor neste mês? Essa ação não pode ser desfeita.")) return;
+    ocultarAvisoMetas();
+    btnRemoverMeta.disabled = true;
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/metas_mensais?vendedor_id=eq.${vendedorId}&competencia=eq.${metasMesAtual}`,
+        { method: "DELETE", headers: headersEscrita() }
+      );
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      mostrarAvisoMetas("sucesso", "Meta removida.");
+      metasObjetivoInput.value = "";
+      metasProduzidoInput.value = "0";
+      btnRemoverMeta.classList.add("oculto");
+      metasFormSub.textContent = "Nova meta — ainda não existe cadastro pra este vendedor neste mês.";
+      await carregarMetasDoMes(metasMesAtual);
+      iniciarApp();
+    } catch (err) {
+      mostrarAvisoMetas("erro", "Não foi possível remover. Tente novamente.");
+    } finally {
+      btnRemoverMeta.disabled = false;
+    }
+  });
+
+  async function iniciarMetas() {
+    metasInicializada = true;
+    await carregarVendedoresMetas();
+    const hoje = new Date();
+    const mesAtualStr = hoje.getFullYear() + "-" + String(hoje.getMonth() + 1).padStart(2, "0");
+    metasMesInput.value = mesAtualStr;
+    metasMesAtual = mesAtualStr + "-01";
+    atualizarNotaAutomatico();
+    await carregarMetasDoMes(metasMesAtual);
+  }
+
+  // --- inicialização ---
+  (async function init() {
+    sessao = await garantirSessaoValida();
+    atualizarAreaConta();
+    await iniciarApp(); // telas de visualização são públicas — carregam sem precisar de login
+  })();
+</script>
+</body>
+</html>
