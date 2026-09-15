@@ -1906,22 +1906,25 @@
     }
 
     // 9) queda contra o mês anterior
-    if (anterior && n(anterior.contatos_efetivos) > 0) {
-      const varContatos = (contatos / n(anterior.contatos_efetivos)) - 1;
+    // comparação por dia útil: o mês corrente está incompleto, comparar totais mentiria
+    if (anterior && n(anterior.contatos_por_dia) > 0) {
+      const varContatos = (n(l.contatos_por_dia) / n(anterior.contatos_por_dia)) - 1;
       if (varContatos < -0.15) {
         itens.push({
           tipo: "atencao",
           titulo: "Ritmo " + fmtDec(Math.abs(varContatos) * 100, 0) + "% abaixo do mês passado",
-          texto: fmtInt(contatos) + " contatos efetivos contra " + fmtInt(anterior.contatos_efetivos) + " em " + nomeMes(anterior.competencia) + "."
+          texto: fmtDec(l.contatos_por_dia, 1) + " contatos efetivos por dia útil contra " +
+            fmtDec(anterior.contatos_por_dia, 1) + " em " + nomeMes(anterior.competencia) + "."
         });
       }
-      if (n(anterior.faturado) > 0) {
-        const varFat = (n(l.faturado) / n(anterior.faturado)) - 1;
+      if (n(anterior.faturado_por_dia) > 0) {
+        const varFat = (n(l.faturado_por_dia) / n(anterior.faturado_por_dia)) - 1;
         if (varFat < -0.2) {
           itens.push({
             tipo: "atencao",
             titulo: "Faturamento " + fmtDec(Math.abs(varFat) * 100, 0) + "% abaixo do mês passado",
-            texto: fmtMoeda(l.faturado) + " contra " + fmtMoeda(anterior.faturado) + " em " + nomeMes(anterior.competencia) + "."
+            texto: fmtMoeda(l.faturado_por_dia) + " por dia útil contra " + fmtMoeda(anterior.faturado_por_dia) +
+              " em " + nomeMes(anterior.competencia) + " (mês corrente ainda em andamento)."
           });
         }
       }
