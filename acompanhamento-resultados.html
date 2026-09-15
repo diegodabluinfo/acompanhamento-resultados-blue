@@ -88,6 +88,7 @@
   /* ---------- App ---------- */
   #app { padding: 20px 16px 56px; }
   .wrap { max-width: 980px; margin: 0 auto; }
+  .wrap.largo { max-width: 1340px; }
   .cabecalho {
     display: flex;
     align-items: flex-start;
@@ -233,6 +234,89 @@
     font-weight: 600;
   }
 
+  /* --- Aba Performance --- */
+  #view-performance table { font-size: 0.8rem; }
+  #view-performance thead th, #view-performance tbody td { padding: 9px 9px; }
+  #view-performance thead th:first-child, #view-performance tbody td:first-child { padding-left: 12px; }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.06);
+  }
+  .kpi .rotulo {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--texto-suave);
+    font-weight: 700;
+  }
+  .kpi .valor { font-size: 1.3rem; font-weight: 700; color: var(--azul-escuro); margin-top: 4px; }
+  .kpi .nota { font-size: 0.75rem; color: var(--texto-suave); margin-top: 3px; }
+  tr.clicavel { cursor: pointer; }
+  tr.clicavel:hover td { background: #f1f6ff; }
+  .link-vendedor { color: var(--azul); text-decoration: underline; text-underline-offset: 2px; }
+
+  .grafico-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.06);
+    margin-bottom: 16px;
+  }
+  .grafico-card h3 { font-size: 0.92rem; margin: 0 0 2px; color: var(--azul-escuro); }
+  .grafico-card p.sub { margin: 0 0 14px; font-size: 0.78rem; color: var(--texto-suave); }
+  .barras { display: flex; align-items: flex-end; gap: 3px; height: 130px; }
+  .barra-col { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; }
+  .barra { border-radius: 4px 4px 0 0; width: 100%; transition: opacity .15s; }
+  .barra-col:hover .barra { opacity: 0.7; }
+  .eixo-x { display: flex; gap: 3px; margin-top: 6px; }
+  .eixo-x span {
+    flex: 1 1 0;
+    text-align: center;
+    font-size: 0.62rem;
+    color: var(--texto-suave);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .diag { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .diag-item {
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-left: 4px solid transparent;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.06);
+  }
+  .diag-item .titulo { font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; }
+  .diag-item .texto { font-size: 0.85rem; color: var(--texto); line-height: 1.45; }
+  .diag-item.critico { border-left-color: var(--vermelho); background: var(--vermelho-fundo); }
+  .diag-item.critico .titulo { color: var(--vermelho); }
+  .diag-item.atencao { border-left-color: var(--amarelo); background: var(--amarelo-fundo); }
+  .diag-item.atencao .titulo { color: var(--amarelo); }
+  .diag-item.bom { border-left-color: var(--verde); background: var(--verde-fundo); }
+  .diag-item.bom .titulo { color: var(--verde); }
+  .diag-item.neutro { border-left-color: var(--borda); }
+  .diag-item.neutro .titulo { color: var(--azul-escuro); }
+  .cabecalho-individual {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .cabecalho-individual h2 { margin: 0; font-size: 1.15rem; color: var(--azul-escuro); }
+  .grid-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) {
+    .grid-graficos { grid-template-columns: 1fr; }
+  }
+
   @media (max-width: 640px) {
     .cabecalho { flex-direction: column; }
     .freshness { margin-left: 0; width: 100%; }
@@ -260,6 +344,7 @@
 
       <div class="tabs">
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
+        <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
         <button class="tab-btn" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
         <button class="tab-btn" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
@@ -299,6 +384,51 @@
         </div>
 
         <div class="rodape-nota" id="nota-rodape"></div>
+      </div>
+
+      <!-- ===== ABA: Performance (esforço x venda) ===== -->
+      <div id="view-performance" class="oculto">
+        <div class="painel-controles">
+          <div>
+            <label for="seletor-mes-perf">Mês</label>
+            <select id="seletor-mes-perf"></select>
+          </div>
+          <span id="freshness-perf" class="freshness"></span>
+        </div>
+
+        <div id="perf-equipe">
+          <div class="kpi-grid" id="perf-kpis"></div>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vendedor</th>
+                    <th>Contatos efetivos</th>
+                    <th>Tentativas</th>
+                    <th>Resposta no ativo</th>
+                    <th>Ligações +1min</th>
+                    <th>Clientes atend. &rarr; compraram</th>
+                    <th>Pedidos</th>
+                    <th>Faturado</th>
+                    <th>% Meta</th>
+                    <th>Margem</th>
+                    <th>R$ por contato</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-perf">
+                  <tr><td colspan="11" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">
+            Clique no vendedor para abrir o diagnóstico individual. Contato efetivo = receptivo + ativo com resposta + ligação acima de 1 minuto.
+            Tentativa = ativo enviado sem resposta do cliente (não soma como atendimento).
+          </div>
+        </div>
+
+        <div id="perf-individual" class="oculto"></div>
       </div>
 
       <!-- ===== ABA: Assistência / Fornecedores ===== -->
@@ -565,10 +695,12 @@
   const notaRodape = document.getElementById("nota-rodape");
 
   const tabBtnResultados = document.getElementById("tab-btn-resultados");
+  const tabBtnPerformance = document.getElementById("tab-btn-performance");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
   const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
   const tabBtnMetas = document.getElementById("tab-btn-metas");
   const viewResultados = document.getElementById("view-resultados");
+  const viewPerformance = document.getElementById("view-performance");
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
   const viewMetas = document.getElementById("view-metas");
@@ -1282,19 +1414,24 @@
   // --- abas ---
   function mostrarAba(aba) {
     viewResultados.classList.toggle("oculto", aba !== "resultados");
+    viewPerformance.classList.toggle("oculto", aba !== "performance");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
+    tabBtnPerformance.classList.toggle("ativa", aba === "performance");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
+    if (aba === "performance") iniciarPerformance();
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
     if (aba === "metas") atualizarTelaMetas();
   }
 
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
+  tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
   tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
   tabBtnMetas.addEventListener("click", () => mostrarAba("metas"));
@@ -1476,6 +1613,429 @@
     atualizarNotaAutomatico();
     await carregarMetasDoMes(metasMesAtual);
   }
+
+  // --- SEÇÃO: Performance (esforço x venda) — pública, só leitura ---
+  const seletorMesPerf = document.getElementById("seletor-mes-perf");
+  const corpoPerf = document.getElementById("corpo-perf");
+  const perfKpis = document.getElementById("perf-kpis");
+  const perfEquipe = document.getElementById("perf-equipe");
+  const perfIndividual = document.getElementById("perf-individual");
+  const freshnessPerf = document.getElementById("freshness-perf");
+
+  let perfMeses = [];
+  let perfDias = [];
+  let perfCompetencia = null;
+  let perfInicializada = false;
+
+  const AZUL_BARRA = "#1e5fbf";
+  const AZUL_BARRA_ESCURO = "#123d80";
+
+  function n(v) { const x = Number(v); return isNaN(x) ? 0 : x; }
+  function fmtInt(v) { return n(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 }); }
+  function fmtDec(v, casas) {
+    return n(v).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  }
+  function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function mediana(valores) {
+    const v = valores.filter((x) => x !== null && x !== undefined && !isNaN(x)).map(Number).sort((a, b) => a - b);
+    if (!v.length) return 0;
+    const meio = Math.floor(v.length / 2);
+    return v.length % 2 ? v[meio] : (v[meio - 1] + v[meio]) / 2;
+  }
+  function proximoMesISO(comp) {
+    const [ano, mes] = comp.split("-").map(Number);
+    return mes === 12 ? (ano + 1) + "-01-01" : ano + "-" + String(mes + 1).padStart(2, "0") + "-01";
+  }
+  function mesAnteriorISO(comp) {
+    const [ano, mes] = comp.split("-").map(Number);
+    return mes === 1 ? (ano - 1) + "-12-01" : ano + "-" + String(mes - 1).padStart(2, "0") + "-01";
+  }
+
+  function diasUteisRestantes(competencia) {
+    const hoje = new Date(hojeISO() + "T12:00:00");
+    const [ano, mes] = competencia.split("-").map(Number);
+    const fim = new Date(ano, mes, 0, 12, 0, 0);
+    if (hoje > fim) return 0;
+    let d = new Date(Math.max(hoje.getTime(), new Date(ano, mes - 1, 1, 12, 0, 0).getTime()));
+    let conta = 0;
+    while (d <= fim) {
+      const dia = d.getDay();
+      if (dia >= 1 && dia <= 5) conta++;
+      d = new Date(d.getTime() + 86400000);
+    }
+    return conta;
+  }
+
+  async function buscarPerfMeses() {
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/v_perf_vendedor_mes?select=*&order=competencia.desc,faturado.desc",
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_perf_vendedor_mes");
+    return res.json();
+  }
+
+  async function buscarPerfDias(competencia) {
+    const fim = proximoMesISO(competencia);
+    const campos = "data,vendedor_id,contatos_efetivos,receptivos,ativos_efetivos,tentativas,ligacoes_efetivas,faturado,pedidos";
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/v_perf_vendedor_dia?select=" + campos +
+      "&data=gte." + competencia + "&data=lt." + fim + "&order=data.asc",
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_perf_vendedor_dia");
+    return res.json();
+  }
+
+  function preencherSeletorMesPerf() {
+    const comps = [...new Set(perfMeses.map((l) => l.competencia))].sort().reverse();
+    seletorMesPerf.innerHTML = comps.map((c) => '<option value="' + c + '">' + nomeMes(c) + "</option>").join("");
+    if (comps.length) {
+      perfCompetencia = comps[0];
+      seletorMesPerf.value = perfCompetencia;
+    }
+  }
+
+  function linhasDoMes(comp) {
+    return perfMeses.filter((l) => l.competencia === comp).sort((a, b) => n(b.faturado) - n(a.faturado));
+  }
+
+  function renderPerfEquipe(comp) {
+    const linhas = linhasDoMes(comp);
+    if (!linhas.length) {
+      perfKpis.innerHTML = "";
+      corpoPerf.innerHTML = '<tr><td colspan="11" class="estado-vazio">Sem dados para este mês.</td></tr>';
+      return;
+    }
+
+    const soma = (campo) => linhas.reduce((t, l) => t + n(l[campo]), 0);
+    const contatos = soma("contatos_efetivos");
+    const tentativas = soma("tentativas");
+    const faturado = soma("faturado");
+    const lucro = soma("lucro_bruto");
+    const ligacoes = soma("ligacoes_efetivas");
+    const diasUteis = Math.max.apply(null, linhas.map((l) => n(l.dias_uteis)));
+
+    perfKpis.innerHTML = [
+      { rotulo: "Contatos efetivos", valor: fmtInt(contatos), nota: diasUteis ? fmtDec(contatos / diasUteis, 1) + " por dia útil" : "" },
+      { rotulo: "Tentativas sem resposta", valor: fmtInt(tentativas), nota: contatos ? fmtDec((tentativas / (contatos + tentativas)) * 100, 0) + "% do esforço não virou contato" : "" },
+      { rotulo: "Ligações acima de 1 min", valor: fmtInt(ligacoes), nota: diasUteis ? fmtDec(ligacoes / diasUteis, 1) + " por dia útil" : "" },
+      { rotulo: "Faturado", valor: fmtMoeda(faturado), nota: contatos ? fmtMoeda(faturado / contatos) + " por contato efetivo" : "" },
+      { rotulo: "Margem bruta", valor: faturado ? fmtDec((lucro / faturado) * 100, 1) + "%" : "—", nota: "lucro de " + fmtMoeda(lucro) }
+    ].map((k) => '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>").join("");
+
+    corpoPerf.innerHTML = linhas.map((l) => {
+      const taxa = l.taxa_resposta_ativo === null || l.taxa_resposta_ativo === undefined ? "—" : fmtDec(n(l.taxa_resposta_ativo) * 100, 0) + "%";
+      const margem = l.margem_pct === null || l.margem_pct === undefined ? "—" : fmtDec(n(l.margem_pct) * 100, 1) + "%";
+      const pctMeta = l.pct_meta === null || l.pct_meta === undefined
+        ? '<span class="pct-pill badge manual">sem meta</span>'
+        : '<span class="pct-pill ' + classePct(l.pct_meta) + '">' + fmtPct(l.pct_meta) + "</span>";
+      return '<tr class="clicavel" data-vendedor="' + l.vendedor_id + '" title="Ver diagnóstico de ' + esc(l.nome_completo) + '">' +
+        '<td><span class="link-vendedor">' + esc(l.nome_curto) + "</span></td>" +
+        "<td>" + fmtInt(l.contatos_efetivos) + ' <small style="color:var(--texto-suave)">(' + fmtDec(l.contatos_por_dia, 1) + "/dia)</small></td>" +
+        "<td>" + fmtInt(l.tentativas) + "</td>" +
+        "<td>" + taxa + "</td>" +
+        "<td>" + fmtInt(l.ligacoes_efetivas) + "</td>" +
+        "<td>" + fmtInt(l.clientes_atendidos) + " &rarr; " + fmtInt(l.clientes_com_pedido) + "</td>" +
+        "<td>" + fmtInt(l.pedidos) + "</td>" +
+        "<td>" + fmtMoeda(l.faturado) + "</td>" +
+        "<td>" + pctMeta + "</td>" +
+        "<td>" + margem + "</td>" +
+        "<td>" + (n(l.contatos_efetivos) ? fmtMoeda(l.faturado_por_contato) : "—") + "</td>" +
+        "</tr>";
+    }).join("");
+
+    corpoPerf.querySelectorAll("tr.clicavel").forEach((tr) => {
+      tr.addEventListener("click", () => abrirDiagnostico(Number(tr.dataset.vendedor)));
+    });
+  }
+
+  function graficoBarras(titulo, subtitulo, dados, cor, formatar) {
+    const maximo = Math.max.apply(null, dados.map((d) => n(d.valor)).concat([0]));
+    const passo = Math.max(1, Math.ceil(dados.length / 12));
+    const barras = dados.map((d) => {
+      const altura = maximo > 0 ? Math.max(2, Math.round((n(d.valor) / maximo) * 100)) : 2;
+      return '<div class="barra-col" title="' + esc(d.rotuloLongo) + ": " + esc(formatar(d.valor)) + '">' +
+        '<div class="barra" style="height:' + altura + "%;background:" + cor + '"></div></div>';
+    }).join("");
+    const eixo = dados.map((d, i) => "<span>" + (i % passo === 0 ? esc(d.rotulo) : "") + "</span>").join("");
+    return '<div class="grafico-card"><h3>' + esc(titulo) + "</h3><p class=\"sub\">" + esc(subtitulo) + "</p>" +
+      '<div class="barras">' + barras + '</div><div class="eixo-x">' + eixo + "</div></div>";
+  }
+
+  function gerarDiagnostico(l, linhas, anterior) {
+    const itens = [];
+    const pares = linhas.filter((x) => x.vendedor_id !== l.vendedor_id && n(x.contatos_efetivos) > 0);
+    const medTaxa = mediana(pares.map((x) => x.taxa_resposta_ativo).filter((v) => v !== null));
+    const medRsContato = mediana(pares.map((x) => x.faturado_por_contato).filter((v) => v !== null));
+    const medTicket = mediana(pares.map((x) => x.ticket_medio).filter((v) => v !== null));
+    const medMargem = mediana(pares.map((x) => x.margem_pct).filter((v) => v !== null));
+    const medLigDia = mediana(pares.map((x) => n(x.ligacoes_efetivas) / Math.max(1, n(x.dias_uteis))));
+    const medContatoDia = mediana(pares.map((x) => x.contatos_por_dia));
+
+    const dias = Math.max(1, n(l.dias_uteis));
+    const contatos = n(l.contatos_efetivos);
+    const tentativas = n(l.tentativas);
+    const ligDia = n(l.ligacoes_efetivas) / dias;
+    const shareReceptivo = contatos ? n(l.receptivos) / contatos : 0;
+
+    // 1) meta: o quanto falta, traduzido em esforço
+    if (l.objetivo !== null && l.objetivo !== undefined && n(l.objetivo) > 0) {
+      const falta = n(l.objetivo) - n(l.faturado);
+      if (falta > 0) {
+        const rs = n(l.faturado_por_contato);
+        const restantes = diasUteisRestantes(l.competencia);
+        let complemento = "";
+        if (rs > 0 && restantes > 0) {
+          const contatosNecessarios = Math.ceil(falta / rs);
+          const porDia = contatosNecessarios / restantes;
+          const ritmoAtual = n(l.contatos_por_dia);
+          complemento = " No seu ritmo de " + fmtMoeda(rs) + " por contato efetivo, fechar isso nos " + fmtInt(restantes) +
+            " dias úteis que restam pede cerca de " + fmtDec(porDia, 1) + " contatos efetivos por dia (hoje você faz " + fmtDec(ritmoAtual, 1) + ").";
+          if (ritmoAtual > 0 && porDia > ritmoAtual * 2) {
+            complemento += " Só volume não fecha essa conta: o caminho é subir o valor por atendimento — pedido mais completo, ticket maior e margem melhor.";
+          }
+        } else if (rs > 0) {
+          complemento = " O mês já fechou: no ritmo de " + fmtMoeda(rs) + " por contato efetivo, faltaram cerca de " + fmtInt(Math.ceil(falta / rs)) + " contatos efetivos.";
+        }
+        itens.push({
+          tipo: n(l.pct_meta) >= 0.7 ? "atencao" : "critico",
+          titulo: "Faltam " + fmtMoeda(falta) + " para a meta",
+          texto: "Você está em " + fmtPct(l.pct_meta) + " do objetivo de " + fmtMoeda(l.objetivo) + "." + complemento
+        });
+      } else {
+        itens.push({
+          tipo: "bom",
+          titulo: "Meta batida: " + fmtPct(l.pct_meta),
+          texto: "Faturado de " + fmtMoeda(l.faturado) + " contra objetivo de " + fmtMoeda(l.objetivo) + "."
+        });
+      }
+    }
+
+    // 2) resposta no ativo / tentativas
+    if (l.taxa_resposta_ativo !== null && l.taxa_resposta_ativo !== undefined && n(l.ativos_conferidos) >= 5) {
+      const taxa = n(l.taxa_resposta_ativo);
+      if (taxa < 0.5 || (medTaxa && taxa < medTaxa - 0.1)) {
+        itens.push({
+          tipo: taxa < 0.4 ? "critico" : "atencao",
+          titulo: "Só " + fmtDec(taxa * 100, 0) + "% dos seus ativos tiveram resposta",
+          texto: "Foram " + fmtInt(tentativas) + " mensagens enviadas sem nenhuma resposta do cliente, contra " +
+            fmtInt(l.ativos_efetivos) + " que responderam. A equipe está em " + fmtDec(medTaxa * 100, 0) + "%. " +
+            "Mensagem sem resposta não vira venda: quem não respondeu em até um dia merece uma ligação, não outra mensagem."
+        });
+      } else if (medTaxa && taxa > medTaxa + 0.1) {
+        itens.push({
+          tipo: "bom",
+          titulo: "Ativo bem feito: " + fmtDec(taxa * 100, 0) + "% de resposta",
+          texto: "Acima da equipe (" + fmtDec(medTaxa * 100, 0) + "%). Suas abordagens estão chegando na hora e no cliente certo."
+        });
+      }
+    }
+
+    // 3) ligações
+    if (ligDia < 1 && (medLigDia === 0 || ligDia < medLigDia)) {
+      itens.push({
+        tipo: ligDia < 0.3 ? "critico" : "atencao",
+        titulo: "Poucas ligações efetivas: " + fmtInt(l.ligacoes_efetivas) + " em " + fmtInt(dias) + " dias úteis",
+        texto: "Isso dá " + fmtDec(ligDia, 1) + " ligação acima de 1 minuto por dia (equipe: " + fmtDec(medLigDia, 1) + "). " +
+          "O telefone é o que resolve o cliente que não responde no chat e o cliente parado há semanas."
+      });
+    } else if (ligDia >= 1) {
+      itens.push({
+        tipo: "bom",
+        titulo: fmtDec(ligDia, 1) + " ligações efetivas por dia",
+        texto: fmtInt(l.ligacoes_efetivas) + " chamadas acima de 1 minuto no mês — é o indicador de venda ativa que mais escapa na equipe."
+      });
+    }
+
+    // 4) passividade
+    if (contatos >= 30 && shareReceptivo > 0.85) {
+      itens.push({
+        tipo: "atencao",
+        titulo: fmtDec(shareReceptivo * 100, 0) + "% do seu contato é cliente chamando você",
+        texto: "De " + fmtInt(contatos) + " contatos efetivos, " + fmtInt(l.receptivos) + " foram receptivos. " +
+          "Atender bem quem chega é o mínimo; o crescimento vem de procurar quem não chamou."
+      });
+    }
+
+    // 5) R$ por contato
+    if (contatos >= 30 && medRsContato > 0 && n(l.faturado_por_contato) < medRsContato * 0.6) {
+      itens.push({
+        tipo: "atencao",
+        titulo: "Muito atendimento, pouco valor por atendimento",
+        texto: "Cada contato efetivo seu rendeu " + fmtMoeda(l.faturado_por_contato) + ", contra " + fmtMoeda(medRsContato) +
+          " da equipe. Volume alto com valor baixo costuma ser atendimento de dúvida e de item avulso — vale qualificar melhor quem recebe o seu tempo."
+      });
+    }
+
+    // 6) ticket médio
+    if (n(l.pedidos) >= 10 && medTicket > 0 && n(l.ticket_medio) < medTicket * 0.7) {
+      itens.push({
+        tipo: "atencao",
+        titulo: "Ticket médio de " + fmtMoeda(l.ticket_medio),
+        texto: "A equipe está em " + fmtMoeda(medTicket) + " por pedido. Oferecer o item complementar e fechar o pedido cheio sobe esse número sem precisar de mais atendimento."
+      });
+    }
+
+    // 7) margem
+    if (n(l.faturado) > 0 && medMargem > 0 && n(l.margem_pct) < medMargem - 0.03) {
+      itens.push({
+        tipo: "atencao",
+        titulo: "Margem de " + fmtDec(n(l.margem_pct) * 100, 1) + "%, abaixo da equipe",
+        texto: "A equipe está em " + fmtDec(medMargem * 100, 1) + "%. Sobre o seu faturamento do mês, cada ponto de margem vale " +
+          fmtMoeda(n(l.faturado) * 0.01) + " — desconto dado rápido demais some daqui."
+      });
+    } else if (n(l.faturado) > 0 && medMargem > 0 && n(l.margem_pct) > medMargem + 0.03) {
+      itens.push({
+        tipo: "bom",
+        titulo: "Margem de " + fmtDec(n(l.margem_pct) * 100, 1) + "%, acima da equipe",
+        texto: "Você segura preço melhor que a média (" + fmtDec(medMargem * 100, 1) + "%)."
+      });
+    }
+
+    // 8) carteira atendida x carteira que comprou
+    if (n(l.clientes_atendidos) >= 20) {
+      const conv = n(l.clientes_com_pedido) / n(l.clientes_atendidos);
+      if (conv < 0.3) {
+        itens.push({
+          tipo: "atencao",
+          titulo: "De " + fmtInt(l.clientes_atendidos) + " clientes atendidos, " + fmtInt(l.clientes_com_pedido) + " compraram",
+          texto: "São " + fmtDec(conv * 100, 0) + "% da carteira que você tocou no mês. Vale revisar a lista de quem conversou e não fechou — é a lista mais quente que existe."
+        });
+      }
+    }
+
+    // 9) queda contra o mês anterior
+    if (anterior && n(anterior.contatos_efetivos) > 0) {
+      const varContatos = (contatos / n(anterior.contatos_efetivos)) - 1;
+      if (varContatos < -0.15) {
+        itens.push({
+          tipo: "atencao",
+          titulo: "Ritmo " + fmtDec(Math.abs(varContatos) * 100, 0) + "% abaixo do mês passado",
+          texto: fmtInt(contatos) + " contatos efetivos contra " + fmtInt(anterior.contatos_efetivos) + " em " + nomeMes(anterior.competencia) + "."
+        });
+      }
+      if (n(anterior.faturado) > 0) {
+        const varFat = (n(l.faturado) / n(anterior.faturado)) - 1;
+        if (varFat < -0.2) {
+          itens.push({
+            tipo: "atencao",
+            titulo: "Faturamento " + fmtDec(Math.abs(varFat) * 100, 0) + "% abaixo do mês passado",
+            texto: fmtMoeda(l.faturado) + " contra " + fmtMoeda(anterior.faturado) + " em " + nomeMes(anterior.competencia) + "."
+          });
+        }
+      }
+    }
+
+    // 10) ritmo de contato baixo
+    if (medContatoDia > 0 && n(l.contatos_por_dia) < medContatoDia * 0.6) {
+      itens.push({
+        tipo: "atencao",
+        titulo: "Volume de contato abaixo da equipe",
+        texto: fmtDec(l.contatos_por_dia, 1) + " contatos efetivos por dia útil, contra " + fmtDec(medContatoDia, 1) + " da equipe."
+      });
+    }
+
+    if (!itens.length) {
+      itens.push({ tipo: "bom", titulo: "Nada fora da curva neste mês", texto: "Seus indicadores estão na faixa da equipe." });
+    }
+
+    const ordem = { critico: 0, atencao: 1, neutro: 2, bom: 3 };
+    return itens.sort((a, b) => ordem[a.tipo] - ordem[b.tipo]).slice(0, 7);
+  }
+
+  function abrirDiagnostico(vendedorId) {
+    const linhas = linhasDoMes(perfCompetencia);
+    const l = linhas.find((x) => x.vendedor_id === vendedorId);
+    if (!l) return;
+    const anterior = perfMeses.find((x) => x.vendedor_id === vendedorId && x.competencia === mesAnteriorISO(perfCompetencia));
+    const dias = perfDias.filter((d) => d.vendedor_id === vendedorId);
+
+    const posicao = (campo) => {
+      const ordenado = linhas.slice().sort((a, b) => n(b[campo]) - n(a[campo]));
+      return ordenado.findIndex((x) => x.vendedor_id === vendedorId) + 1;
+    };
+
+    const serieContatos = dias.map((d) => ({
+      rotulo: d.data.slice(8, 10),
+      rotuloLongo: fmtData(d.data),
+      valor: n(d.contatos_efetivos)
+    }));
+    const serieFaturado = dias.map((d) => ({
+      rotulo: d.data.slice(8, 10),
+      rotuloLongo: fmtData(d.data),
+      valor: n(d.faturado)
+    }));
+
+    const kpis = [
+      { rotulo: "Contatos efetivos", valor: fmtInt(l.contatos_efetivos), nota: fmtDec(l.contatos_por_dia, 1) + " por dia · " + posicao("contatos_efetivos") + "º da equipe" },
+      { rotulo: "Tentativas sem resposta", valor: fmtInt(l.tentativas), nota: (l.taxa_resposta_ativo === null ? "sem ativo no mês" : fmtDec(n(l.taxa_resposta_ativo) * 100, 0) + "% dos ativos responderam") },
+      { rotulo: "Ligações +1 min", valor: fmtInt(l.ligacoes_efetivas), nota: fmtDec(n(l.ligacoes_efetivas) / Math.max(1, n(l.dias_uteis)), 1) + " por dia útil" },
+      { rotulo: "Faturado", valor: fmtMoeda(l.faturado), nota: posicao("faturado") + "º da equipe · " + (n(l.contatos_efetivos) ? fmtMoeda(l.faturado_por_contato) + " por contato" : "—") },
+      { rotulo: "Pedidos", valor: fmtInt(l.pedidos), nota: (n(l.pedidos) ? "ticket " + fmtMoeda(l.ticket_medio) : "—") },
+      { rotulo: "Margem bruta", valor: (l.margem_pct === null || l.margem_pct === undefined ? "—" : fmtDec(n(l.margem_pct) * 100, 1) + "%"), nota: "lucro de " + fmtMoeda(l.lucro_bruto) },
+      { rotulo: "Clientes atendidos", valor: fmtInt(l.clientes_atendidos), nota: fmtInt(l.clientes_com_pedido) + " compraram no mês" },
+      { rotulo: "% da meta", valor: (l.pct_meta === null || l.pct_meta === undefined ? "sem meta" : fmtPct(l.pct_meta)), nota: (l.objetivo ? "objetivo " + fmtMoeda(l.objetivo) : "") }
+    ];
+
+    const diag = gerarDiagnostico(l, linhas, anterior);
+
+    perfIndividual.innerHTML =
+      '<div class="cabecalho-individual">' +
+        '<button class="btn-secundario" id="btn-voltar-perf">&larr; Voltar</button>' +
+        "<h2>" + esc(l.nome_completo) + "</h2>" +
+        '<span class="badge manual">' + nomeMes(l.competencia) + "</span>" +
+      "</div>" +
+      '<div class="kpi-grid">' + kpis.map((k) =>
+        '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>"
+      ).join("") + "</div>" +
+      '<h3 style="font-size:0.95rem;color:var(--azul-escuro);margin:18px 0 10px;">O que melhorar para performar mais</h3>' +
+      '<div class="diag">' + diag.map((d) =>
+        '<div class="diag-item ' + d.tipo + '"><div class="titulo">' + d.titulo + '</div><div class="texto">' + d.texto + "</div></div>"
+      ).join("") + "</div>" +
+      '<div class="grid-graficos">' +
+        graficoBarras("Contatos efetivos por dia", "Receptivos + ativos com resposta + ligações acima de 1 minuto", serieContatos, AZUL_BARRA, (v) => fmtInt(v)) +
+        graficoBarras("Faturado por dia", "Pedidos faturados no ERP, pela data de faturamento", serieFaturado, AZUL_BARRA_ESCURO, (v) => fmtMoeda(v)) +
+      "</div>" +
+      '<div class="rodape-nota">Comparações usam a mediana dos outros vendedores da equipe comercial no mesmo mês.</div>';
+
+    document.getElementById("btn-voltar-perf").addEventListener("click", () => {
+      perfIndividual.classList.add("oculto");
+      perfEquipe.classList.remove("oculto");
+    });
+
+    perfEquipe.classList.add("oculto");
+    perfIndividual.classList.remove("oculto");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function trocarMesPerf(comp) {
+    perfCompetencia = comp;
+    perfIndividual.classList.add("oculto");
+    perfEquipe.classList.remove("oculto");
+    corpoPerf.innerHTML = '<tr><td colspan="11" class="estado-vazio">Carregando...</td></tr>';
+    perfDias = await buscarPerfDias(comp);
+    renderPerfEquipe(comp);
+    const ultimoDia = perfDias.filter((d) => n(d.contatos_efetivos) > 0 || n(d.faturado) > 0).map((d) => d.data).sort().pop();
+    freshnessPerf.textContent = ultimoDia ? "Dados até " + fmtData(ultimoDia) : "";
+  }
+
+  async function iniciarPerformance() {
+    if (perfInicializada) return;
+    perfInicializada = true;
+    try {
+      perfMeses = await buscarPerfMeses();
+      preencherSeletorMesPerf();
+      if (perfCompetencia) await trocarMesPerf(perfCompetencia);
+    } catch (err) {
+      console.error("Erro ao carregar performance:", err);
+      perfInicializada = false;
+      const mensagem = (err && err.message) ? err.message : String(err);
+      corpoPerf.innerHTML = '<tr><td colspan="11" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">' + esc(mensagem) + "</small></td></tr>";
+    }
+  }
+
+  seletorMesPerf.addEventListener("change", () => trocarMesPerf(seletorMesPerf.value));
 
   // --- inicialização ---
   (async function init() {
