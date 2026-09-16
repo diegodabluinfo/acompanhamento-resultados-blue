@@ -258,6 +258,8 @@
   .pill-reativado { background: #fdeadf; color: #a2461c; }
   .pill-risco { background: var(--amarelo-fundo); color: var(--amarelo); }
   .pill-perdido { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .cod-cliente { color: var(--texto-suave); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .atividade-cliente { font-size: 0.72rem; color: var(--texto-suave); font-weight: 400; margin-top: 2px; }
 
   /* --- Aba Ritmo Comercial --- */
   #view-ritmo {
@@ -2312,7 +2314,7 @@
     try {
       const [porVendedor, lista] = await Promise.all([
         lerRest("v_clientes_vendedor_mes?select=*&competencia=eq." + competencia + "&order=faturado.desc"),
-        lerRest("v_clientes_mes?select=cliente,clientes_no_grupo,tipo,tipo_dist,dias_parado,dias_dist,faturado,faturado_dist,pedidos,vendedor_venda,vendedor_carteira,segmento&competencia=eq." +
+        lerRest("v_clientes_mes?select=grupo_id,cliente,clientes_no_grupo,atividade,tipo,tipo_dist,dias_parado,dias_dist,faturado,faturado_dist,pedidos,vendedor_venda,vendedor_carteira,segmento&competencia=eq." +
                 competencia + (clientesSegmento === "dist" ? "&tipo_dist=in.(novo,reativado)" : "&tipo=in.(novo,reativado)") +
                 "&order=faturado.desc&limit=300")
       ]);
@@ -2334,7 +2336,7 @@
 
       corpoClientesLista.innerHTML = lista.length ? lista.map((l) =>
         "<tr>" +
-        "<td>" + esc(l.cliente) + rotuloGrupo(l.clientes_no_grupo) + "</td>" +
+        celulaCliente(l) +
         '<td><span class="pill-tipo pill-' + (clientesSegmento === "dist" ? l.tipo_dist : l.tipo) + '">' +
           (clientesSegmento === "dist" ? l.tipo_dist : l.tipo) + "</span></td>" +
         "<td>" + (() => {
@@ -2354,6 +2356,13 @@
     }
   }
 
+  // código do ERP antes do nome, atividade logo abaixo
+  function celulaCliente(l) {
+    return "<td>" + '<span class="cod-cliente">' + esc(String(l.grupo_id)) + "</span> " + esc(l.cliente) +
+      rotuloGrupo(l.clientes_no_grupo) +
+      (l.atividade ? '<div class="atividade-cliente">' + esc(l.atividade) + "</div>" : "") + "</td>";
+  }
+
   function rotuloGrupo(quantos) {
     return n(quantos) > 1 ? ' <small style="color:var(--texto-suave)">(grupo de ' + fmtInt(quantos) + " CNPJs)</small>" : "";
   }
@@ -2366,7 +2375,7 @@
     const linhas = riscoDoSegmento().slice().sort((a, b) => n(b.faturado_12m) - n(a.faturado_12m));
     corpoClientesRisco.innerHTML = linhas.length ? linhas.map((l) =>
       "<tr>" +
-      "<td>" + esc(l.cliente) + rotuloGrupo(l.clientes_no_grupo) + "</td>" +
+      celulaCliente(l) +
       "<td>" + esc(l.vendedor_carteira || ("código " + l.codigo_carteira)) + "</td>" +
       "<td>" + fmtData(l.ultima_compra) + "</td>" +
       "<td>" + fmtInt(l.dias_sem_comprar) + "</td>" +
