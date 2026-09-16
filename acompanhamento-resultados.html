@@ -234,6 +234,28 @@
     font-weight: 600;
   }
 
+  /* --- Aba Vendas do Dia --- */
+  #view-vendas table { font-size: 0.86rem; }
+  .celula-barra { position: relative; }
+  .barra-part {
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    height: 22px;
+    background: #dce8fa;
+    border-radius: 4px;
+    z-index: 0;
+  }
+  .celula-barra span { position: relative; z-index: 1; }
+  tr.sem-venda td { color: var(--texto-suave); }
+  .dia-barras { display: flex; align-items: flex-end; gap: 4px; height: 110px; }
+  .dia-col { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; cursor: pointer; min-width: 0; }
+  .dia-col .barra { border-radius: 4px 4px 0 0; width: 100%; background: #9dbdea; transition: background .15s; }
+  .dia-col:hover .barra { background: var(--azul); }
+  .dia-col.selecionado .barra { background: var(--azul-escuro); }
+  .controles-vendas { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .controles-vendas input[type="date"] { width: auto; }
+
   /* --- Aba Performance --- */
   #view-performance table { font-size: 0.8rem; }
   #view-performance thead th, #view-performance tbody td { padding: 9px 9px; }
@@ -344,6 +366,7 @@
 
       <div class="tabs">
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
+        <button class="tab-btn" data-tab="vendas" id="tab-btn-vendas">Vendas do Dia</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
         <button class="tab-btn" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
@@ -384,6 +407,52 @@
         </div>
 
         <div class="rodape-nota" id="nota-rodape"></div>
+      </div>
+
+      <!-- ===== ABA: Vendas do Dia ===== -->
+      <div id="view-vendas" class="oculto">
+        <div class="painel-controles controles-vendas">
+          <div>
+            <label for="seletor-data-vendas">Dia</label>
+            <input type="date" id="seletor-data-vendas">
+          </div>
+          <button class="btn-secundario" id="btn-hoje-vendas">Hoje</button>
+          <button class="btn-secundario" id="btn-atualizar-vendas">Atualizar</button>
+          <span id="freshness-vendas" class="freshness"></span>
+        </div>
+
+        <div class="kpi-grid" id="vendas-kpis"></div>
+
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Faturado</th>
+                  <th>% do dia</th>
+                  <th>Pedidos</th>
+                  <th>Ticket médio</th>
+                  <th>Clientes</th>
+                  <th>Margem</th>
+                  <th>Última venda</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-vendas">
+                <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grafico-card" style="margin-top:16px;">
+          <h3>Faturamento por dia</h3>
+          <p class="sub">Últimos dias com faturamento — clique em uma barra para abrir aquele dia.</p>
+          <div class="dia-barras" id="vendas-dias"></div>
+          <div class="eixo-x" id="vendas-dias-eixo"></div>
+        </div>
+
+        <div class="rodape-nota" id="nota-vendas"></div>
       </div>
 
       <!-- ===== ABA: Performance (esforço x venda) ===== -->
@@ -695,11 +764,13 @@
   const notaRodape = document.getElementById("nota-rodape");
 
   const tabBtnResultados = document.getElementById("tab-btn-resultados");
+  const tabBtnVendas = document.getElementById("tab-btn-vendas");
   const tabBtnPerformance = document.getElementById("tab-btn-performance");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
   const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
   const tabBtnMetas = document.getElementById("tab-btn-metas");
   const viewResultados = document.getElementById("view-resultados");
+  const viewVendas = document.getElementById("view-vendas");
   const viewPerformance = document.getElementById("view-performance");
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
@@ -1414,16 +1485,19 @@
   // --- abas ---
   function mostrarAba(aba) {
     viewResultados.classList.toggle("oculto", aba !== "resultados");
+    viewVendas.classList.toggle("oculto", aba !== "vendas");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
     document.querySelector(".wrap").classList.toggle("largo", aba === "performance");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
+    tabBtnVendas.classList.toggle("ativa", aba === "vendas");
     tabBtnPerformance.classList.toggle("ativa", aba === "performance");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
+    if (aba === "vendas") iniciarVendas();
     if (aba === "performance") iniciarPerformance();
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
@@ -1431,6 +1505,7 @@
   }
 
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
+  tabBtnVendas.addEventListener("click", () => mostrarAba("vendas"));
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
   tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
@@ -1614,6 +1689,179 @@
     await carregarMetasDoMes(metasMesAtual);
   }
 
+  // --- helpers numéricos compartilhados pelas abas Vendas e Performance ---
+  function n(v) { const x = Number(v); return isNaN(x) ? 0 : x; }
+  function fmtInt(v) { return n(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 }); }
+  function fmtDec(v, casas) {
+    return n(v).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  }
+  function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  // --- SEÇÃO: Vendas do Dia (pública, só leitura) ---
+  const seletorDataVendas = document.getElementById("seletor-data-vendas");
+  const btnHojeVendas = document.getElementById("btn-hoje-vendas");
+  const btnAtualizarVendas = document.getElementById("btn-atualizar-vendas");
+  const corpoVendas = document.getElementById("corpo-vendas");
+  const vendasKpis = document.getElementById("vendas-kpis");
+  const vendasDias = document.getElementById("vendas-dias");
+  const vendasDiasEixo = document.getElementById("vendas-dias-eixo");
+  const freshnessVendas = document.getElementById("freshness-vendas");
+  const notaVendas = document.getElementById("nota-vendas");
+
+  let vendasLinhas = [];
+  let vendasDataSel = null;
+  let vendasInicializada = false;
+  let vendasTimer = null;
+
+  function hojeSP() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  }
+  function diasAtrasISO(dias) {
+    const d = new Date(hojeSP() + "T12:00:00");
+    d.setDate(d.getDate() - dias);
+    return d.toLocaleDateString("en-CA");
+  }
+  function hhmm(hora) {
+    if (!hora) return "—";
+    return String(hora).slice(0, 5);
+  }
+
+  async function buscarVendasDia() {
+    const desde = diasAtrasISO(60);
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/v_vendas_dia?select=*&data=gte." + desde + "&order=data.desc,faturado.desc",
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_vendas_dia");
+    return res.json();
+  }
+
+  function diasComVenda() {
+    const mapa = new Map();
+    vendasLinhas.forEach((l) => {
+      mapa.set(l.data, (mapa.get(l.data) || 0) + n(l.faturado));
+    });
+    return [...mapa.entries()].filter((e) => e[1] > 0).sort((a, b) => a[0] < b[0] ? -1 : 1);
+  }
+
+  function renderVendasDia(dataISO) {
+    vendasDataSel = dataISO;
+    seletorDataVendas.value = dataISO;
+    const linhas = vendasLinhas.filter((l) => l.data === dataISO)
+      .sort((a, b) => n(b.faturado) - n(a.faturado) || a.nome_curto.localeCompare(b.nome_curto));
+
+    if (!linhas.length) {
+      vendasKpis.innerHTML = "";
+      corpoVendas.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhuma venda faturada neste dia.</td></tr>';
+      renderGraficoDias();
+      return;
+    }
+
+    const faturado = linhas.reduce((t, l) => t + n(l.faturado), 0);
+    const pedidos = linhas.reduce((t, l) => t + n(l.pedidos), 0);
+    const lucro = linhas.reduce((t, l) => t + n(l.lucro_bruto), 0);
+    const clientes = linhas.reduce((t, l) => t + n(l.clientes), 0);
+    const venderam = linhas.filter((l) => n(l.faturado) > 0).length;
+
+    // média dos dias com venda anteriores a este (até 5)
+    const anteriores = diasComVenda().filter((d) => d[0] < dataISO).slice(-5);
+    const mediaAnterior = anteriores.length ? anteriores.reduce((t, d) => t + d[1], 0) / anteriores.length : 0;
+    const variacao = mediaAnterior > 0 ? (faturado / mediaAnterior) - 1 : null;
+
+    vendasKpis.innerHTML = [
+      {
+        rotulo: "Faturado no dia", valor: fmtMoeda(faturado),
+        nota: variacao === null ? "" :
+          (variacao >= 0 ? "▲ " : "▼ ") + fmtDec(Math.abs(variacao) * 100, 0) + "% contra a média dos " + anteriores.length + " dias anteriores"
+      },
+      { rotulo: "Pedidos", valor: fmtInt(pedidos), nota: fmtInt(clientes) + " clientes" },
+      { rotulo: "Ticket médio", valor: pedidos ? fmtMoeda(faturado / pedidos) : "—", nota: "faturado ÷ pedidos do dia" },
+      { rotulo: "Margem bruta", valor: faturado ? fmtDec((lucro / faturado) * 100, 1) + "%" : "—", nota: "lucro de " + fmtMoeda(lucro) },
+      { rotulo: "Venderam no dia", valor: fmtInt(venderam) + " de " + fmtInt(linhas.length), nota: "vendedores com pedido faturado" }
+    ].map((k) => '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>").join("");
+
+    const maiorFat = Math.max.apply(null, linhas.map((l) => n(l.faturado)).concat([0]));
+    corpoVendas.innerHTML = linhas.map((l) => {
+      const fat = n(l.faturado);
+      const largura = maiorFat > 0 ? Math.max(0, (fat / maiorFat) * 100) : 0;
+      const margem = l.margem_pct === null || l.margem_pct === undefined ? "—" : fmtDec(n(l.margem_pct) * 100, 1) + "%";
+      return '<tr' + (fat > 0 ? "" : ' class="sem-venda"') + ' title="' + esc(l.nome_completo) + '">' +
+        "<td>" + esc(l.nome_curto) + "</td>" +
+        '<td class="celula-barra"><div class="barra-part" style="width:' + largura.toFixed(1) + '%"></div><span>' + fmtMoeda(fat) + "</span></td>" +
+        "<td>" + (fat > 0 ? fmtDec(n(l.participacao) * 100, 1) + "%" : "—") + "</td>" +
+        "<td>" + fmtInt(l.pedidos) + "</td>" +
+        "<td>" + (n(l.pedidos) ? fmtMoeda(l.ticket_medio) : "—") + "</td>" +
+        "<td>" + fmtInt(l.clientes) + "</td>" +
+        "<td>" + margem + "</td>" +
+        "<td>" + hhmm(l.ultima_venda) + "</td>" +
+        "</tr>";
+    }).join("") +
+      '<tr class="total"><td>TOTAL</td><td>' + fmtMoeda(faturado) + "</td><td>100,0%</td><td>" + fmtInt(pedidos) +
+      "</td><td>" + (pedidos ? fmtMoeda(faturado / pedidos) : "—") + "</td><td>" + fmtInt(clientes) +
+      "</td><td>" + (faturado ? fmtDec((lucro / faturado) * 100, 1) + "%" : "—") + "</td><td></td></tr>";
+
+    renderGraficoDias();
+  }
+
+  function renderGraficoDias() {
+    const dias = diasComVenda().slice(-20);
+    const maximo = Math.max.apply(null, dias.map((d) => d[1]).concat([0]));
+    vendasDias.innerHTML = dias.map((d) => {
+      const altura = maximo > 0 ? Math.max(2, Math.round((d[1] / maximo) * 100)) : 2;
+      return '<div class="dia-col' + (d[0] === vendasDataSel ? " selecionado" : "") + '" data-dia="' + d[0] + '" title="' + fmtData(d[0]) + ": " + fmtMoeda(d[1]) + '">' +
+        '<div class="barra" style="height:' + altura + '%"></div></div>';
+    }).join("");
+    vendasDiasEixo.innerHTML = dias.map((d) => "<span>" + d[0].slice(8, 10) + "</span>").join("");
+    vendasDias.querySelectorAll(".dia-col").forEach((el) => {
+      el.addEventListener("click", () => renderVendasDia(el.dataset.dia));
+    });
+  }
+
+  async function carregarVendas(dataDesejada) {
+    try {
+      const [linhas, sincronizacao] = await Promise.all([buscarVendasDia(), buscarUltimaSincronizacao()]);
+      vendasLinhas = linhas;
+      const dias = diasComVenda().map((d) => d[0]);
+      const ultimo = dias.length ? dias[dias.length - 1] : hojeSP();
+      const alvo = dataDesejada && vendasLinhas.some((l) => l.data === dataDesejada) ? dataDesejada : ultimo;
+      seletorDataVendas.max = ultimo;
+      renderVendasDia(alvo);
+
+      if (sincronizacao && sincronizacao.carregadoEm) {
+        const dataHora = new Date(sincronizacao.carregadoEm).toLocaleString("pt-BR", {
+          timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+        });
+        freshnessVendas.textContent = "Última sincronização com o ERP: " + dataHora;
+      }
+      notaVendas.textContent = "Pedidos faturados no ERP, pela data de faturamento, com a mesma regra do Produzido " +
+        "(exclui pedidos cancelados, tabela de preço 99 e o código DIRETO). A carga do ERP roda a cada 30 minutos, " +
+        "então o dia corrente vai enchendo ao longo do expediente.";
+    } catch (err) {
+      console.error("Erro ao carregar vendas do dia:", err);
+      const mensagem = (err && err.message) ? err.message : String(err);
+      corpoVendas.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">' + esc(mensagem) + "</small></td></tr>";
+    }
+  }
+
+  async function iniciarVendas() {
+    if (!vendasInicializada) {
+      vendasInicializada = true;
+      await carregarVendas(null);
+      // enquanto a aba estiver aberta, recarrega sozinho a cada 5 minutos
+      vendasTimer = setInterval(() => {
+        if (!viewVendas.classList.contains("oculto")) carregarVendas(vendasDataSel);
+      }, 300000);
+    } else {
+      carregarVendas(vendasDataSel);
+    }
+  }
+
+  seletorDataVendas.addEventListener("change", () => {
+    if (seletorDataVendas.value) renderVendasDia(seletorDataVendas.value);
+  });
+  btnHojeVendas.addEventListener("click", () => carregarVendas(hojeSP()));
+  btnAtualizarVendas.addEventListener("click", () => carregarVendas(vendasDataSel));
+
   // --- SEÇÃO: Performance (esforço x venda) — pública, só leitura ---
   const seletorMesPerf = document.getElementById("seletor-mes-perf");
   const corpoPerf = document.getElementById("corpo-perf");
@@ -1630,12 +1878,6 @@
   const AZUL_BARRA = "#1e5fbf";
   const AZUL_BARRA_ESCURO = "#123d80";
 
-  function n(v) { const x = Number(v); return isNaN(x) ? 0 : x; }
-  function fmtInt(v) { return n(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 }); }
-  function fmtDec(v, casas) {
-    return n(v).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
-  }
-  function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function mediana(valores) {
     const v = valores.filter((x) => x !== null && x !== undefined && !isNaN(x)).map(Number).sort((a, b) => a - b);
     if (!v.length) return 0;
