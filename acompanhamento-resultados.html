@@ -571,6 +571,10 @@
             <label for="seletor-mes-clientes">Mês</label>
             <select id="seletor-mes-clientes"></select>
           </div>
+          <div class="filtro-periodo" id="filtro-segmento" style="align-self:flex-end;">
+            <button data-seg="dist" class="ativa">Distribuição</button>
+            <button data-seg="tudo">Tudo (com loja e serviço)</button>
+          </div>
           <span id="freshness-clientes" class="freshness"></span>
         </div>
 
@@ -661,6 +665,9 @@
         </div>
 
         <div class="rodape-nota">
+          <strong>Distribuição</strong> = pedidos de revenda: CNPJ, acima de R$ 250 e sem ordem de serviço.
+          O que sobra é a loja — balcão, consumidor final e assistência —, que por natureza não faz recompra
+          e por isso fica fora da conta por padrão.
           Cliente positivado = comprou no mês (mesma regra de pedido válido do Produzido). O tipo vem do campo
           <strong>dias do último pedido</strong> do primeiro pedido do mês: sem valor = primeira compra (novo),
           acima de 90 dias = reativado, o resto = ativo. Aos 90 dias sem comprar o cliente perde o vínculo com o vendedor,
@@ -2125,6 +2132,26 @@
   let clientesRisco = [];
   let clientesCompetencia = null;
   let clientesInicializada = false;
+  let clientesSegmento = "dist"; // "dist" = só distribuição (revendas), "tudo" = inclui loja e serviço
+
+  // nomes de coluna conforme a frente escolhida
+  function campoClientes(nome) {
+    const mapa = {
+      positivados: { dist: "positivados_dist", tudo: "positivados" },
+      novos: { dist: "novos_dist", tudo: "novos" },
+      reativados: { dist: "reativados_dist", tudo: "reativados" },
+      ativos: { dist: "ativos_dist", tudo: "ativos" },
+      faturado: { dist: "faturado_distribuicao", tudo: "faturado" },
+      faturado_novos: { dist: "faturado_dist_novos", tudo: "faturado_novos" },
+      faturado_reativados: { dist: "faturado_dist_reativados", tudo: "faturado_reativados" },
+      faturado_ativos: { dist: "faturado_dist_ativos", tudo: "faturado_ativos" }
+    };
+    return mapa[nome][clientesSegmento];
+  }
+  function campoCorte(nome) {
+    const base = campoClientes(nome);
+    return base === "faturado_distribuicao" ? "faturado_distribuicao_corte" : base + "_corte";
+  }
 
   async function lerRest(caminho) {
     const res = await fetch(SUPABASE_URL + "/rest/v1/" + caminho, { headers: headersLeitura() });
@@ -2146,7 +2173,7 @@
   // compara com a média dos 3 meses anteriores; no mês corrente usa o corte do mesmo dia dos dois lados
   function comparativo(competencia, campo) {
     const parcial = competencia === mesCorrenteISO();
-    const chave = parcial ? campo + "_corte" : campo;
+    const chave = parcial ? campoCorte(campo) : campoClientes(campo);
     const atual = clientesResumo.find((l) => l.competencia === competencia);
     if (!atual) return null;
     const anteriores = clientesResumo
@@ -2179,18 +2206,23 @@
       { rotulo: "Ativos", campo: "ativos", moeda: false },
       { rotulo: "Faturado", campo: "faturado", moeda: true }
     ];
-    const emRisco = clientesRisco.filter((r) => r.faixa === "risco").length;
-    const perdidos = clientesRisco.filter((r) => r.faixa === "perdido").length;
+    const riscoFiltrado = riscoDoSegmento();
+    const emRisco = riscoFiltrado.filter((r) => r.faixa === "risco").length;
+    const perdidos = riscoFiltrado.filter((r) => r.faixa === "perdido").length;
 
     clientesKpis.innerHTML = campos.map((c) => {
       const cmp = comparativo(competencia, c.campo);
-      const bruto = parcial ? n(linha[c.campo + "_corte"]) : n(linha[c.campo]);
+      const bruto = parcial ? n(linha[campoCorte(c.campo)]) : n(linha[campoClientes(c.campo)]);
       const fmt = c.moeda ? fmtMoeda : fmtInt;
       return '<div class="kpi"><div class="rotulo">' + c.rotulo + '</div><div class="valor">' + fmt(bruto) + "</div>" +
         '<div class="nota">' + notaComparativo(cmp, fmt) + "</div></div>";
     }).join("") +
       '<div class="kpi"><div class="rotulo">Carteira em risco (hoje)</div><div class="valor">' + fmtInt(emRisco) + "</div>" +
-      '<div class="nota">61 a 90 dias sem comprar · ' + fmtInt(perdidos) + " já passaram de 90</div></div>";
+      '<div class="nota">61 a 90 dias sem comprar · ' + fmtInt(perdidos) + " já passaram de 90</div></div>" +
+      (clientesSegmento === "dist"
+        ? '<div class="kpi"><div class="rotulo">Loja e serviço (fora da conta)</div><div class="valor">' +
+          fmtInt(linha.positivados_loja) + '</div><div class="nota">' + fmtMoeda(linha.faturado_loja) + " no mês</div></div>"
+        : "");
 
     if (parcial) {
       freshnessClientes.textContent = "Mês em andamento — comparações usam o dia " + fmtInt(linha.dia_corte) + " dos meses anteriores";
@@ -2207,7 +2239,7 @@
     const meses = clientesResumo.slice().sort((a, b) => a.competencia < b.competencia ? -1 : 1).slice(-12);
     if (!meses.length) { clientesGrafico.innerHTML = ""; return; }
     const W = 1000, H = 240, base = H - 26, topo = 10;
-    const maximo = Math.max.apply(null, meses.map((m) => n(m.positivados)).concat([1]));
+    const maximo = Math.max.apply(null, meses.map((m) => n(m[campoClientes("positivados")])).concat([1]));
     const passoX = W / meses.length;
     const larg = Math.min(46, passoX - 10);
     const alturaDe = (v) => (v / maximo) * (base - topo);
@@ -2216,9 +2248,9 @@
       const x = i * passoX + (passoX - larg) / 2;
       let y = base;
       [
-        { v: n(m.ativos), cor: "var(--serie-ativo)" },
-        { v: n(m.reativados), cor: "var(--serie-reativado)" },
-        { v: n(m.novos), cor: "var(--serie-novo)" }
+        { v: n(m[campoClientes("ativos")]), cor: "var(--serie-ativo)" },
+        { v: n(m[campoClientes("reativados")]), cor: "var(--serie-reativado)" },
+        { v: n(m[campoClientes("novos")]), cor: "var(--serie-novo)" }
       ].forEach((p) => {
         if (p.v <= 0) return;
         const h = Math.max(1.5, alturaDe(p.v) - 2);
@@ -2227,8 +2259,9 @@
           (m.competencia === clientesCompetencia ? ' stroke="#123d80" stroke-width="1.5"' : "") + "></rect>";
       });
       corpo += '<rect class="clique-mes" data-mes="' + m.competencia + '" x="' + (i * passoX).toFixed(1) + '" y="' + topo + '" width="' + passoX.toFixed(1) + '" height="' + (base - topo).toFixed(1) + '" fill="transparent" style="cursor:pointer">' +
-        "<title>" + nomeMes(m.competencia) + ": " + fmtInt(m.positivados) + " positivados (" + fmtInt(m.novos) + " novos, " +
-        fmtInt(m.reativados) + " reativados, " + fmtInt(m.ativos) + " ativos) · " + fmtMoeda(m.faturado) + "</title></rect>";
+        "<title>" + nomeMes(m.competencia) + ": " + fmtInt(m[campoClientes("positivados")]) + " positivados (" +
+        fmtInt(m[campoClientes("novos")]) + " novos, " + fmtInt(m[campoClientes("reativados")]) + " reativados, " +
+        fmtInt(m[campoClientes("ativos")]) + " ativos) · " + fmtMoeda(m[campoClientes("faturado")]) + "</title></rect>";
       corpo += '<text x="' + (i * passoX + passoX / 2).toFixed(1) + '" y="' + (H - 8) + '" font-size="11" fill="#5b6b7c" text-anchor="middle">' +
         m.competencia.slice(5, 7) + "/" + m.competencia.slice(2, 4) + "</text>";
     });
@@ -2244,9 +2277,9 @@
 
   function renderFaturamentoTipos(linha, parcial) {
     const partes = [
-      { rotulo: "Novos", valor: n(linha.faturado_novos), cor: "var(--serie-novo)" },
-      { rotulo: "Reativados", valor: n(linha.faturado_reativados), cor: "var(--serie-reativado)" },
-      { rotulo: "Ativos", valor: n(linha.faturado_ativos), cor: "var(--serie-ativo)" }
+      { rotulo: "Novos", valor: n(linha[campoClientes("faturado_novos")]), cor: "var(--serie-novo)" },
+      { rotulo: "Reativados", valor: n(linha[campoClientes("faturado_reativados")]), cor: "var(--serie-reativado)" },
+      { rotulo: "Ativos", valor: n(linha[campoClientes("faturado_ativos")]), cor: "var(--serie-ativo)" }
     ];
     const total = partes.reduce((t, p) => t + p.valor, 0) || 1;
     clientesBarraTipos.innerHTML = partes.map((p) =>
@@ -2263,30 +2296,36 @@
     try {
       const [porVendedor, lista] = await Promise.all([
         lerRest("v_clientes_vendedor_mes?select=*&competencia=eq." + competencia + "&order=faturado.desc"),
-        lerRest("v_clientes_mes?select=cliente,tipo,dias_parado,faturado,pedidos,vendedor_venda,vendedor_carteira&competencia=eq." +
-                competencia + "&tipo=in.(novo,reativado)&order=faturado.desc&limit=300")
+        lerRest("v_clientes_mes?select=cliente,tipo,tipo_dist,dias_parado,dias_dist,faturado,faturado_dist,pedidos,vendedor_venda,vendedor_carteira,segmento&competencia=eq." +
+                competencia + (clientesSegmento === "dist" ? "&tipo_dist=in.(novo,reativado)" : "&tipo=in.(novo,reativado)") +
+                "&order=faturado.desc&limit=300")
       ]);
 
+      porVendedor.sort((a, b) => n(b[campoClientes("faturado")]) - n(a[campoClientes("faturado")]));
       corpoClientesVendedor.innerHTML = porVendedor.length ? porVendedor.map((l) =>
         "<tr>" +
         "<td>" + esc(l.nome_curto || ("código " + l.codigo)) + "</td>" +
-        "<td>" + fmtInt(l.positivados) + "</td>" +
-        "<td>" + fmtInt(l.novos) + "</td>" +
-        "<td>" + fmtInt(l.reativados) + "</td>" +
-        "<td>" + fmtInt(l.ativos) + "</td>" +
-        "<td>" + fmtMoeda(l.faturado) + "</td>" +
+        "<td>" + fmtInt(l[campoClientes("positivados")]) + "</td>" +
+        "<td>" + fmtInt(l[campoClientes("novos")]) + "</td>" +
+        "<td>" + fmtInt(l[campoClientes("reativados")]) + "</td>" +
+        "<td>" + fmtInt(l[campoClientes("ativos")]) + "</td>" +
+        "<td>" + fmtMoeda(l[campoClientes("faturado")]) + "</td>" +
         "<td>" + fmtInt(l.clientes_carteira) + "</td>" +
-        "<td>" + fmtInt(l.positivados_carteira) + "</td>" +
-        "<td>" + (l.taxa_positivacao === null || l.taxa_positivacao === undefined ? "—" : fmtDec(n(l.taxa_positivacao) * 100, 1) + "%") + "</td>" +
+        "<td>" + fmtInt(clientesSegmento === "dist" ? l.positivados_carteira_dist : l.positivados_carteira) + "</td>" +
+        "<td>" + (n(l.clientes_carteira) ? fmtDec(100 * n(clientesSegmento === "dist" ? l.positivados_carteira_dist : l.positivados_carteira) / n(l.clientes_carteira), 1) + "%" : "—") + "</td>" +
         "</tr>"
       ).join("") : '<tr><td colspan="9" class="estado-vazio">Sem dados neste mês.</td></tr>';
 
       corpoClientesLista.innerHTML = lista.length ? lista.map((l) =>
         "<tr>" +
         "<td>" + esc(l.cliente) + "</td>" +
-        '<td><span class="pill-tipo pill-' + l.tipo + '">' + (l.tipo === "novo" ? "novo" : "reativado") + "</span></td>" +
-        "<td>" + (l.dias_parado === null || l.dias_parado === undefined ? "primeira compra" : fmtInt(l.dias_parado) + " dias") + "</td>" +
-        "<td>" + fmtMoeda(l.faturado) + "</td>" +
+        '<td><span class="pill-tipo pill-' + (clientesSegmento === "dist" ? l.tipo_dist : l.tipo) + '">' +
+          (clientesSegmento === "dist" ? l.tipo_dist : l.tipo) + "</span></td>" +
+        "<td>" + (() => {
+          const d = clientesSegmento === "dist" ? l.dias_dist : l.dias_parado;
+          return (d === null || d === undefined) ? "primeira compra" : fmtInt(d) + " dias";
+        })() + "</td>" +
+        "<td>" + fmtMoeda(clientesSegmento === "dist" ? l.faturado_dist : l.faturado) + "</td>" +
         "<td>" + fmtInt(l.pedidos) + "</td>" +
         "<td>" + esc(l.vendedor_venda || "—") + "</td>" +
         "<td>" + esc(l.vendedor_carteira || "—") + "</td>" +
@@ -2299,8 +2338,12 @@
     }
   }
 
+  function riscoDoSegmento() {
+    return clientesSegmento === "dist" ? clientesRisco.filter((r) => r.segmento === "distribuicao") : clientesRisco;
+  }
+
   function renderRisco() {
-    const linhas = clientesRisco.slice().sort((a, b) => n(b.faturado_12m) - n(a.faturado_12m));
+    const linhas = riscoDoSegmento().slice().sort((a, b) => n(b.faturado_12m) - n(a.faturado_12m));
     corpoClientesRisco.innerHTML = linhas.length ? linhas.map((l) =>
       "<tr>" +
       "<td>" + esc(l.cliente) + "</td>" +
@@ -2335,6 +2378,15 @@
   }
 
   seletorMesClientes.addEventListener("change", () => renderClientes(seletorMesClientes.value));
+
+  document.getElementById("filtro-segmento").addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-seg]");
+    if (!btn) return;
+    clientesSegmento = btn.dataset.seg;
+    document.getElementById("filtro-segmento").querySelectorAll("button").forEach((b) => b.classList.toggle("ativa", b === btn));
+    renderRisco();
+    renderClientes(clientesCompetencia);
+  });
 
   // --- SEÇÃO: Ritmo Comercial (pública, só leitura) ---
   const filtroPeriodo = document.getElementById("filtro-periodo");
