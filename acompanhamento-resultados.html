@@ -586,12 +586,13 @@
                   <th>Receptivos</th>
                   <th>Ativos com resposta</th>
                   <th>Tentativas</th>
+                  <th>Cobranças</th>
                   <th>Ligações +1min</th>
                   <th>Contatos efetivos</th>
                 </tr>
               </thead>
               <tbody id="corpo-ritmo-dias">
-                <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
+                <tr><td colspan="7" class="estado-vazio">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -600,7 +601,8 @@
         <div class="rodape-nota">
           Equipe comercial (Lucas, Maurino, Luiz, Luciana e Rafael), sem contatos de fornecedor e sem conversa interna.
           Contato efetivo = receptivo + ativo com resposta do cliente + ligação acima de 1 minuto. Tentativa é ativo sem resposta e não soma.
-          A janela termina no último dia com movimento, não em hoje.
+          Protocolo fechado com a tag <strong>Cobrança/Inadimplente/Bloqueado</strong> não conta como ativo nem como tentativa — cobrar inadimplente não é prospecção;
+          esses aparecem só na coluna Cobranças. A janela termina no último dia com movimento, não em hoje.
         </div>
       </div>
 
@@ -1986,7 +1988,7 @@
   let ritmoInicializada = false;
 
   async function buscarRitmo() {
-    const campos = "data,semana,vendedor_id,nome_curto,nome_completo,receptivos,ativos_efetivos,tentativas,ligacoes_efetivas,contatos_efetivos";
+    const campos = "data,semana,vendedor_id,nome_curto,nome_completo,receptivos,ativos_efetivos,tentativas,cobrancas,ligacoes_efetivas,contatos_efetivos";
     const desde = diasAtrasISO(120);
     const res = await fetch(
       SUPABASE_URL + "/rest/v1/v_perf_vendedor_dia?select=" + campos + "&data=gte." + desde + "&order=data.asc",
@@ -2000,10 +2002,11 @@
   function janelaRitmo() {
     const porDia = new Map();
     ritmoLinhas.forEach((l) => {
-      const d = porDia.get(l.data) || { data: l.data, semana: l.semana, receptivos: 0, ativos: 0, tentativas: 0, ligacoes: 0, total: 0 };
+      const d = porDia.get(l.data) || { data: l.data, semana: l.semana, receptivos: 0, ativos: 0, tentativas: 0, cobrancas: 0, ligacoes: 0, total: 0 };
       d.receptivos += n(l.receptivos);
       d.ativos += n(l.ativos_efetivos);
       d.tentativas += n(l.tentativas);
+      d.cobrancas += n(l.cobrancas);
       d.ligacoes += n(l.ligacoes_efetivas);
       d.total += n(l.contatos_efetivos);
       porDia.set(l.data, d);
@@ -2040,7 +2043,7 @@
       });
       barras += '<rect x="' + (i * passoX).toFixed(1) + '" y="' + topo + '" width="' + passoX.toFixed(1) + '" height="' + (base - topo).toFixed(1) + '" fill="transparent">' +
         "<title>" + fmtData(d.data) + ": " + fmtInt(d.total) + " contatos efetivos (" + fmtInt(d.receptivos) + " receptivos, " +
-        fmtInt(d.ativos) + " ativos com resposta, " + fmtInt(d.ligacoes) + " ligações; " + fmtInt(d.tentativas) + " tentativas)</title></rect>";
+        fmtInt(d.ativos) + " ativos com resposta, " + fmtInt(d.ligacoes) + " ligações; " + fmtInt(d.tentativas) + " tentativas, " + fmtInt(d.cobrancas) + " cobranças)</title></rect>";
     });
     // média móvel de 5 dias
     let pontos = [];
@@ -2107,7 +2110,8 @@
       { rotulo: "Receptivos", campo: "receptivos" },
       { rotulo: "Ativos com resposta", campo: "ativos" },
       { rotulo: "Ligações +1 min", campo: "ligacoes" },
-      { rotulo: "Tentativas sem resposta", campo: "tentativas" }
+      { rotulo: "Tentativas sem resposta", campo: "tentativas" },
+      { rotulo: "Cobranças (fora da conta)", campo: "cobrancas" }
     ].map((k) => {
       const total = soma(k.campo);
       const variacao = variacaoMetades(dias.map((d) => d[k.campo]));
@@ -2168,7 +2172,7 @@
     const ultimos = dias.slice(-15).reverse();
     corpoRitmoDias.innerHTML = ultimos.map((d) =>
       "<tr><td>" + fmtData(d.data) + "</td><td>" + fmtInt(d.receptivos) + "</td><td>" + fmtInt(d.ativos) +
-      "</td><td>" + fmtInt(d.tentativas) + "</td><td>" + fmtInt(d.ligacoes) + "</td><td>" + fmtInt(d.total) + "</td></tr>"
+      "</td><td>" + fmtInt(d.tentativas) + "</td><td>" + fmtInt(d.cobrancas) + "</td><td>" + fmtInt(d.ligacoes) + "</td><td>" + fmtInt(d.total) + "</td></tr>"
     ).join("");
 
     freshnessRitmo.textContent = "Movimento até " + fmtData(dias[dias.length - 1].data);
