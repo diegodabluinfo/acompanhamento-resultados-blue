@@ -1061,10 +1061,12 @@
   let metasLinhasDoMes = [];
   let metasMesAtual = null; // 'YYYY-MM-01'
 
-  // --- headers de leitura: funciona logado OU anônimo (telas de visualização são públicas) ---
+  // --- headers de leitura: sempre a chave anônima ---
+  // As telas de visualização são públicas, então a leitura não depende de login.
+  // Mandar o token do usuário aqui só criava problema: o token do Supabase dura 1 hora e,
+  // numa aba aberta há mais tempo, a leitura voltava com 401 "JWT expired" mesmo o dado sendo público.
   function headersLeitura() {
-    const token = (sessao && sessao.access_token) ? sessao.access_token : SUPABASE_KEY;
-    return { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + token };
+    return { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
   }
   function headersEscrita() {
     return {
@@ -3038,11 +3040,26 @@
 
   seletorMesPerf.addEventListener("change", () => trocarMesPerf(seletorMesPerf.value));
 
+  // --- sessão: mantida viva enquanto a aba fica aberta (o token do Supabase dura 1 hora) ---
+  async function revalidarSessao() {
+    try {
+      sessao = await garantirSessaoValida();
+      atualizarAreaConta();
+    } catch (e) {
+      console.error("Erro ao revalidar a sessão:", e);
+    }
+  }
+
   // --- inicialização ---
   (async function init() {
     sessao = await garantirSessaoValida();
     atualizarAreaConta();
     await iniciarApp(); // telas de visualização são públicas — carregam sem precisar de login
+
+    setInterval(revalidarSessao, 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) revalidarSessao();
+    });
   })();
 </script>
 </body>
