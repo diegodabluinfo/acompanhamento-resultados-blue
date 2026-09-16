@@ -570,8 +570,8 @@
       headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer " + s.access_token, "Content-Type": "application/json", ...(opcoes.headers || {}) }
     });
     if (!res.ok) { const t = await res.text().catch(() => ""); throw new Error("HTTP " + res.status + " " + t); }
-    if (res.status === 204) return null;
-    return res.json();
+    const texto = await res.text();
+    return texto ? JSON.parse(texto) : null;
   }
 
   // ============ Navegação ============
