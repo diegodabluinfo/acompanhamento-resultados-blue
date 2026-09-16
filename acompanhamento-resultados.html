@@ -668,7 +668,7 @@
           <strong>Distribuição</strong> = pedidos de revenda: CNPJ, acima de R$ 250 e sem ordem de serviço.
           O que sobra é a loja — balcão, consumidor final e assistência —, que por natureza não faz recompra
           e por isso fica fora da conta por padrão.
-          Cliente positivado = comprou no mês (mesma regra de pedido válido do Produzido). O tipo vem do campo
+          Cliente com <strong>representante</strong> (mesma empresa com vários CNPJs, ou clientes atendidos pelo mesmo representante) conta como um cliente só, igual o ERP já faz no campo de dias do último pedido. Cliente positivado = comprou no mês (mesma regra de pedido válido do Produzido). O tipo vem do campo
           <strong>dias do último pedido</strong> do primeiro pedido do mês: sem valor = primeira compra (novo),
           acima de 90 dias = reativado, o resto = ativo. Aos 90 dias sem comprar o cliente perde o vínculo com o vendedor,
           por isso a faixa de 61 a 90 dias é a janela de salvar. Comparações do mês corrente usam o mesmo dia dos meses anteriores.
@@ -2296,7 +2296,7 @@
     try {
       const [porVendedor, lista] = await Promise.all([
         lerRest("v_clientes_vendedor_mes?select=*&competencia=eq." + competencia + "&order=faturado.desc"),
-        lerRest("v_clientes_mes?select=cliente,tipo,tipo_dist,dias_parado,dias_dist,faturado,faturado_dist,pedidos,vendedor_venda,vendedor_carteira,segmento&competencia=eq." +
+        lerRest("v_clientes_mes?select=cliente,clientes_no_grupo,tipo,tipo_dist,dias_parado,dias_dist,faturado,faturado_dist,pedidos,vendedor_venda,vendedor_carteira,segmento&competencia=eq." +
                 competencia + (clientesSegmento === "dist" ? "&tipo_dist=in.(novo,reativado)" : "&tipo=in.(novo,reativado)") +
                 "&order=faturado.desc&limit=300")
       ]);
@@ -2318,7 +2318,7 @@
 
       corpoClientesLista.innerHTML = lista.length ? lista.map((l) =>
         "<tr>" +
-        "<td>" + esc(l.cliente) + "</td>" +
+        "<td>" + esc(l.cliente) + rotuloGrupo(l.clientes_no_grupo) + "</td>" +
         '<td><span class="pill-tipo pill-' + (clientesSegmento === "dist" ? l.tipo_dist : l.tipo) + '">' +
           (clientesSegmento === "dist" ? l.tipo_dist : l.tipo) + "</span></td>" +
         "<td>" + (() => {
@@ -2338,6 +2338,10 @@
     }
   }
 
+  function rotuloGrupo(quantos) {
+    return n(quantos) > 1 ? ' <small style="color:var(--texto-suave)">(grupo de ' + fmtInt(quantos) + " CNPJs)</small>" : "";
+  }
+
   function riscoDoSegmento() {
     return clientesSegmento === "dist" ? clientesRisco.filter((r) => r.segmento === "distribuicao") : clientesRisco;
   }
@@ -2346,7 +2350,7 @@
     const linhas = riscoDoSegmento().slice().sort((a, b) => n(b.faturado_12m) - n(a.faturado_12m));
     corpoClientesRisco.innerHTML = linhas.length ? linhas.map((l) =>
       "<tr>" +
-      "<td>" + esc(l.cliente) + "</td>" +
+      "<td>" + esc(l.cliente) + rotuloGrupo(l.clientes_no_grupo) + "</td>" +
       "<td>" + esc(l.vendedor_carteira || ("código " + l.codigo_carteira)) + "</td>" +
       "<td>" + fmtData(l.ultima_compra) + "</td>" +
       "<td>" + fmtInt(l.dias_sem_comprar) + "</td>" +
