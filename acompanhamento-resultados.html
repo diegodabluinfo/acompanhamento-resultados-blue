@@ -294,6 +294,20 @@
   .variacao-alta { color: var(--verde); font-weight: 700; }
   .variacao-baixa { color: var(--vermelho); font-weight: 700; }
   .svg-grafico { width: 100%; height: auto; display: block; }
+  tr.dia-clicavel { cursor: pointer; }
+  tr.dia-clicavel:hover td { background: #f1f6ff; }
+  tr.dia-clicavel td:first-child::before {
+    content: "▸";
+    display: inline-block;
+    width: 14px;
+    color: var(--texto-suave);
+  }
+  tr.dia-clicavel.aberta td:first-child::before { content: "▾"; color: var(--azul); }
+  tr.detalhe-dia td { background: #f7faff; padding: 0 12px 12px; }
+  .subtabela { width: 100%; border-collapse: collapse; font-size: 0.82rem; background: #fff; border-radius: 8px; overflow: hidden; }
+  .subtabela th { background: #eef3fb; font-size: 0.7rem; padding: 7px 10px; }
+  .subtabela td { padding: 7px 10px; border-bottom: 1px solid #eef1f6; }
+  .subtabela tr:last-child td { border-bottom: none; }
   #ritmo-grafico svg { max-height: 260px; }
 
   /* --- Aba Vendas do Dia --- */
@@ -2591,11 +2605,66 @@
     // detalhe dia a dia (mais recentes primeiro, últimos 15)
     const ultimos = dias.slice(-15).reverse();
     corpoRitmoDias.innerHTML = ultimos.map((d) =>
-      "<tr><td>" + fmtData(d.data) + "</td><td>" + fmtInt(d.receptivos) + "</td><td>" + fmtInt(d.ativos) +
+      '<tr class="dia-clicavel" data-dia="' + d.data + '" title="Clique para ver vendedor a vendedor neste dia">' +
+      "<td>" + fmtData(d.data) + "</td><td>" + fmtInt(d.receptivos) + "</td><td>" + fmtInt(d.ativos) +
       "</td><td>" + fmtInt(d.tentativas) + "</td><td>" + fmtInt(d.cobrancas) + "</td><td>" + fmtInt(d.ligacoes) + "</td><td>" + fmtInt(d.total) + "</td></tr>"
     ).join("");
 
+    corpoRitmoDias.querySelectorAll("tr.dia-clicavel").forEach((tr) => {
+      tr.addEventListener("click", () => alternarDetalheDia(tr));
+    });
+
     freshnessRitmo.textContent = "Movimento até " + fmtData(dias[dias.length - 1].data);
+  }
+
+  // abre, embaixo da linha do dia, o que cada vendedor fez naquele dia
+  function alternarDetalheDia(tr) {
+    const proxima = tr.nextElementSibling;
+    if (proxima && proxima.classList.contains("detalhe-dia")) {
+      proxima.remove();
+      tr.classList.remove("aberta");
+      return;
+    }
+    corpoRitmoDias.querySelectorAll("tr.detalhe-dia").forEach((el) => el.remove());
+    corpoRitmoDias.querySelectorAll("tr.dia-clicavel").forEach((el) => el.classList.remove("aberta"));
+
+    const dia = tr.dataset.dia;
+    const linhas = ritmoLinhas
+      .filter((l) => l.data === dia)
+      .map((l) => ({
+        nome: l.nome_curto,
+        completo: l.nome_completo,
+        receptivos: n(l.receptivos),
+        ativos: n(l.ativos_efetivos),
+        tentativas: n(l.tentativas),
+        cobrancas: n(l.cobrancas),
+        ligacoes: n(l.ligacoes_efetivas),
+        total: n(l.contatos_efetivos)
+      }))
+      .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome));
+
+    const corpo = linhas.length
+      ? linhas.map((v) =>
+          '<tr><td style="text-align:left;font-weight:600">' + esc(v.nome) + "</td>" +
+          '<td style="text-align:right">' + fmtInt(v.receptivos) + "</td>" +
+          '<td style="text-align:right">' + fmtInt(v.ativos) + "</td>" +
+          '<td style="text-align:right">' + fmtInt(v.tentativas) + "</td>" +
+          '<td style="text-align:right">' + fmtInt(v.cobrancas) + "</td>" +
+          '<td style="text-align:right">' + fmtInt(v.ligacoes) + "</td>" +
+          '<td style="text-align:right;font-weight:700">' + fmtInt(v.total) + "</td></tr>"
+        ).join("")
+      : '<tr><td colspan="7" style="text-align:center;color:var(--texto-suave)">Sem movimento neste dia.</td></tr>';
+
+    const nova = document.createElement("tr");
+    nova.className = "detalhe-dia";
+    nova.innerHTML = '<td colspan="7">' +
+      '<div style="font-size:0.8rem;color:var(--texto-suave);margin:10px 0 6px">Vendedor a vendedor em ' + fmtData(dia) + "</div>" +
+      '<table class="subtabela"><thead><tr>' +
+      '<th style="text-align:left">Vendedor</th><th style="text-align:right">Receptivos</th><th style="text-align:right">Ativos com resposta</th>' +
+      '<th style="text-align:right">Tentativas</th><th style="text-align:right">Cobranças</th><th style="text-align:right">Ligações +1min</th>' +
+      '<th style="text-align:right">Contatos efetivos</th></tr></thead><tbody>' + corpo + "</tbody></table></td>";
+    tr.after(nova);
+    tr.classList.add("aberta");
   }
 
   async function iniciarRitmo() {
