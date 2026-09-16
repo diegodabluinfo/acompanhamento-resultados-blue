@@ -234,6 +234,43 @@
     font-weight: 600;
   }
 
+  /* --- Aba Ritmo Comercial --- */
+  #view-ritmo {
+    --serie-receptivo: #2a78d6;
+    --serie-ativo: #eb6834;
+    --serie-ligacao: #1baf7a;
+    --linha-media: #123d80;
+  }
+  .filtro-periodo { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filtro-periodo button {
+    background: #fff;
+    color: var(--texto-suave);
+    border: 1px solid var(--borda);
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .filtro-periodo button.ativa { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .legenda { display: flex; gap: 16px; flex-wrap: wrap; margin: 2px 0 14px; font-size: 0.78rem; color: var(--texto-suave); }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .legenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .legenda i.linha { width: 16px; height: 2px; border-radius: 0; }
+  .grid-vendedores { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card-vendedor {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.06);
+  }
+  .card-vendedor h4 { margin: 0 0 2px; font-size: 0.92rem; color: var(--azul-escuro); }
+  .card-vendedor .linha-info { font-size: 0.78rem; color: var(--texto-suave); margin-bottom: 8px; }
+  .variacao-alta { color: var(--verde); font-weight: 700; }
+  .variacao-baixa { color: var(--vermelho); font-weight: 700; }
+  .svg-grafico { width: 100%; height: auto; display: block; }
+  #ritmo-grafico svg { max-height: 260px; }
+
   /* --- Aba Vendas do Dia --- */
   #view-vendas table { font-size: 0.86rem; }
   .celula-barra { position: relative; }
@@ -368,6 +405,7 @@
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
         <button class="tab-btn" data-tab="vendas" id="tab-btn-vendas">Vendas do Dia</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
+        <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
         <button class="tab-btn" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
         <button class="tab-btn" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
@@ -498,6 +536,72 @@
         </div>
 
         <div id="perf-individual" class="oculto"></div>
+      </div>
+
+      <!-- ===== ABA: Ritmo Comercial (atendimentos e ligações) ===== -->
+      <div id="view-ritmo" class="oculto">
+        <div class="painel-controles">
+          <div class="filtro-periodo" id="filtro-periodo">
+            <button data-dias="7">Semana</button>
+            <button data-dias="14">14 dias</button>
+            <button data-dias="30" class="ativa">30 dias</button>
+            <button data-dias="60">60 dias</button>
+            <button data-dias="90">90 dias</button>
+          </div>
+          <span id="freshness-ritmo" class="freshness"></span>
+        </div>
+
+        <div class="kpi-grid" id="ritmo-kpis"></div>
+
+        <div class="grafico-card">
+          <h3>Evolução diária da equipe</h3>
+          <p class="sub">Cada dia útil, empilhado por tipo de contato. A linha é a média móvel de 5 dias do total.</p>
+          <div class="legenda">
+            <span><i style="background:var(--serie-receptivo)"></i> Receptivo</span>
+            <span><i style="background:var(--serie-ativo)"></i> Ativo com resposta</span>
+            <span><i style="background:var(--serie-ligacao)"></i> Ligação acima de 1 min</span>
+            <span><i class="linha" style="background:var(--linha-media)"></i> Média móvel de 5 dias</span>
+          </div>
+          <div id="ritmo-grafico"></div>
+        </div>
+
+        <h3 style="font-size:0.95rem;color:var(--azul-escuro);margin:18px 0 10px;">Vendedor a vendedor</h3>
+        <div class="grid-vendedores" id="ritmo-vendedores"></div>
+
+        <div class="card-tabela" style="margin-bottom:16px;">
+          <div class="tabela-scroll">
+            <table id="tabela-semanas">
+              <thead><tr><th>Contatos efetivos por semana</th></tr></thead>
+              <tbody><tr><td class="estado-vazio">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Dia</th>
+                  <th>Receptivos</th>
+                  <th>Ativos com resposta</th>
+                  <th>Tentativas</th>
+                  <th>Ligações +1min</th>
+                  <th>Contatos efetivos</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-ritmo-dias">
+                <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="rodape-nota">
+          Equipe comercial (Lucas, Maurino, Luiz, Luciana e Rafael), sem contatos de fornecedor e sem conversa interna.
+          Contato efetivo = receptivo + ativo com resposta do cliente + ligação acima de 1 minuto. Tentativa é ativo sem resposta e não soma.
+          A janela termina no último dia com movimento, não em hoje.
+        </div>
       </div>
 
       <!-- ===== ABA: Assistência / Fornecedores ===== -->
@@ -766,12 +870,14 @@
   const tabBtnResultados = document.getElementById("tab-btn-resultados");
   const tabBtnVendas = document.getElementById("tab-btn-vendas");
   const tabBtnPerformance = document.getElementById("tab-btn-performance");
+  const tabBtnRitmo = document.getElementById("tab-btn-ritmo");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
   const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
   const tabBtnMetas = document.getElementById("tab-btn-metas");
   const viewResultados = document.getElementById("view-resultados");
   const viewVendas = document.getElementById("view-vendas");
   const viewPerformance = document.getElementById("view-performance");
+  const viewRitmo = document.getElementById("view-ritmo");
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
   const viewMetas = document.getElementById("view-metas");
@@ -1487,18 +1593,21 @@
     viewResultados.classList.toggle("oculto", aba !== "resultados");
     viewVendas.classList.toggle("oculto", aba !== "vendas");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo");
+    viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
     tabBtnVendas.classList.toggle("ativa", aba === "vendas");
     tabBtnPerformance.classList.toggle("ativa", aba === "performance");
+    tabBtnRitmo.classList.toggle("ativa", aba === "ritmo");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
     if (aba === "vendas") iniciarVendas();
     if (aba === "performance") iniciarPerformance();
+    if (aba === "ritmo") iniciarRitmo();
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
     if (aba === "metas") atualizarTelaMetas();
@@ -1507,6 +1616,7 @@
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
   tabBtnVendas.addEventListener("click", () => mostrarAba("vendas"));
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
+  tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
   tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
   tabBtnMetas.addEventListener("click", () => mostrarAba("metas"));
@@ -1861,6 +1971,230 @@
   });
   btnHojeVendas.addEventListener("click", () => carregarVendas(hojeSP()));
   btnAtualizarVendas.addEventListener("click", () => carregarVendas(vendasDataSel));
+
+  // --- SEÇÃO: Ritmo Comercial (pública, só leitura) ---
+  const filtroPeriodo = document.getElementById("filtro-periodo");
+  const ritmoKpis = document.getElementById("ritmo-kpis");
+  const ritmoGrafico = document.getElementById("ritmo-grafico");
+  const ritmoVendedores = document.getElementById("ritmo-vendedores");
+  const tabelaSemanas = document.getElementById("tabela-semanas");
+  const corpoRitmoDias = document.getElementById("corpo-ritmo-dias");
+  const freshnessRitmo = document.getElementById("freshness-ritmo");
+
+  let ritmoLinhas = [];
+  let ritmoDias = 30;
+  let ritmoInicializada = false;
+
+  async function buscarRitmo() {
+    const campos = "data,semana,vendedor_id,nome_curto,nome_completo,receptivos,ativos_efetivos,tentativas,ligacoes_efetivas,contatos_efetivos";
+    const desde = diasAtrasISO(120);
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/v_perf_vendedor_dia?select=" + campos + "&data=gte." + desde + "&order=data.asc",
+      { headers: headersLeitura() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_perf_vendedor_dia");
+    return res.json();
+  }
+
+  // dias da janela: terminam no último dia COM movimento, não em hoje
+  function janelaRitmo() {
+    const porDia = new Map();
+    ritmoLinhas.forEach((l) => {
+      const d = porDia.get(l.data) || { data: l.data, semana: l.semana, receptivos: 0, ativos: 0, tentativas: 0, ligacoes: 0, total: 0 };
+      d.receptivos += n(l.receptivos);
+      d.ativos += n(l.ativos_efetivos);
+      d.tentativas += n(l.tentativas);
+      d.ligacoes += n(l.ligacoes_efetivas);
+      d.total += n(l.contatos_efetivos);
+      porDia.set(l.data, d);
+    });
+    const todos = [...porDia.values()].sort((a, b) => a.data < b.data ? -1 : 1);
+    let fim = todos.length - 1;
+    while (fim >= 0 && todos[fim].total === 0 && todos[fim].tentativas === 0) fim--;
+    if (fim < 0) return [];
+    const uteisDesejados = Math.round(ritmoDias * 5 / 7);
+    return todos.slice(Math.max(0, fim + 1 - uteisDesejados), fim + 1);
+  }
+
+  function svgEmpilhado(dias) {
+    if (!dias.length) return '<div class="estado-vazio">Sem movimento no período.</div>';
+    const W = 1000, H = 240, base = H - 26, topo = 10;
+    const maximo = Math.max.apply(null, dias.map((d) => d.total).concat([1]));
+    const passoX = W / dias.length;
+    const larg = Math.max(3, Math.min(34, passoX - 6));
+    const alturaDe = (v) => (v / maximo) * (base - topo);
+    let barras = "";
+    dias.forEach((d, i) => {
+      const x = i * passoX + (passoX - larg) / 2;
+      let y = base;
+      const partes = [
+        { v: d.receptivos, cor: "var(--serie-receptivo)" },
+        { v: d.ativos, cor: "var(--serie-ativo)" },
+        { v: d.ligacoes, cor: "var(--serie-ligacao)" }
+      ];
+      partes.forEach((p) => {
+        if (p.v <= 0) return;
+        const h = Math.max(1.5, alturaDe(p.v) - 2);
+        y -= (h + 2);
+        barras += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + larg.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" fill="' + p.cor + '"></rect>';
+      });
+      barras += '<rect x="' + (i * passoX).toFixed(1) + '" y="' + topo + '" width="' + passoX.toFixed(1) + '" height="' + (base - topo).toFixed(1) + '" fill="transparent">' +
+        "<title>" + fmtData(d.data) + ": " + fmtInt(d.total) + " contatos efetivos (" + fmtInt(d.receptivos) + " receptivos, " +
+        fmtInt(d.ativos) + " ativos com resposta, " + fmtInt(d.ligacoes) + " ligações; " + fmtInt(d.tentativas) + " tentativas)</title></rect>";
+    });
+    // média móvel de 5 dias
+    let pontos = [];
+    dias.forEach((d, i) => {
+      const ini = Math.max(0, i - 4);
+      const fatia = dias.slice(ini, i + 1);
+      const media = fatia.reduce((t, x) => t + x.total, 0) / fatia.length;
+      pontos.push((i * passoX + passoX / 2).toFixed(1) + "," + (base - alturaDe(media)).toFixed(1));
+    });
+    const linha = '<polyline fill="none" stroke="var(--linha-media)" stroke-width="2" stroke-linejoin="round" points="' + pontos.join(" ") + '"></polyline>';
+    // rótulos do eixo
+    const passo = Math.max(1, Math.ceil(dias.length / 15));
+    let eixo = "";
+    dias.forEach((d, i) => {
+      if (i % passo !== 0) return;
+      eixo += '<text x="' + (i * passoX + passoX / 2).toFixed(1) + '" y="' + (H - 8) + '" font-size="11" fill="#5b6b7c" text-anchor="middle">' + d.data.slice(8, 10) + "/" + d.data.slice(5, 7) + "</text>";
+    });
+    return '<svg class="svg-grafico" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Contatos efetivos por dia">' +
+      '<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" stroke="#e3e9f2" stroke-width="1"></line>' +
+      barras + linha + eixo + "</svg>";
+  }
+
+  function svgMini(valores) {
+    const W = 200, H = 46;
+    if (!valores.length) return "";
+    const maximo = Math.max.apply(null, valores.concat([1]));
+    const passoX = W / valores.length;
+    const larg = Math.max(2, passoX - 2);
+    return '<svg class="svg-grafico" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' +
+      valores.map((v, i) => {
+        const h = Math.max(1, (v / maximo) * (H - 2));
+        return '<rect x="' + (i * passoX).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + larg.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="var(--serie-receptivo)"></rect>';
+      }).join("") + "</svg>";
+  }
+
+  function variacaoMetades(valores) {
+    if (valores.length < 4) return null;
+    const meio = Math.floor(valores.length / 2);
+    const a = valores.slice(0, meio).reduce((t, v) => t + v, 0) / meio;
+    const b = valores.slice(meio).reduce((t, v) => t + v, 0) / (valores.length - meio);
+    if (a === 0) return null;
+    return (b / a) - 1;
+  }
+
+  function textoVariacao(v) {
+    if (v === null) return "";
+    const seta = v >= 0 ? "▲ " : "▼ ";
+    return seta + fmtDec(Math.abs(v) * 100, 0) + "% contra a primeira metade do período";
+  }
+
+  function renderRitmo() {
+    const dias = janelaRitmo();
+    if (!dias.length) {
+      ritmoKpis.innerHTML = "";
+      ritmoGrafico.innerHTML = '<div class="estado-vazio">Sem movimento no período.</div>';
+      return;
+    }
+    const datas = new Set(dias.map((d) => d.data));
+    const linhas = ritmoLinhas.filter((l) => datas.has(l.data));
+
+    const soma = (campo) => dias.reduce((t, d) => t + d[campo], 0);
+    ritmoKpis.innerHTML = [
+      { rotulo: "Contatos efetivos", campo: "total" },
+      { rotulo: "Receptivos", campo: "receptivos" },
+      { rotulo: "Ativos com resposta", campo: "ativos" },
+      { rotulo: "Ligações +1 min", campo: "ligacoes" },
+      { rotulo: "Tentativas sem resposta", campo: "tentativas" }
+    ].map((k) => {
+      const total = soma(k.campo);
+      const variacao = variacaoMetades(dias.map((d) => d[k.campo]));
+      return '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + fmtInt(total) + '</div>' +
+        '<div class="nota">' + fmtDec(total / dias.length, 1) + " por dia útil · " + textoVariacao(variacao) + "</div></div>";
+    }).join("");
+
+    ritmoGrafico.innerHTML = svgEmpilhado(dias);
+
+    // vendedor a vendedor
+    const vendedores = [...new Map(linhas.map((l) => [l.vendedor_id, l])).values()]
+      .map((v) => {
+        const serie = dias.map((d) => {
+          const l = linhas.find((x) => x.vendedor_id === v.vendedor_id && x.data === d.data);
+          return l ? n(l.contatos_efetivos) : 0;
+        });
+        return { nome: v.nome_curto, completo: v.nome_completo, serie, total: serie.reduce((t, x) => t + x, 0) };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    ritmoVendedores.innerHTML = vendedores.map((v) => {
+      const variacao = variacaoMetades(v.serie);
+      const classe = variacao === null ? "" : (variacao >= 0 ? "variacao-alta" : "variacao-baixa");
+      const txt = variacao === null ? "" : (variacao >= 0 ? "▲ " : "▼ ") + fmtDec(Math.abs(variacao) * 100, 0) + "%";
+      return '<div class="card-vendedor" title="' + esc(v.completo) + '"><h4>' + esc(v.nome) + "</h4>" +
+        '<div class="linha-info">' + fmtDec(v.total / dias.length, 1) + " por dia · " + fmtInt(v.total) + " no período " +
+        '<span class="' + classe + '">' + txt + "</span></div>" + svgMini(v.serie) + "</div>";
+    }).join("");
+
+    // tabela por semana
+    const semanas = [...new Set(dias.map((d) => d.semana))];
+    const porSemana = new Map();
+    linhas.forEach((l) => {
+      const chave = l.vendedor_id + "|" + l.semana;
+      porSemana.set(chave, (porSemana.get(chave) || 0) + n(l.contatos_efetivos));
+    });
+    const rotuloSemana = (s) => {
+      const diasDaSemana = dias.filter((d) => d.semana === s).map((d) => d.data);
+      if (!diasDaSemana.length) return s;
+      const inicio = diasDaSemana[0].slice(8, 10) + "/" + diasDaSemana[0].slice(5, 7);
+      // semana cortada pela janela (ou ainda em andamento) vira "parcial", senão lê como semana desabada
+      return diasDaSemana.length < 5 ? inicio + '<br><small style="font-weight:600">parcial</small>' : inicio;
+    };
+    tabelaSemanas.innerHTML =
+      "<thead><tr><th>Contatos efetivos por semana</th>" + semanas.map((s) => "<th>" + rotuloSemana(s) + "</th>").join("") + "</tr></thead><tbody>" +
+      vendedores.map((v) => {
+        const linhaV = ritmoLinhas.find((l) => l.nome_curto === v.nome);
+        const id = linhaV ? linhaV.vendedor_id : null;
+        return "<tr><td>" + esc(v.nome) + "</td>" +
+          semanas.map((s) => "<td>" + fmtInt(porSemana.get(id + "|" + s) || 0) + "</td>").join("") + "</tr>";
+      }).join("") +
+      '<tr class="total"><td>TOTAL</td>' + semanas.map((s) => {
+        const t = dias.filter((d) => d.semana === s).reduce((acc, d) => acc + d.total, 0);
+        return "<td>" + fmtInt(t) + "</td>";
+      }).join("") + "</tr></tbody>";
+
+    // detalhe dia a dia (mais recentes primeiro, últimos 15)
+    const ultimos = dias.slice(-15).reverse();
+    corpoRitmoDias.innerHTML = ultimos.map((d) =>
+      "<tr><td>" + fmtData(d.data) + "</td><td>" + fmtInt(d.receptivos) + "</td><td>" + fmtInt(d.ativos) +
+      "</td><td>" + fmtInt(d.tentativas) + "</td><td>" + fmtInt(d.ligacoes) + "</td><td>" + fmtInt(d.total) + "</td></tr>"
+    ).join("");
+
+    freshnessRitmo.textContent = "Movimento até " + fmtData(dias[dias.length - 1].data);
+  }
+
+  async function iniciarRitmo() {
+    if (ritmoInicializada) { renderRitmo(); return; }
+    ritmoInicializada = true;
+    try {
+      ritmoLinhas = await buscarRitmo();
+      renderRitmo();
+    } catch (err) {
+      console.error("Erro ao carregar ritmo comercial:", err);
+      ritmoInicializada = false;
+      const mensagem = (err && err.message) ? err.message : String(err);
+      ritmoGrafico.innerHTML = '<div class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">' + esc(mensagem) + "</small></div>";
+    }
+  }
+
+  filtroPeriodo.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-dias]");
+    if (!btn) return;
+    ritmoDias = Number(btn.dataset.dias);
+    filtroPeriodo.querySelectorAll("button").forEach((b) => b.classList.toggle("ativa", b === btn));
+    renderRitmo();
+  });
 
   // --- SEÇÃO: Performance (esforço x venda) — pública, só leitura ---
   const seletorMesPerf = document.getElementById("seletor-mes-perf");
