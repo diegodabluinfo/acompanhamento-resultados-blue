@@ -234,6 +234,31 @@
     font-weight: 600;
   }
 
+  /* --- Aba Clientes --- */
+  #view-clientes {
+    --serie-novo: #2a78d6;
+    --serie-reativado: #eb6834;
+    --serie-ativo: #1baf7a;
+  }
+  #view-clientes table { font-size: 0.82rem; }
+  #view-clientes thead th, #view-clientes tbody td { padding: 9px 10px; }
+  .grupo-titulo {
+    font-size: 0.95rem;
+    color: var(--azul-escuro);
+    margin: 20px 0 10px;
+  }
+  .barra-tipos { display: flex; height: 26px; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .barra-tipos div { height: 100%; }
+  .tabela-alta { max-height: 420px; overflow-y: auto; }
+  .pill-tipo {
+    display: inline-block; padding: 2px 9px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 700;
+  }
+  .pill-novo { background: #e4eefc; color: #1a4f94; }
+  .pill-reativado { background: #fdeadf; color: #a2461c; }
+  .pill-risco { background: var(--amarelo-fundo); color: var(--amarelo); }
+  .pill-perdido { background: var(--vermelho-fundo); color: var(--vermelho); }
+
   /* --- Aba Ritmo Comercial --- */
   #view-ritmo {
     --serie-receptivo: #2a78d6;
@@ -404,6 +429,7 @@
       <div class="tabs">
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
         <button class="tab-btn" data-tab="vendas" id="tab-btn-vendas">Vendas do Dia</button>
+        <button class="tab-btn" data-tab="clientes" id="tab-btn-clientes">Clientes</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
@@ -536,6 +562,110 @@
         </div>
 
         <div id="perf-individual" class="oculto"></div>
+      </div>
+
+      <!-- ===== ABA: Clientes (positivados, novos, reativados) ===== -->
+      <div id="view-clientes" class="oculto">
+        <div class="painel-controles">
+          <div>
+            <label for="seletor-mes-clientes">Mês</label>
+            <select id="seletor-mes-clientes"></select>
+          </div>
+          <span id="freshness-clientes" class="freshness"></span>
+        </div>
+
+        <div class="kpi-grid" id="clientes-kpis"></div>
+
+        <div class="grafico-card">
+          <h3>Positivados por mês</h3>
+          <p class="sub">Cada mês empilhado por tipo de cliente. O mês corrente aparece parcial.</p>
+          <div class="legenda">
+            <span><i style="background:var(--serie-novo)"></i> Novo (primeira compra)</span>
+            <span><i style="background:var(--serie-reativado)"></i> Reativado (voltou depois de 90 dias)</span>
+            <span><i style="background:var(--serie-ativo)"></i> Ativo (comprou nos últimos 90 dias)</span>
+          </div>
+          <div id="clientes-grafico"></div>
+        </div>
+
+        <h3 class="grupo-titulo">De onde veio o faturamento do mês</h3>
+        <div class="grafico-card">
+          <div class="barra-tipos" id="clientes-barra-tipos"></div>
+          <div id="clientes-faturamento-tipos" style="font-size:0.84rem;color:var(--texto-suave);"></div>
+        </div>
+
+        <h3 class="grupo-titulo">Por vendedor</h3>
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Positivados</th>
+                  <th>Novos</th>
+                  <th>Reativados</th>
+                  <th>Ativos</th>
+                  <th>Faturado</th>
+                  <th>Carteira</th>
+                  <th>Da carteira compraram</th>
+                  <th>Positivação</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-clientes-vendedor">
+                <tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="grupo-titulo">Novos e reativados do mês</h3>
+        <div class="card-tabela">
+          <div class="tabela-scroll tabela-alta">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>Parado há</th>
+                  <th>Faturado no mês</th>
+                  <th>Pedidos</th>
+                  <th>Vendeu</th>
+                  <th>Carteira</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-clientes-lista">
+                <tr><td colspan="7" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="grupo-titulo">Carteira em risco — hoje</h3>
+        <div class="card-tabela">
+          <div class="tabela-scroll tabela-alta">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Vendedor da carteira</th>
+                  <th>Última compra</th>
+                  <th>Dias sem comprar</th>
+                  <th>Faturado 12 meses</th>
+                  <th>Situação</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-clientes-risco">
+                <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="rodape-nota">
+          Cliente positivado = comprou no mês (mesma regra de pedido válido do Produzido). O tipo vem do campo
+          <strong>dias do último pedido</strong> do primeiro pedido do mês: sem valor = primeira compra (novo),
+          acima de 90 dias = reativado, o resto = ativo. Aos 90 dias sem comprar o cliente perde o vínculo com o vendedor,
+          por isso a faixa de 61 a 90 dias é a janela de salvar. Comparações do mês corrente usam o mesmo dia dos meses anteriores.
+        </div>
       </div>
 
       <!-- ===== ABA: Ritmo Comercial (atendimentos e ligações) ===== -->
@@ -871,6 +1001,7 @@
 
   const tabBtnResultados = document.getElementById("tab-btn-resultados");
   const tabBtnVendas = document.getElementById("tab-btn-vendas");
+  const tabBtnClientes = document.getElementById("tab-btn-clientes");
   const tabBtnPerformance = document.getElementById("tab-btn-performance");
   const tabBtnRitmo = document.getElementById("tab-btn-ritmo");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
@@ -878,6 +1009,7 @@
   const tabBtnMetas = document.getElementById("tab-btn-metas");
   const viewResultados = document.getElementById("view-resultados");
   const viewVendas = document.getElementById("view-vendas");
+  const viewClientes = document.getElementById("view-clientes");
   const viewPerformance = document.getElementById("view-performance");
   const viewRitmo = document.getElementById("view-ritmo");
   const viewAssistencia = document.getElementById("view-assistencia");
@@ -1594,20 +1726,23 @@
   function mostrarAba(aba) {
     viewResultados.classList.toggle("oculto", aba !== "resultados");
     viewVendas.classList.toggle("oculto", aba !== "vendas");
+    viewClientes.classList.toggle("oculto", aba !== "clientes");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "clientes");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
     tabBtnVendas.classList.toggle("ativa", aba === "vendas");
+    tabBtnClientes.classList.toggle("ativa", aba === "clientes");
     tabBtnPerformance.classList.toggle("ativa", aba === "performance");
     tabBtnRitmo.classList.toggle("ativa", aba === "ritmo");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
     if (aba === "vendas") iniciarVendas();
+    if (aba === "clientes") iniciarClientes();
     if (aba === "performance") iniciarPerformance();
     if (aba === "ritmo") iniciarRitmo();
     if (aba === "assistencia") iniciarAssistencia();
@@ -1617,6 +1752,7 @@
 
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
   tabBtnVendas.addEventListener("click", () => mostrarAba("vendas"));
+  tabBtnClientes.addEventListener("click", () => mostrarAba("clientes"));
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
@@ -1973,6 +2109,232 @@
   });
   btnHojeVendas.addEventListener("click", () => carregarVendas(hojeSP()));
   btnAtualizarVendas.addEventListener("click", () => carregarVendas(vendasDataSel));
+
+  // --- SEÇÃO: Clientes (positivados, novos, reativados) — pública, só leitura ---
+  const seletorMesClientes = document.getElementById("seletor-mes-clientes");
+  const clientesKpis = document.getElementById("clientes-kpis");
+  const clientesGrafico = document.getElementById("clientes-grafico");
+  const clientesBarraTipos = document.getElementById("clientes-barra-tipos");
+  const clientesFatTipos = document.getElementById("clientes-faturamento-tipos");
+  const corpoClientesVendedor = document.getElementById("corpo-clientes-vendedor");
+  const corpoClientesLista = document.getElementById("corpo-clientes-lista");
+  const corpoClientesRisco = document.getElementById("corpo-clientes-risco");
+  const freshnessClientes = document.getElementById("freshness-clientes");
+
+  let clientesResumo = [];
+  let clientesRisco = [];
+  let clientesCompetencia = null;
+  let clientesInicializada = false;
+
+  async function lerRest(caminho) {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/" + caminho, { headers: headersLeitura() });
+    if (!res.ok) throw new Error("HTTP " + res.status + " em " + caminho.split("?")[0]);
+    return res.json();
+  }
+
+  function mesCorrenteISO() {
+    return hojeSP().slice(0, 7) + "-01";
+  }
+
+  function preencherSeletorMesClientes() {
+    const comps = clientesResumo.map((l) => l.competencia).sort().reverse().slice(0, 24);
+    seletorMesClientes.innerHTML = comps.map((c) => '<option value="' + c + '">' + nomeMes(c) + "</option>").join("");
+    clientesCompetencia = comps[0];
+    seletorMesClientes.value = clientesCompetencia;
+  }
+
+  // compara com a média dos 3 meses anteriores; no mês corrente usa o corte do mesmo dia dos dois lados
+  function comparativo(competencia, campo) {
+    const parcial = competencia === mesCorrenteISO();
+    const chave = parcial ? campo + "_corte" : campo;
+    const atual = clientesResumo.find((l) => l.competencia === competencia);
+    if (!atual) return null;
+    const anteriores = clientesResumo
+      .filter((l) => l.competencia < competencia)
+      .sort((a, b) => a.competencia < b.competencia ? 1 : -1)
+      .slice(0, 3);
+    if (!anteriores.length) return null;
+    const media = anteriores.reduce((t, l) => t + n(l[chave]), 0) / anteriores.length;
+    if (!media) return null;
+    return { valor: n(atual[chave]), media, variacao: (n(atual[chave]) / media) - 1, parcial };
+  }
+
+  function notaComparativo(cmp, formatar) {
+    if (!cmp) return "";
+    const seta = cmp.variacao >= 0 ? "▲ " : "▼ ";
+    return seta + fmtDec(Math.abs(cmp.variacao) * 100, 0) + "% contra a média dos 3 meses anteriores" +
+      (cmp.parcial ? " no mesmo dia" : "") + " (" + formatar(cmp.media) + ")";
+  }
+
+  function renderClientes(competencia) {
+    clientesCompetencia = competencia;
+    const linha = clientesResumo.find((l) => l.competencia === competencia);
+    if (!linha) return;
+    const parcial = competencia === mesCorrenteISO();
+
+    const campos = [
+      { rotulo: "Positivados", campo: "positivados", moeda: false },
+      { rotulo: "Novos", campo: "novos", moeda: false },
+      { rotulo: "Reativados", campo: "reativados", moeda: false },
+      { rotulo: "Ativos", campo: "ativos", moeda: false },
+      { rotulo: "Faturado", campo: "faturado", moeda: true }
+    ];
+    const emRisco = clientesRisco.filter((r) => r.faixa === "risco").length;
+    const perdidos = clientesRisco.filter((r) => r.faixa === "perdido").length;
+
+    clientesKpis.innerHTML = campos.map((c) => {
+      const cmp = comparativo(competencia, c.campo);
+      const bruto = parcial ? n(linha[c.campo + "_corte"]) : n(linha[c.campo]);
+      const fmt = c.moeda ? fmtMoeda : fmtInt;
+      return '<div class="kpi"><div class="rotulo">' + c.rotulo + '</div><div class="valor">' + fmt(bruto) + "</div>" +
+        '<div class="nota">' + notaComparativo(cmp, fmt) + "</div></div>";
+    }).join("") +
+      '<div class="kpi"><div class="rotulo">Carteira em risco (hoje)</div><div class="valor">' + fmtInt(emRisco) + "</div>" +
+      '<div class="nota">61 a 90 dias sem comprar · ' + fmtInt(perdidos) + " já passaram de 90</div></div>";
+
+    if (parcial) {
+      freshnessClientes.textContent = "Mês em andamento — comparações usam o dia " + fmtInt(linha.dia_corte) + " dos meses anteriores";
+    } else {
+      freshnessClientes.textContent = "Mês fechado";
+    }
+
+    renderGraficoClientes();
+    renderFaturamentoTipos(linha, parcial);
+    carregarClientesDoMes(competencia);
+  }
+
+  function renderGraficoClientes() {
+    const meses = clientesResumo.slice().sort((a, b) => a.competencia < b.competencia ? -1 : 1).slice(-12);
+    if (!meses.length) { clientesGrafico.innerHTML = ""; return; }
+    const W = 1000, H = 240, base = H - 26, topo = 10;
+    const maximo = Math.max.apply(null, meses.map((m) => n(m.positivados)).concat([1]));
+    const passoX = W / meses.length;
+    const larg = Math.min(46, passoX - 10);
+    const alturaDe = (v) => (v / maximo) * (base - topo);
+    let corpo = "";
+    meses.forEach((m, i) => {
+      const x = i * passoX + (passoX - larg) / 2;
+      let y = base;
+      [
+        { v: n(m.ativos), cor: "var(--serie-ativo)" },
+        { v: n(m.reativados), cor: "var(--serie-reativado)" },
+        { v: n(m.novos), cor: "var(--serie-novo)" }
+      ].forEach((p) => {
+        if (p.v <= 0) return;
+        const h = Math.max(1.5, alturaDe(p.v) - 2);
+        y -= (h + 2);
+        corpo += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + larg.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" fill="' + p.cor + '"' +
+          (m.competencia === clientesCompetencia ? ' stroke="#123d80" stroke-width="1.5"' : "") + "></rect>";
+      });
+      corpo += '<rect class="clique-mes" data-mes="' + m.competencia + '" x="' + (i * passoX).toFixed(1) + '" y="' + topo + '" width="' + passoX.toFixed(1) + '" height="' + (base - topo).toFixed(1) + '" fill="transparent" style="cursor:pointer">' +
+        "<title>" + nomeMes(m.competencia) + ": " + fmtInt(m.positivados) + " positivados (" + fmtInt(m.novos) + " novos, " +
+        fmtInt(m.reativados) + " reativados, " + fmtInt(m.ativos) + " ativos) · " + fmtMoeda(m.faturado) + "</title></rect>";
+      corpo += '<text x="' + (i * passoX + passoX / 2).toFixed(1) + '" y="' + (H - 8) + '" font-size="11" fill="#5b6b7c" text-anchor="middle">' +
+        m.competencia.slice(5, 7) + "/" + m.competencia.slice(2, 4) + "</text>";
+    });
+    clientesGrafico.innerHTML = '<svg class="svg-grafico" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Positivados por mês">' +
+      '<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" stroke="#e3e9f2" stroke-width="1"></line>' + corpo + "</svg>";
+    clientesGrafico.querySelectorAll(".clique-mes").forEach((el) => {
+      el.addEventListener("click", () => {
+        seletorMesClientes.value = el.dataset.mes;
+        renderClientes(el.dataset.mes);
+      });
+    });
+  }
+
+  function renderFaturamentoTipos(linha, parcial) {
+    const partes = [
+      { rotulo: "Novos", valor: n(linha.faturado_novos), cor: "var(--serie-novo)" },
+      { rotulo: "Reativados", valor: n(linha.faturado_reativados), cor: "var(--serie-reativado)" },
+      { rotulo: "Ativos", valor: n(linha.faturado_ativos), cor: "var(--serie-ativo)" }
+    ];
+    const total = partes.reduce((t, p) => t + p.valor, 0) || 1;
+    clientesBarraTipos.innerHTML = partes.map((p) =>
+      '<div style="width:' + ((p.valor / total) * 100).toFixed(1) + '%;background:' + p.cor + '" title="' + p.rotulo + ": " + fmtMoeda(p.valor) + '"></div>'
+    ).join("");
+    clientesFatTipos.innerHTML = partes.map((p) =>
+      "<strong>" + p.rotulo + ":</strong> " + fmtMoeda(p.valor) + " (" + fmtDec((p.valor / total) * 100, 1) + "%)"
+    ).join(" · ") + (parcial ? " — mês em andamento" : "");
+  }
+
+  async function carregarClientesDoMes(competencia) {
+    corpoClientesVendedor.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>';
+    corpoClientesLista.innerHTML = '<tr><td colspan="7" class="estado-vazio">Carregando...</td></tr>';
+    try {
+      const [porVendedor, lista] = await Promise.all([
+        lerRest("v_clientes_vendedor_mes?select=*&competencia=eq." + competencia + "&order=faturado.desc"),
+        lerRest("v_clientes_mes?select=cliente,tipo,dias_parado,faturado,pedidos,vendedor_venda,vendedor_carteira&competencia=eq." +
+                competencia + "&tipo=in.(novo,reativado)&order=faturado.desc&limit=300")
+      ]);
+
+      corpoClientesVendedor.innerHTML = porVendedor.length ? porVendedor.map((l) =>
+        "<tr>" +
+        "<td>" + esc(l.nome_curto || ("código " + l.codigo)) + "</td>" +
+        "<td>" + fmtInt(l.positivados) + "</td>" +
+        "<td>" + fmtInt(l.novos) + "</td>" +
+        "<td>" + fmtInt(l.reativados) + "</td>" +
+        "<td>" + fmtInt(l.ativos) + "</td>" +
+        "<td>" + fmtMoeda(l.faturado) + "</td>" +
+        "<td>" + fmtInt(l.clientes_carteira) + "</td>" +
+        "<td>" + fmtInt(l.positivados_carteira) + "</td>" +
+        "<td>" + (l.taxa_positivacao === null || l.taxa_positivacao === undefined ? "—" : fmtDec(n(l.taxa_positivacao) * 100, 1) + "%") + "</td>" +
+        "</tr>"
+      ).join("") : '<tr><td colspan="9" class="estado-vazio">Sem dados neste mês.</td></tr>';
+
+      corpoClientesLista.innerHTML = lista.length ? lista.map((l) =>
+        "<tr>" +
+        "<td>" + esc(l.cliente) + "</td>" +
+        '<td><span class="pill-tipo pill-' + l.tipo + '">' + (l.tipo === "novo" ? "novo" : "reativado") + "</span></td>" +
+        "<td>" + (l.dias_parado === null || l.dias_parado === undefined ? "primeira compra" : fmtInt(l.dias_parado) + " dias") + "</td>" +
+        "<td>" + fmtMoeda(l.faturado) + "</td>" +
+        "<td>" + fmtInt(l.pedidos) + "</td>" +
+        "<td>" + esc(l.vendedor_venda || "—") + "</td>" +
+        "<td>" + esc(l.vendedor_carteira || "—") + "</td>" +
+        "</tr>"
+      ).join("") : '<tr><td colspan="7" class="estado-vazio">Nenhum novo ou reativado neste mês.</td></tr>';
+    } catch (err) {
+      console.error("Erro ao carregar clientes do mês:", err);
+      const mensagem = (err && err.message) ? err.message : String(err);
+      corpoClientesVendedor.innerHTML = '<tr><td colspan="9" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(mensagem) + "</small></td></tr>";
+    }
+  }
+
+  function renderRisco() {
+    const linhas = clientesRisco.slice().sort((a, b) => n(b.faturado_12m) - n(a.faturado_12m));
+    corpoClientesRisco.innerHTML = linhas.length ? linhas.map((l) =>
+      "<tr>" +
+      "<td>" + esc(l.cliente) + "</td>" +
+      "<td>" + esc(l.vendedor_carteira || ("código " + l.codigo_carteira)) + "</td>" +
+      "<td>" + fmtData(l.ultima_compra) + "</td>" +
+      "<td>" + fmtInt(l.dias_sem_comprar) + "</td>" +
+      "<td>" + fmtMoeda(l.faturado_12m) + "</td>" +
+      '<td><span class="pill-tipo pill-' + l.faixa + '">' + l.faixa + "</span></td>" +
+      "</tr>"
+    ).join("") : '<tr><td colspan="6" class="estado-vazio">Ninguém na zona de risco.</td></tr>';
+  }
+
+  async function iniciarClientes() {
+    if (clientesInicializada) { renderClientes(clientesCompetencia); return; }
+    clientesInicializada = true;
+    try {
+      const [resumo, risco] = await Promise.all([
+        lerRest("v_clientes_resumo_mes?select=*&order=competencia.desc&limit=24"),
+        lerRest("v_carteira_risco?select=*&faixa=in.(risco,perdido)&order=faturado_12m.desc&limit=400")
+      ]);
+      clientesResumo = resumo;
+      clientesRisco = risco;
+      preencherSeletorMesClientes();
+      renderRisco();
+      renderClientes(clientesCompetencia);
+    } catch (err) {
+      console.error("Erro ao carregar aba Clientes:", err);
+      clientesInicializada = false;
+      const mensagem = (err && err.message) ? err.message : String(err);
+      clientesKpis.innerHTML = '<div class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(mensagem) + "</small></div>";
+    }
+  }
+
+  seletorMesClientes.addEventListener("change", () => renderClientes(seletorMesClientes.value));
 
   // --- SEÇÃO: Ritmo Comercial (pública, só leitura) ---
   const filtroPeriodo = document.getElementById("filtro-periodo");
