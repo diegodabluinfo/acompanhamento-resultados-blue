@@ -2862,7 +2862,7 @@
       const falta = n(l.objetivo) - n(l.faturado);
       if (falta > 0) {
         const rs = n(l.faturado_por_contato);
-        const restantes = diasUteisRestantes(l.competencia);
+        const restantes = l.dias_uteis_restantes ?? diasUteisRestantes(l.competencia);
         let complemento = "";
         if (rs > 0 && restantes > 0) {
           const contatosNecessarios = Math.ceil(falta / rs);
