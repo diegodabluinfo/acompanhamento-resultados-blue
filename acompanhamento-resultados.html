@@ -261,6 +261,15 @@
   .cod-cliente { color: var(--texto-suave); font-weight: 600; font-variant-numeric: tabular-nums; }
   .atividade-cliente { font-size: 0.72rem; color: var(--texto-suave); font-weight: 400; margin-top: 2px; }
 
+  /* --- Aba Usuários --- */
+  .abas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 4px 14px; }
+  .check-aba { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; margin: 0; white-space: nowrap; }
+  .check-aba input { width: auto; }
+  #view-usuarios table { font-size: 0.82rem; }
+  #view-usuarios tbody td { vertical-align: top; }
+  #corpo-usuarios .abas-grid { grid-template-columns: repeat(3, max-content); gap: 3px 16px; }
+  @media (max-width: 900px) { #corpo-usuarios .abas-grid { grid-template-columns: repeat(2, max-content); } }
+  .form-card.largo { max-width: 100%; }
   /* --- Aba Em Aberto (cobrança) --- */
   #view-cobranca table { font-size: 0.82rem; }
   #view-cobranca thead th, #view-cobranca tbody td { padding: 9px 10px; }
@@ -459,6 +468,7 @@
         </div>
         <div class="area-conta">
           <span id="email-logado" class="email-logado oculto"></span>
+          <button id="btn-senha" class="btn-secundario oculto">Minha senha</button>
           <button id="btn-sair" class="btn-secundario oculto">Sair</button>
           <button id="btn-entrar-topo" class="btn-secundario">Entrar</button>
         </div>
@@ -474,6 +484,26 @@
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
         <button class="tab-btn" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
         <button class="tab-btn" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
+        <button class="tab-btn oculto" data-tab="usuarios" id="tab-btn-usuarios">Usuários</button>
+      </div>
+
+      <div id="card-senha" class="form-card oculto">
+        <h2>Minha senha</h2>
+        <p class="sub">Troque a senha provisória por uma sua.</p>
+        <div id="aviso-senha" class="aviso"></div>
+        <form id="form-senha" autocomplete="off">
+          <div class="linha-dupla">
+            <div class="campo">
+              <label for="senha-nova">Nova senha</label>
+              <input type="password" id="senha-nova" required autocomplete="new-password" minlength="8">
+            </div>
+            <div class="campo">
+              <label for="senha-conf">Repita a nova senha</label>
+              <input type="password" id="senha-conf" required autocomplete="new-password" minlength="8">
+            </div>
+          </div>
+          <button type="submit" class="btn-full">Salvar senha</button>
+        </form>
       </div>
 
       <!-- ===== ABA: Resultados por Vendedor ===== -->
@@ -1091,6 +1121,94 @@
 
       </div>
 
+      <!-- ===== ABA: Usuários (cadastro e permissão por aba — só administrador) ===== -->
+      <div id="view-usuarios" class="oculto">
+        <div id="usuarios-bloqueada">
+          <div class="caixa-login">
+            <h2>Faça login para administrar os usuários</h2>
+            <p class="sub">Só o administrador do painel entra aqui.</p>
+            <button type="button" id="btn-usuarios-ir-login" class="btn-full">Fazer login</button>
+          </div>
+        </div>
+        <div id="usuarios-sem-permissao" class="oculto">
+          <div class="caixa-login">
+            <h2>Sem permissão para esta área</h2>
+            <p class="sub">Sua conta não é administradora do painel.</p>
+          </div>
+        </div>
+        <div id="usuarios-liberada" class="oculto">
+          <div id="aviso-usuarios" class="aviso"></div>
+
+          <div class="form-card">
+            <h2>Cadastrar usuário</h2>
+            <p class="sub">Defina uma senha provisória e passe para a pessoa; ela troca depois no botão "Minha senha".</p>
+            <form id="form-novo-usuario" autocomplete="off">
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="novo-nome">Nome</label>
+                  <input type="text" id="novo-nome" placeholder="Ex: Lucas Toniolli">
+                </div>
+                <div class="campo">
+                  <label for="novo-email">E-mail</label>
+                  <input type="email" id="novo-email" required placeholder="pessoa@bluedistribuidora.com.br">
+                </div>
+              </div>
+              <div class="campo">
+                <label for="novo-senha">Senha provisória <span style="font-weight:400;color:var(--texto-suave);">(mínimo 8 caracteres)</span></label>
+                <input type="text" id="novo-senha" required minlength="8">
+              </div>
+              <div class="campo">
+                <label>Abas liberadas</label>
+                <div class="abas-grid" id="novo-abas"></div>
+              </div>
+              <button type="submit" id="btn-novo-usuario" class="btn-full">Cadastrar</button>
+            </form>
+          </div>
+
+          <div id="card-senha-usuario" class="form-card oculto">
+            <h2>Nova senha para <span id="senha-usuario-alvo"></span></h2>
+            <p class="sub">A pessoa entra com esta senha e pode trocá-la depois.</p>
+            <form id="form-senha-usuario" autocomplete="off">
+              <div class="campo">
+                <label for="senha-usuario-valor">Senha provisória</label>
+                <input type="text" id="senha-usuario-valor" required minlength="8">
+              </div>
+              <div class="linha-dupla">
+                <button type="submit">Salvar</button>
+                <button type="button" id="btn-senha-usuario-cancelar" class="btn-secundario">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
+          <h3 class="grupo-titulo">Usuários cadastrados</h3>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Usuário</th>
+                    <th style="text-align:left;">Abas liberadas</th>
+                    <th>Último acesso</th>
+                    <th>Situação</th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-usuarios">
+                  <tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rodape-nota">
+            Marcar ou desmarcar uma aba salva na hora e vale no ato — a pessoa não precisa sair e entrar de novo.
+            Desativar tira o acesso sem apagar a conta. Enquanto as telas de visualização ainda forem públicas,
+            a permissão vale para esconder as abas; o bloqueio no banco entra na etapa seguinte.
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1121,6 +1239,11 @@
   const tabBtnVendas = document.getElementById("tab-btn-vendas");
   const tabBtnClientes = document.getElementById("tab-btn-clientes");
   const tabBtnCobranca = document.getElementById("tab-btn-cobranca");
+  const tabBtnUsuarios = document.getElementById("tab-btn-usuarios");
+  const btnSenha = document.getElementById("btn-senha");
+  const cardSenha = document.getElementById("card-senha");
+  const formSenha = document.getElementById("form-senha");
+  const avisoSenha = document.getElementById("aviso-senha");
   const tabBtnPerformance = document.getElementById("tab-btn-performance");
   const tabBtnRitmo = document.getElementById("tab-btn-ritmo");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
@@ -1130,6 +1253,18 @@
   const viewVendas = document.getElementById("view-vendas");
   const viewClientes = document.getElementById("view-clientes");
   const viewCobranca = document.getElementById("view-cobranca");
+  const viewUsuarios = document.getElementById("view-usuarios");
+  const usuariosBloqueada = document.getElementById("usuarios-bloqueada");
+  const usuariosSemPermissao = document.getElementById("usuarios-sem-permissao");
+  const usuariosLiberada = document.getElementById("usuarios-liberada");
+  const corpoUsuarios = document.getElementById("corpo-usuarios");
+  const avisoUsuarios = document.getElementById("aviso-usuarios");
+  const formNovoUsuario = document.getElementById("form-novo-usuario");
+  const novoAbas = document.getElementById("novo-abas");
+  const cardSenhaUsuario = document.getElementById("card-senha-usuario");
+  const formSenhaUsuario = document.getElementById("form-senha-usuario");
+  const senhaUsuarioAlvo = document.getElementById("senha-usuario-alvo");
+  let voltarParaUsuarios = false;
   const viewPerformance = document.getElementById("view-performance");
   const viewRitmo = document.getElementById("view-ritmo");
   const viewAssistencia = document.getElementById("view-assistencia");
@@ -1339,7 +1474,9 @@
       salvarSessao(sessao);
       atualizarAreaConta();
       atualizarTelaDevolucao();
+      await carregarMeuAcesso();
       if (voltarParaCobranca) { voltarParaCobranca = false; mostrarAba("cobranca"); }
+      else if (voltarParaUsuarios) { voltarParaUsuarios = false; mostrarAba("usuarios"); }
     } catch (err) {
       mostrarAvisoLogin("erro", "E-mail ou senha inválidos.");
     } finally {
@@ -1358,6 +1495,7 @@
     atualizarTelaMetas();
     cobrancaLinhas = null;
     atualizarTelaCobranca();
+    carregarMeuAcesso();
   }
   btnSair.addEventListener("click", sair);
   btnEntrarTopo.addEventListener("click", () => mostrarAba("devolucao"));
@@ -1853,6 +1991,7 @@
     viewVendas.classList.toggle("oculto", aba !== "vendas");
     viewClientes.classList.toggle("oculto", aba !== "clientes");
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
+    viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
     document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "clientes" || aba === "cobranca");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
@@ -1863,6 +2002,7 @@
     tabBtnVendas.classList.toggle("ativa", aba === "vendas");
     tabBtnClientes.classList.toggle("ativa", aba === "clientes");
     tabBtnCobranca.classList.toggle("ativa", aba === "cobranca");
+    tabBtnUsuarios.classList.toggle("ativa", aba === "usuarios");
     tabBtnPerformance.classList.toggle("ativa", aba === "performance");
     tabBtnRitmo.classList.toggle("ativa", aba === "ritmo");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
@@ -1871,6 +2011,7 @@
     if (aba === "vendas") iniciarVendas();
     if (aba === "clientes") iniciarClientes();
     if (aba === "cobranca") atualizarTelaCobranca();
+    if (aba === "usuarios") atualizarTelaUsuarios();
     if (aba === "performance") iniciarPerformance();
     if (aba === "ritmo") iniciarRitmo();
     if (aba === "assistencia") iniciarAssistencia();
@@ -1882,6 +2023,7 @@
   tabBtnVendas.addEventListener("click", () => mostrarAba("vendas"));
   tabBtnClientes.addEventListener("click", () => mostrarAba("clientes"));
   tabBtnCobranca.addEventListener("click", () => mostrarAba("cobranca"));
+  tabBtnUsuarios.addEventListener("click", () => mostrarAba("usuarios"));
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
@@ -2073,6 +2215,248 @@
     return n(v).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
   }
   function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  // --- SEÇÃO: quem entrou (cadastro do painel) ---
+  // A permissão por aba vem do banco (tabelas painel_usuarios / painel_acessos), não do token:
+  // tirar um acesso vale na hora, sem a pessoa precisar sair e entrar de novo.
+  let meuAcesso = { email: null, ativo: false, admin: false, abas: [] };
+
+  async function carregarMeuAcesso() {
+    if (!sessao) { meuAcesso = { email: null, ativo: false, admin: false, abas: [] }; aplicarMeuAcesso(); return; }
+    try {
+      sessao = await garantirSessaoValida();
+      if (!sessao) { meuAcesso = { email: null, ativo: false, admin: false, abas: [] }; aplicarMeuAcesso(); return; }
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/meu_acesso", {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: "{}"
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const d = await res.json();
+      meuAcesso = { email: d.email, ativo: !!d.ativo, admin: !!d.admin, abas: Array.isArray(d.abas) ? d.abas : [] };
+    } catch (e) {
+      console.error("Erro ao ler o acesso do usuário:", e);
+      meuAcesso = { email: sessao.user && sessao.user.email, ativo: false, admin: false, abas: [] };
+    }
+    aplicarMeuAcesso();
+  }
+
+  function aplicarMeuAcesso() {
+    tabBtnUsuarios.classList.toggle("oculto", !meuAcesso.admin);
+    btnSenha.classList.toggle("oculto", !sessao);
+    if (!meuAcesso.admin && !viewUsuarios.classList.contains("oculto")) mostrarAba("resultados");
+  }
+
+  // --- trocar a própria senha ---
+  btnSenha.addEventListener("click", () => {
+    cardSenha.classList.toggle("oculto");
+    avisoSenha.className = "aviso";
+  });
+  formSenha.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const nova = document.getElementById("senha-nova").value;
+    const conf = document.getElementById("senha-conf").value;
+    if (nova.length < 8) { avisoSenha.textContent = "A senha precisa ter pelo menos 8 caracteres."; avisoSenha.className = "aviso mostrar erro"; return; }
+    if (nova !== conf) { avisoSenha.textContent = "As duas senhas não são iguais."; avisoSenha.className = "aviso mostrar erro"; return; }
+    try {
+      sessao = await garantirSessaoValida();
+      const res = await fetch(SUPABASE_URL + "/auth/v1/user", {
+        method: "PUT",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify({ password: nova })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.msg || d.error_description || "Não foi possível trocar a senha.");
+      formSenha.reset();
+      avisoSenha.textContent = "Senha alterada.";
+      avisoSenha.className = "aviso mostrar sucesso";
+    } catch (err) {
+      avisoSenha.textContent = err.message;
+      avisoSenha.className = "aviso mostrar erro";
+    }
+  });
+
+  // --- SEÇÃO: Usuários (só administrador) ---
+  // Cadastrar usuário exige a chave secreta do projeto, que não pode ficar nesta página:
+  // quem faz isso é a função admin-usuarios no Supabase, que confere se quem chamou é admin.
+  const URL_ADMIN = SUPABASE_URL + "/functions/v1/admin-usuarios";
+  let usuariosAbas = [];
+  let usuariosLista = [];
+  let usuariosCarregando = false;
+
+  async function chamarAdmin(acao, dados) {
+    sessao = await garantirSessaoValida();
+    if (!sessao) throw new Error("Sessão expirada, entre de novo.");
+    const res = await fetch(URL_ADMIN, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+      body: JSON.stringify({ acao, ...(dados || {}) })
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.erro || ("HTTP " + res.status));
+    return d;
+  }
+
+  function atualizarTelaUsuarios() {
+    const mostrar = (qual) => {
+      usuariosBloqueada.classList.toggle("oculto", qual !== "bloqueada");
+      usuariosSemPermissao.classList.toggle("oculto", qual !== "sem");
+      usuariosLiberada.classList.toggle("oculto", qual !== "liberada");
+    };
+    if (!sessao) { mostrar("bloqueada"); return; }
+    if (!meuAcesso.admin) { mostrar("sem"); return; }
+    mostrar("liberada");
+    carregarUsuarios();
+  }
+  document.getElementById("btn-usuarios-ir-login").addEventListener("click", () => {
+    voltarParaUsuarios = true;
+    mostrarAba("devolucao");
+  });
+
+  async function carregarUsuarios() {
+    if (usuariosCarregando) return;
+    usuariosCarregando = true;
+    corpoUsuarios.innerHTML = '<tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>';
+    try {
+      const d = await chamarAdmin("listar");
+      usuariosAbas = d.abas || [];
+      usuariosLista = d.usuarios || [];
+      montarCheckboxesNovo();
+      renderUsuarios();
+    } catch (err) {
+      corpoUsuarios.innerHTML = '<tr><td colspan="6" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(err.message) + "</small></td></tr>";
+    } finally {
+      usuariosCarregando = false;
+    }
+  }
+
+  function montarCheckboxesNovo() {
+    novoAbas.innerHTML = usuariosAbas.map((a) =>
+      '<label class="check-aba"><input type="checkbox" value="' + esc(a.codigo) + '"> ' + esc(a.nome) + "</label>").join("");
+  }
+
+  function renderUsuarios() {
+    if (!usuariosLista.length) {
+      corpoUsuarios.innerHTML = '<tr><td colspan="6" class="estado-vazio">Nenhum usuário cadastrado.</td></tr>';
+      return;
+    }
+    corpoUsuarios.innerHTML = usuariosLista.map((u) => {
+      const abas = u.admin
+        ? '<span class="pill-tipo pill-novo">administrador — vê tudo</span>'
+        : usuariosAbas.map((a) =>
+            '<label class="check-aba"><input type="checkbox" data-user="' + u.user_id + '" value="' + esc(a.codigo) + '"' +
+            (u.abas.includes(a.codigo) ? " checked" : "") + "> " + esc(a.nome) + "</label>").join("");
+      return '<tr>' +
+        "<td>" + esc(u.nome || "—") + '<div class="atividade-cliente">' + esc(u.email) + "</div></td>" +
+        '<td style="text-align:left;"><div class="abas-grid">' + abas + "</div></td>" +
+        "<td>" + (u.ultimo_acesso ? fmtData(u.ultimo_acesso.slice(0, 10)) : "nunca entrou") + "</td>" +
+        "<td>" + (u.ativo ? '<span class="pct-pill pct-verde">ativo</span>' : '<span class="pct-pill pct-vermelho">inativo</span>') + "</td>" +
+        '<td><button type="button" class="btn-secundario" data-acao="ativar" data-user="' + u.user_id + '">' + (u.ativo ? "Desativar" : "Ativar") + "</button></td>" +
+        '<td><button type="button" class="btn-secundario" data-acao="senha" data-user="' + u.user_id + '">Nova senha</button> ' +
+        '<button type="button" class="btn-excluir" data-acao="excluir" data-user="' + u.user_id + '">Excluir</button></td>' +
+      "</tr>";
+    }).join("");
+  }
+
+  function avisoUsuariosMostrar(tipo, texto) { avisoUsuarios.textContent = texto; avisoUsuarios.className = "aviso mostrar " + tipo; }
+
+  // marcar/desmarcar aba salva na hora
+  corpoUsuarios.addEventListener("change", async (ev) => {
+    const cb = ev.target.closest('input[type="checkbox"][data-user]');
+    if (!cb) return;
+    const userId = cb.dataset.user;
+    const marcadas = [...corpoUsuarios.querySelectorAll('input[type="checkbox"][data-user="' + userId + '"]:checked')].map((x) => x.value);
+    cb.disabled = true;
+    try {
+      await chamarAdmin("atualizar", { user_id: userId, abas: marcadas });
+      const u = usuariosLista.find((x) => x.user_id === userId);
+      if (u) u.abas = marcadas;
+      avisoUsuariosMostrar("sucesso", "Acesso atualizado.");
+    } catch (err) {
+      cb.checked = !cb.checked;
+      avisoUsuariosMostrar("erro", err.message);
+    } finally {
+      cb.disabled = false;
+    }
+  });
+
+  corpoUsuarios.addEventListener("click", async (ev) => {
+    const btn = ev.target.closest("button[data-acao]");
+    if (!btn) return;
+    const userId = btn.dataset.user;
+    const u = usuariosLista.find((x) => x.user_id === userId);
+    if (!u) return;
+    try {
+      if (btn.dataset.acao === "ativar") {
+        await chamarAdmin("atualizar", { user_id: userId, ativo: !u.ativo });
+        avisoUsuariosMostrar("sucesso", (u.ativo ? "Acesso desativado." : "Acesso ativado.") + " " + esc(u.email));
+      } else if (btn.dataset.acao === "senha") {
+        usuarioSenhaId = userId;
+        senhaUsuarioAlvo.textContent = u.email;
+        cardSenhaUsuario.classList.remove("oculto");
+        document.getElementById("senha-usuario-valor").focus();
+        return;
+      } else if (btn.dataset.acao === "excluir") {
+        if (!confirmarExclusao(u)) return;
+        await chamarAdmin("excluir", { user_id: userId });
+        avisoUsuariosMostrar("sucesso", "Usuário excluído.");
+      }
+      await carregarUsuarios();
+    } catch (err) {
+      avisoUsuariosMostrar("erro", err.message);
+    }
+  });
+
+  // confirmação sem usar diálogo do navegador: dois cliques no mesmo botão
+  let excluirPendente = null;
+  function confirmarExclusao(u) {
+    if (excluirPendente === u.user_id) { excluirPendente = null; return true; }
+    excluirPendente = u.user_id;
+    avisoUsuariosMostrar("erro", "Clique em Excluir de novo para confirmar a exclusão de " + u.email + ".");
+    setTimeout(() => { if (excluirPendente === u.user_id) excluirPendente = null; }, 8000);
+    return false;
+  }
+
+  let usuarioSenhaId = null;
+  formSenhaUsuario.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const valor = document.getElementById("senha-usuario-valor").value;
+    try {
+      await chamarAdmin("senha", { user_id: usuarioSenhaId, senha: valor });
+      formSenhaUsuario.reset();
+      cardSenhaUsuario.classList.add("oculto");
+      avisoUsuariosMostrar("sucesso", "Senha redefinida. Passe a senha provisória para a pessoa — ela pode trocar no botão \"Minha senha\".");
+    } catch (err) {
+      avisoUsuariosMostrar("erro", err.message);
+    }
+  });
+  document.getElementById("btn-senha-usuario-cancelar").addEventListener("click", () => {
+    cardSenhaUsuario.classList.add("oculto");
+    formSenhaUsuario.reset();
+  });
+
+  formNovoUsuario.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const abas = [...novoAbas.querySelectorAll("input:checked")].map((x) => x.value);
+    const dados = {
+      email: document.getElementById("novo-email").value.trim(),
+      nome: document.getElementById("novo-nome").value.trim(),
+      senha: document.getElementById("novo-senha").value,
+      abas
+    };
+    const btn = document.getElementById("btn-novo-usuario");
+    btn.disabled = true;
+    try {
+      await chamarAdmin("criar", dados);
+      formNovoUsuario.reset();
+      avisoUsuariosMostrar("sucesso", "Usuário criado. Passe o e-mail e a senha provisória para a pessoa.");
+      await carregarUsuarios();
+    } catch (err) {
+      avisoUsuariosMostrar("erro", err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // --- SEÇÃO: Em Aberto (cobrança) — exige login + claim pode_ver_cobranca ---
   // Os dados vêm da função cobranca_titulos_vencidos() (security definer), que confere o claim
@@ -3477,6 +3861,7 @@
   (async function init() {
     sessao = await garantirSessaoValida();
     atualizarAreaConta();
+    await carregarMeuAcesso();
     await iniciarApp(); // telas de visualização são públicas — carregam sem precisar de login
 
     setInterval(revalidarSessao, 10 * 60 * 1000);
