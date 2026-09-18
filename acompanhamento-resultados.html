@@ -1638,12 +1638,11 @@
 
   async function buscarUltimaSincronizacao() {
     try {
-      const [resSync, resFatura] = await Promise.all([
-        leitura(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=carregado_em&order=carregado_em.desc&limit=1`),
-        leitura(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=dt_fatura&order=dt_fatura.desc&limit=1`)
-      ]);
-      const carregadoEm = resSync.ok ? (await resSync.json())[0]?.carregado_em : null;
-      const dtFatura = resFatura.ok ? (await resFatura.json())[0]?.dt_fatura : null;
+      // v_painel_frescor devolve as duas datas numa linha só e respeita o cadastro de acesso
+      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_painel_frescor?select=carregado_em,dt_fatura&limit=1`);
+      const linha = res.ok ? (await res.json())[0] : null;
+      const carregadoEm = linha ? linha.carregado_em : null;
+      const dtFatura = linha ? linha.dt_fatura : null;
       return { carregadoEm: carregadoEm || null, dtFatura: dtFatura || null };
     } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null }; }
   }
