@@ -474,6 +474,32 @@
         </div>
       </div>
 
+      <div id="tela-login" class="oculto">
+        <div class="caixa-login">
+          <h2>Entre para ver o acompanhamento</h2>
+          <p class="sub">O painel é de uso interno da Blue Distribuidora. Use o e-mail e a senha que o administrador passou.</p>
+          <div id="aviso-login-geral" class="aviso"></div>
+          <form id="form-login-geral" autocomplete="on">
+            <div class="campo">
+              <label for="login-geral-email">E-mail</label>
+              <input type="email" id="login-geral-email" required autocomplete="username">
+            </div>
+            <div class="campo">
+              <label for="login-geral-senha">Senha</label>
+              <input type="password" id="login-geral-senha" required autocomplete="current-password">
+            </div>
+            <button type="submit" id="btn-login-geral" class="btn-full">Entrar</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="sem-acesso" class="oculto">
+        <div class="caixa-login">
+          <h2>Sua conta ainda não tem nenhuma aba liberada</h2>
+          <p class="sub">Peça ao administrador do painel para liberar o que você precisa ver.</p>
+        </div>
+      </div>
+
       <div class="tabs">
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
         <button class="tab-btn" data-tab="vendas" id="tab-btn-vendas">Vendas do Dia</button>
@@ -1262,6 +1288,11 @@
   const tabBtnCobranca = document.getElementById("tab-btn-cobranca");
   const tabBtnUsuarios = document.getElementById("tab-btn-usuarios");
   const btnSenha = document.getElementById("btn-senha");
+  const telaLogin = document.getElementById("tela-login");
+  const semAcesso = document.getElementById("sem-acesso");
+  const barraAbas = document.querySelector(".tabs");
+  const formLoginGeral = document.getElementById("form-login-geral");
+  const avisoLoginGeral = document.getElementById("aviso-login-geral");
   const cardSenha = document.getElementById("card-senha");
   const formSenha = document.getElementById("form-senha");
   const avisoSenha = document.getElementById("aviso-senha");
@@ -1332,12 +1363,28 @@
   let metasLinhasDoMes = [];
   let metasMesAtual = null; // 'YYYY-MM-01'
 
-  // --- headers de leitura: sempre a chave anônima ---
-  // As telas de visualização são públicas, então a leitura não depende de login.
-  // Mandar o token do usuário aqui só criava problema: o token do Supabase dura 1 hora e,
-  // numa aba aberta há mais tempo, a leitura voltava com 401 "JWT expired" mesmo o dado sendo público.
+  // --- headers de leitura: o token de quem está logado ---
+  // O token do Supabase dura 1 hora, e numa aba aberta há mais tempo a leitura voltava com
+  // 401 "JWT expired". Por isso toda leitura passa por leitura(): ela renova o token antes da
+  // hora e, se ainda assim vier 401, renova e tenta de novo uma vez.
   function headersLeitura() {
-    return { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY };
+    const token = (sessao && sessao.access_token) ? sessao.access_token : SUPABASE_KEY;
+    return { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + token };
+  }
+  async function leitura(url) {
+    if (sessao) sessao = await garantirSessaoValida();
+    let res = await fetch(url, { headers: headersLeitura() });
+    if (res.status === 401 && sessao && sessao.refresh_token) {
+      try {
+        sessao = await renovarSessao(sessao.refresh_token);
+        salvarSessao(sessao);
+      } catch (e) {
+        limparSessao(); sessao = null; atualizarAreaConta(); aplicarMeuAcesso();
+        throw new Error("Sua sessão expirou. Entre de novo.");
+      }
+      res = await fetch(url, { headers: headersLeitura() });
+    }
+    return res;
   }
   function headersEscrita() {
     return {
@@ -1409,7 +1456,7 @@
     let s = carregarSessao();
     if (!s) return null;
     const agora = Math.floor(Date.now() / 1000);
-    if (s.expires_at && s.expires_at - agora < 60) {
+    if (s.expires_at && s.expires_at - agora < 900) {
       try {
         s = await renovarSessao(s.refresh_token);
         salvarSessao(s);
@@ -1438,7 +1485,7 @@
   // claim pode_lancar_devolucao (app_metadata) — sem ele, a tela fica bloqueada
   // mesmo com login correto (ex: conta rma@bluedistribuidora.com.br).
   function temPermissaoDevolucao() {
-    return !!(sessao && sessao.user && sessao.user.app_metadata && sessao.user.app_metadata.pode_lancar_devolucao === true);
+    return !!sessao && podeVerAba("devolucao");
   }
 
   function atualizarTelaDevolucao() {
@@ -1462,7 +1509,7 @@
 
   // Mesmo padrão do claim de devolução, mas pra cadastro de metas — hoje só o Diego tem.
   function temPermissaoMetas() {
-    return !!(sessao && sessao.user && sessao.user.app_metadata && sessao.user.app_metadata.pode_editar_metas === true);
+    return !!sessao && podeVerAba("metas");
   }
 
   function atualizarTelaMetas() {
@@ -1498,6 +1545,7 @@
       atualizarAreaConta();
       atualizarTelaDevolucao();
       await carregarMeuAcesso();
+      if (!appIniciado) await iniciarApp();
       if (voltarParaCobranca) { voltarParaCobranca = false; mostrarAba("cobranca"); }
       else if (voltarParaUsuarios) { voltarParaUsuarios = false; mostrarAba("usuarios"); }
     } catch (err) {
@@ -1508,8 +1556,32 @@
     }
   });
 
+  formLoginGeral.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const btn = document.getElementById("btn-login-geral");
+    avisoLoginGeral.className = "aviso";
+    btn.disabled = true;
+    btn.textContent = "Entrando...";
+    try {
+      sessao = await fazerLogin(document.getElementById("login-geral-email").value.trim(),
+                                document.getElementById("login-geral-senha").value);
+      salvarSessao(sessao);
+      document.getElementById("login-geral-senha").value = "";
+      atualizarAreaConta();
+      await carregarMeuAcesso();
+      if (!appIniciado) await iniciarApp();
+    } catch (err) {
+      avisoLoginGeral.textContent = "E-mail ou senha inválidos.";
+      avisoLoginGeral.className = "aviso mostrar erro";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Entrar";
+    }
+  });
+
   function sair() {
     limparSessao();
+    location.reload();
     sessao = null;
     devolucaoInicializada = false;
     metasInicializada = false;
@@ -1557,9 +1629,7 @@
   // --- dados: Resultados por Vendedor ---
   async function buscarConfigAutomacao() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/automacao_config?select=mes_inicio_automatico&limit=1`, {
-        headers: headersLeitura()
-      });
+      const res = await leitura(`${SUPABASE_URL}/rest/v1/automacao_config?select=mes_inicio_automatico&limit=1`);
       if (!res.ok) return null;
       const dados = await res.json();
       return dados[0] ? dados[0].mes_inicio_automatico : null;
@@ -1569,8 +1639,8 @@
   async function buscarUltimaSincronizacao() {
     try {
       const [resSync, resFatura] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=carregado_em&order=carregado_em.desc&limit=1`, { headers: headersLeitura() }),
-        fetch(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=dt_fatura&order=dt_fatura.desc&limit=1`, { headers: headersLeitura() })
+        leitura(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=carregado_em&order=carregado_em.desc&limit=1`),
+        leitura(`${SUPABASE_URL}/rest/v1/pedidos_erp?select=dt_fatura&order=dt_fatura.desc&limit=1`)
       ]);
       const carregadoEm = resSync.ok ? (await resSync.json())[0]?.carregado_em : null;
       const dtFatura = resFatura.ok ? (await resFatura.json())[0]?.dt_fatura : null;
@@ -1579,9 +1649,8 @@
   }
 
   async function buscarResultados() {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/v_metas_mensais_completo?select=*&order=competencia.desc,nome_completo.asc`,
-      { headers: headersLeitura() }
+    const res = await leitura(
+      `${SUPABASE_URL}/rest/v1/v_metas_mensais_completo?select=*&order=competencia.desc,nome_completo.asc`
     );
     if (!res.ok) {
       let detalhe = "";
@@ -1660,7 +1729,9 @@
     badgeFonte.className = "badge " + (ehAutomatico ? "automatico" : "manual");
   }
 
+  let appIniciado = false;
   async function iniciarApp() {
+    appIniciado = true;
     corpoTabela.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>';
     try {
       const [linhas, cutoff, sincronizacao] = await Promise.all([
@@ -1699,9 +1770,8 @@
 
   // --- dados: Assistência / Fornecedores ---
   async function buscarGastosAssistencia() {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/fornecedores_gastos?select=*&order=data.desc`,
-      { headers: headersLeitura() }
+    const res = await leitura(
+      `${SUPABASE_URL}/rest/v1/fornecedores_gastos?select=*&order=data.desc`
     );
     if (!res.ok) {
       let detalhe = "";
@@ -1712,9 +1782,8 @@
   }
 
   async function buscarResumoAssistencia() {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/v_assistencia_resumo?select=*&order=competencia.desc`,
-      { headers: headersLeitura() }
+    const res = await leitura(
+      `${SUPABASE_URL}/rest/v1/v_assistencia_resumo?select=*&order=competencia.desc`
     );
     if (!res.ok) {
       let detalhe = "";
@@ -1854,7 +1923,7 @@
   // --- Lançar Devolução (cadastro, exige login) ---
   async function carregarVendedoresDevolucao() {
     try {
-      const res = await fetch(
+      const res = await leitura(
         `${SUPABASE_URL}/rest/v1/v_vendedores_status?select=id,nome_completo&ativo=eq.true&order=nome_completo.asc`,
         { headers: headersEscrita() }
       );
@@ -2009,7 +2078,9 @@
   }
 
   // --- abas ---
+  let abaAtual = null;
   function mostrarAba(aba) {
+    abaAtual = aba;
     viewResultados.classList.toggle("oculto", aba !== "resultados");
     viewVendas.classList.toggle("oculto", aba !== "vendas");
     viewClientes.classList.toggle("oculto", aba !== "clientes");
@@ -2264,10 +2335,36 @@
     aplicarMeuAcesso();
   }
 
+  // ordem das abas na tela; o código é o mesmo de painel_abas no banco
+  const ABAS = [
+    ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["clientes", () => tabBtnClientes],
+    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo],
+    ["assistencia", () => tabBtnAssistencia], ["devolucao", () => tabBtnDevolucao], ["metas", () => tabBtnMetas]
+  ];
+  function podeVerAba(codigo) {
+    if (codigo === "usuarios") return meuAcesso.admin;
+    return meuAcesso.admin || meuAcesso.abas.indexOf(codigo) >= 0;
+  }
+
   function aplicarMeuAcesso() {
+    const logado = !!sessao;
+    telaLogin.classList.toggle("oculto", logado);
+    barraAbas.classList.toggle("oculto", !logado);
+    btnSenha.classList.toggle("oculto", !logado);
+    btnEntrarTopo.classList.add("oculto"); // o login agora é a própria tela inicial
+    if (!logado) {
+      semAcesso.classList.add("oculto");
+      cardSenha.classList.add("oculto");
+      mostrarAba("nenhuma");
+      return;
+    }
+    const liberadas = ABAS.filter(([cod]) => podeVerAba(cod)).map(([cod]) => cod);
+    ABAS.forEach(([cod, el]) => el().classList.toggle("oculto", !podeVerAba(cod)));
     tabBtnUsuarios.classList.toggle("oculto", !meuAcesso.admin);
-    btnSenha.classList.toggle("oculto", !sessao);
-    if (!meuAcesso.admin && !viewUsuarios.classList.contains("oculto")) mostrarAba("resultados");
+    semAcesso.classList.toggle("oculto", liberadas.length > 0 || meuAcesso.admin);
+    if (!abaAtual || abaAtual === "nenhuma" || !podeVerAba(abaAtual)) {
+      mostrarAba(liberadas.length ? liberadas[0] : (meuAcesso.admin ? "usuarios" : "nenhuma"));
+    }
   }
 
   // --- trocar a própria senha ---
@@ -2526,10 +2623,9 @@
   let cobrancaFaixa = "ate365";
   let cobrancaAbertos = new Set();
   let voltarParaCobranca = false;
-  let cobrancaRenovouClaim = false;
 
   function temPermissaoCobranca() {
-    return !!(sessao && sessao.user && sessao.user.app_metadata && sessao.user.app_metadata.pode_ver_cobranca === true);
+    return !!sessao && podeVerAba("cobranca");
   }
 
   async function atualizarTelaCobranca() {
@@ -2539,11 +2635,6 @@
       cobLiberada.classList.toggle("oculto", qual !== "liberada");
     };
     if (!sessao) { mostrar("bloqueada"); return; }
-    if (!temPermissaoCobranca() && !cobrancaRenovouClaim && sessao.refresh_token) {
-      // permissão pode ter sido liberada depois do login: renova o token uma vez para trazer o claim novo
-      cobrancaRenovouClaim = true;
-      try { sessao = await renovarSessao(sessao.refresh_token); salvarSessao(sessao); } catch (e) {}
-    }
     if (!temPermissaoCobranca()) { mostrar("sem"); return; }
     mostrar("liberada");
     if (!cobrancaLinhas) carregarCobranca();
@@ -2782,8 +2873,7 @@
   async function buscarVendasDia() {
     const desde = diasAtrasISO(60);
     const res = await fetch(
-      SUPABASE_URL + "/rest/v1/v_vendas_dia?select=*&data=gte." + desde + "&order=data.desc,faturado.desc",
-      { headers: headersLeitura() }
+      SUPABASE_URL + "/rest/v1/v_vendas_dia?select=*&data=gte." + desde + "&order=data.desc,faturado.desc"
     );
     if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_vendas_dia");
     return res.json();
@@ -2952,7 +3042,7 @@
   }
 
   async function lerRest(caminho) {
-    const res = await fetch(SUPABASE_URL + "/rest/v1/" + caminho, { headers: headersLeitura() });
+    const res = await leitura(SUPABASE_URL + "/rest/v1/" + caminho);
     if (!res.ok) throw new Error("HTTP " + res.status + " em " + caminho.split("?")[0]);
     return res.json();
   }
@@ -3213,9 +3303,8 @@
   async function buscarRitmo() {
     const campos = "data,semana,vendedor_id,nome_curto,nome_completo,receptivos,ativos_efetivos,tentativas,cobrancas,ligacoes_efetivas,contatos_efetivos";
     const desde = diasAtrasISO(120);
-    const res = await fetch(
-      SUPABASE_URL + "/rest/v1/v_perf_vendedor_dia?select=" + campos + "&data=gte." + desde + "&order=data.asc",
-      { headers: headersLeitura() }
+    const res = await leitura(
+      SUPABASE_URL + "/rest/v1/v_perf_vendedor_dia?select=" + campos + "&data=gte." + desde + "&order=data.asc"
     );
     if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_perf_vendedor_dia");
     return res.json();
@@ -3525,9 +3614,8 @@
   }
 
   async function buscarPerfMeses() {
-    const res = await fetch(
-      SUPABASE_URL + "/rest/v1/v_perf_vendedor_mes?select=*&order=competencia.desc,faturado.desc",
-      { headers: headersLeitura() }
+    const res = await leitura(
+      SUPABASE_URL + "/rest/v1/v_perf_vendedor_mes?select=*&order=competencia.desc,faturado.desc"
     );
     if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_perf_vendedor_mes");
     return res.json();
@@ -3536,10 +3624,9 @@
   async function buscarPerfDias(competencia) {
     const fim = proximoMesISO(competencia);
     const campos = "data,vendedor_id,contatos_efetivos,receptivos,ativos_efetivos,tentativas,ligacoes_efetivas,faturado,pedidos";
-    const res = await fetch(
+    const res = await leitura(
       SUPABASE_URL + "/rest/v1/v_perf_vendedor_dia?select=" + campos +
-      "&data=gte." + competencia + "&data=lt." + fim + "&order=data.asc",
-      { headers: headersLeitura() }
+      "&data=gte." + competencia + "&data=lt." + fim + "&order=data.asc"
     );
     if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_perf_vendedor_dia");
     return res.json();
@@ -3913,7 +4000,7 @@
     sessao = await garantirSessaoValida();
     atualizarAreaConta();
     await carregarMeuAcesso();
-    await iniciarApp(); // telas de visualização são públicas — carregam sem precisar de login
+    if (sessao) await iniciarApp();
 
     setInterval(revalidarSessao, 10 * 60 * 1000);
     document.addEventListener("visibilitychange", () => {
