@@ -2871,7 +2871,7 @@
 
   async function buscarVendasDia() {
     const desde = diasAtrasISO(60);
-    const res = await fetch(
+    const res = await leitura(
       SUPABASE_URL + "/rest/v1/v_vendas_dia?select=*&data=gte." + desde + "&order=data.desc,faturado.desc"
     );
     if (!res.ok) throw new Error("HTTP " + res.status + " ao ler v_vendas_dia");
