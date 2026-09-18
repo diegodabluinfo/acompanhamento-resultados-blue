@@ -1165,6 +1165,27 @@
             </form>
           </div>
 
+          <div id="card-editar-usuario" class="form-card oculto">
+            <h2>Editar usuário</h2>
+            <p class="sub">Trocar o e-mail muda o login da pessoa.</p>
+            <form id="form-editar-usuario" autocomplete="off">
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="editar-nome">Nome</label>
+                  <input type="text" id="editar-nome" placeholder="Ex: Lucas Toniolli">
+                </div>
+                <div class="campo">
+                  <label for="editar-email">E-mail</label>
+                  <input type="email" id="editar-email" required>
+                </div>
+              </div>
+              <div class="linha-dupla">
+                <button type="submit">Salvar</button>
+                <button type="button" id="btn-editar-cancelar" class="btn-secundario">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
           <div id="card-senha-usuario" class="form-card oculto">
             <h2>Nova senha para <span id="senha-usuario-alvo"></span></h2>
             <p class="sub">A pessoa entra com esta senha e pode trocá-la depois.</p>
@@ -1264,6 +1285,8 @@
   const cardSenhaUsuario = document.getElementById("card-senha-usuario");
   const formSenhaUsuario = document.getElementById("form-senha-usuario");
   const senhaUsuarioAlvo = document.getElementById("senha-usuario-alvo");
+  const cardEditarUsuario = document.getElementById("card-editar-usuario");
+  const formEditarUsuario = document.getElementById("form-editar-usuario");
   let voltarParaUsuarios = false;
   const viewPerformance = document.getElementById("view-performance");
   const viewRitmo = document.getElementById("view-ritmo");
@@ -2352,7 +2375,8 @@
         "<td>" + (u.ultimo_acesso ? fmtData(u.ultimo_acesso.slice(0, 10)) : "nunca entrou") + "</td>" +
         "<td>" + (u.ativo ? '<span class="pct-pill pct-verde">ativo</span>' : '<span class="pct-pill pct-vermelho">inativo</span>') + "</td>" +
         '<td><button type="button" class="btn-secundario" data-acao="ativar" data-user="' + u.user_id + '">' + (u.ativo ? "Desativar" : "Ativar") + "</button></td>" +
-        '<td><button type="button" class="btn-secundario" data-acao="senha" data-user="' + u.user_id + '">Nova senha</button> ' +
+        '<td><button type="button" class="btn-secundario" data-acao="editar" data-user="' + u.user_id + '">Editar</button> ' +
+        '<button type="button" class="btn-secundario" data-acao="senha" data-user="' + u.user_id + '">Nova senha</button> ' +
         '<button type="button" class="btn-excluir" data-acao="excluir" data-user="' + u.user_id + '">Excluir</button></td>' +
       "</tr>";
     }).join("");
@@ -2390,10 +2414,21 @@
       if (btn.dataset.acao === "ativar") {
         await chamarAdmin("atualizar", { user_id: userId, ativo: !u.ativo });
         avisoUsuariosMostrar("sucesso", (u.ativo ? "Acesso desativado." : "Acesso ativado.") + " " + esc(u.email));
+      } else if (btn.dataset.acao === "editar") {
+        usuarioEditarId = userId;
+        document.getElementById("editar-nome").value = u.nome || "";
+        document.getElementById("editar-email").value = u.email || "";
+        cardSenhaUsuario.classList.add("oculto");
+        cardEditarUsuario.classList.remove("oculto");
+        cardEditarUsuario.scrollIntoView({ block: "center" });
+        document.getElementById("editar-nome").focus();
+        return;
       } else if (btn.dataset.acao === "senha") {
         usuarioSenhaId = userId;
         senhaUsuarioAlvo.textContent = u.email;
+        cardEditarUsuario.classList.add("oculto");
         cardSenhaUsuario.classList.remove("oculto");
+        cardSenhaUsuario.scrollIntoView({ block: "center" });
         document.getElementById("senha-usuario-valor").focus();
         return;
       } else if (btn.dataset.acao === "excluir") {
@@ -2416,6 +2451,22 @@
     setTimeout(() => { if (excluirPendente === u.user_id) excluirPendente = null; }, 8000);
     return false;
   }
+
+  let usuarioEditarId = null;
+  formEditarUsuario.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const nome = document.getElementById("editar-nome").value.trim();
+    const email = document.getElementById("editar-email").value.trim();
+    try {
+      await chamarAdmin("atualizar", { user_id: usuarioEditarId, nome: nome, email: email });
+      cardEditarUsuario.classList.add("oculto");
+      avisoUsuariosMostrar("sucesso", "Cadastro atualizado.");
+      await carregarUsuarios();
+    } catch (err) {
+      avisoUsuariosMostrar("erro", err.message);
+    }
+  });
+  document.getElementById("btn-editar-cancelar").addEventListener("click", () => cardEditarUsuario.classList.add("oculto"));
 
   let usuarioSenhaId = null;
   formSenhaUsuario.addEventListener("submit", async (ev) => {
