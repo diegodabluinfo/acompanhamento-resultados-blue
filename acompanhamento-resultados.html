@@ -3038,7 +3038,7 @@
           "<td>" + fmtData(l.data) + "</td>" +
           '<td style="text-align:left;">' + esc(l.fornecedor) + "</td>" +
           '<td style="text-align:left;">' + esc(l.categoria || "—") + "</td>" +
-          '<td style="text-align:left;">' + esc(l.os || "—") + "</td>" +
+          '<td style="text-align:left;">' + esc(l.os_descricao || "—") + "</td>" +
           "<td>" + fmtMoeda(l.valor_os) + "</td>" +
           "<td>" + fmtMoeda(l.valor_terceiro) + "</td>" +
           '<td style="text-align:left;">' + esc(l.nf || "—") + "</td>" +
@@ -3060,11 +3060,11 @@
       competencia: data ? data.slice(0, 8) + "01" : null,
       fornecedor: lgFornecedor.value,
       categoria: document.getElementById("lg-categoria").value,
-      os: textoOuNulo(document.getElementById("lg-os").value),
+      os_descricao: textoOuNulo(document.getElementById("lg-os").value),
       valor_os: numeroOuNulo(document.getElementById("lg-valor-os").value),
       valor_terceiro: numeroOuNulo(document.getElementById("lg-valor-terceiro").value),
       nf: textoOuNulo(document.getElementById("lg-nf").value),
-      observacao: textoOuNulo(document.getElementById("lg-obs").value)
+      status_obs: textoOuNulo(document.getElementById("lg-obs").value)
     };
     btn.disabled = true;
     try {
@@ -3173,11 +3173,11 @@
     document.getElementById("ed-id").value = l.id;
     document.getElementById("ed-data").value = l.data || "";
     document.getElementById("ed-categoria").value = CATEGORIAS_GASTO.indexOf(l.categoria) >= 0 ? l.categoria : "Outro";
-    document.getElementById("ed-os").value = l.os || "";
+    document.getElementById("ed-os").value = l.os_descricao || "";
     document.getElementById("ed-valor-os").value = l.valor_os == null ? "" : l.valor_os;
     document.getElementById("ed-valor-terceiro").value = l.valor_terceiro == null ? "" : l.valor_terceiro;
     document.getElementById("ed-nf").value = l.nf || "";
-    document.getElementById("ed-obs").value = l.observacao || "";
+    document.getElementById("ed-obs").value = l.status_obs || "";
     const sel = document.getElementById("ed-fornecedor");
     const nomes = listaFornecedores.map((f) => f.nome);
     if (l.fornecedor && nomes.indexOf(l.fornecedor) < 0) nomes.unshift(l.fornecedor);
@@ -3202,11 +3202,11 @@
       competencia: data ? data.slice(0, 8) + "01" : null,
       fornecedor: document.getElementById("ed-fornecedor").value,
       categoria: document.getElementById("ed-categoria").value,
-      os: textoOuNulo(document.getElementById("ed-os").value),
+      os_descricao: textoOuNulo(document.getElementById("ed-os").value),
       valor_os: numeroOuNulo(document.getElementById("ed-valor-os").value),
       valor_terceiro: numeroOuNulo(document.getElementById("ed-valor-terceiro").value),
       nf: textoOuNulo(document.getElementById("ed-nf").value),
-      observacao: textoOuNulo(document.getElementById("ed-obs").value)
+      status_obs: textoOuNulo(document.getElementById("ed-obs").value)
     };
     try {
       const res = await fetch(SUPABASE_URL + "/rest/v1/fornecedores_gastos?id=eq." + id, {
@@ -3304,7 +3304,7 @@
       if (forn && l.fornecedor !== forn) return false;
       if (cat && l.categoria !== cat) return false;
       if (busca) {
-        const alvo = ((l.nf || "") + " " + (l.os || "") + " " + (l.observacao || "") + " " + (l.fornecedor || "")).toLowerCase();
+        const alvo = ((l.nf || "") + " " + (l.os_descricao || "") + " " + (l.status_obs || "") + " " + (l.fornecedor || "")).toLowerCase();
         if (!alvo.includes(busca)) return false;
       }
       return true;
@@ -3325,12 +3325,12 @@
         "<td>" + fmtData(l.data) + "</td>" +
         '<td style="text-align:left;">' + esc(l.fornecedor) + "</td>" +
         '<td style="text-align:left;">' + esc(l.categoria || "—") + "</td>" +
-        '<td style="text-align:left;">' + esc(l.os || "—") + "</td>" +
+        '<td style="text-align:left;">' + esc(l.os_descricao || "—") + "</td>" +
         "<td>" + fmtMoeda(l.valor_os) + "</td>" +
         "<td>" + fmtMoeda(l.valor_terceiro) + "</td>" +
         "<td>" + (m == null ? "—" : fmtMoeda(m)) + "</td>" +
         '<td style="text-align:left;">' + esc(l.nf || "—") + "</td>" +
-        '<td style="text-align:left;">' + esc(l.observacao || "—") + "</td>" +
+        '<td style="text-align:left;">' + esc(l.status_obs || "—") + "</td>" +
         "<td>" + (podeEditar ? '<button type="button" class="btn-secundario" data-editar-gasto="' + l.id + '">Editar</button>' : "") + "</td>" +
       "</tr>";
     }).join("") : '<tr><td colspan="10" class="estado-vazio">Nenhum lançamento com esses filtros.</td></tr>';
