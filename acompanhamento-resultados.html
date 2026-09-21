@@ -261,12 +261,44 @@
   .cod-cliente { color: var(--texto-suave); font-weight: 600; font-variant-numeric: tabular-nums; }
   .atividade-cliente { font-size: 0.72rem; color: var(--texto-suave); font-weight: 400; margin-top: 2px; }
 
+  /* --- Janela de editar gasto --- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(20,35,60,0.45);
+    display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+  }
+  .modal-gasto {
+    background: #fff; border-radius: 14px; padding: 20px; width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(20,40,70,0.22);
+  }
+  .modal-gasto h2 { font-size: 1.05rem; margin: 0 0 12px; color: var(--azul-escuro); }
+  .modal-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  #corpo-fornecedores input[type="text"] { padding: 6px 8px; font-size: 0.82rem; }
+  #assist-subabas { margin-top: 2px; }
+  /* --- Menu Cadastros --- */
+  .menu-cadastros { position: relative; display: inline-block; }
+  #btn-menu-cadastros .seta { font-size: 0.7rem; margin-left: 2px; }
+  .menu-lista {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+    background: #fff; border: 1px solid var(--borda); border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(20,40,70,0.14); padding: 6px; min-width: 232px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .menu-lista .item-menu { text-align: left; border: none; background: transparent; padding: 9px 12px; }
+  .menu-lista .item-menu:hover { background: #f1f6ff; }
+  .menu-lista .item-menu.ativa { background: var(--azul); color: #fff; }
+  @media (max-width: 640px) { .menu-lista { left: auto; right: 0; } }
   /* --- Aba Usuários --- */
   .abas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 4px 14px; }
   .check-aba { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; margin: 0; white-space: nowrap; }
   .check-aba input { width: auto; }
   #view-usuarios table { font-size: 0.82rem; }
   #view-usuarios tbody td { vertical-align: top; }
+  .grupo-abas { margin-bottom: 8px; }
+  .grupo-abas:last-child { margin-bottom: 0; }
+  .grupo-abas-titulo {
+    display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--texto-suave); font-weight: 700; margin-bottom: 3px;
+  }
   #corpo-usuarios .abas-grid { grid-template-columns: repeat(3, max-content); gap: 3px 16px; }
   @media (max-width: 900px) { #corpo-usuarios .abas-grid { grid-template-columns: repeat(2, max-content); } }
   .form-card.largo { max-width: 100%; }
@@ -507,10 +539,17 @@
         <button class="tab-btn" data-tab="cobranca" id="tab-btn-cobranca">Em Aberto</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
-        <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Assistência / Fornecedores</button>
-        <button class="tab-btn" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
-        <button class="tab-btn" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
-        <button class="tab-btn oculto" data-tab="usuarios" id="tab-btn-usuarios">Usuários</button>
+        <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Gastos e Assistência</button>
+        <div class="menu-cadastros" id="menu-cadastros">
+          <button class="tab-btn" id="btn-menu-cadastros" type="button" aria-haspopup="true" aria-expanded="false">Cadastros <span class="seta">▾</span></button>
+          <div class="menu-lista oculto" id="lista-cadastros">
+            <button class="tab-btn item-menu" data-tab="gastos" id="tab-btn-gastos">Lançar Gasto</button>
+            <button class="tab-btn item-menu" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
+            <button class="tab-btn item-menu" data-tab="fornecedores" id="tab-btn-fornecedores">Cadastro de Fornecedores</button>
+            <button class="tab-btn item-menu" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
+            <button class="tab-btn item-menu oculto" data-tab="usuarios" id="tab-btn-usuarios">Usuários</button>
+          </div>
+        </div>
       </div>
 
       <div id="card-senha" class="form-card oculto">
@@ -912,6 +951,13 @@
 
       <!-- ===== ABA: Assistência / Fornecedores ===== -->
       <div id="view-assistencia" class="oculto">
+        <div class="filtro-periodo" id="assist-subabas" style="margin-bottom:14px;">
+          <button data-sub="mes" class="ativa">Mês</button>
+          <button data-sub="lancamentos">Lançamentos</button>
+          <button data-sub="anual">Resumo Anual</button>
+        </div>
+
+        <div id="assist-mes">
         <div class="painel-controles">
           <div>
             <label for="seletor-mes-assist">Mês</label>
@@ -983,6 +1029,213 @@
         </div>
 
         <div class="rodape-nota" id="nota-rodape-assist">Produzido (Serviço) é automático — soma dos pedidos com "só serviço" no ERP. Custos Fornecedores vêm dos lançamentos manuais acima.</div>
+        </div>
+
+        <!-- ===== sub-aba: Lançamentos (filtro livre) ===== -->
+        <div id="assist-lancamentos" class="oculto">
+          <div class="kpi-grid" id="gastos-kpis"></div>
+          <div class="painel-controles">
+            <div>
+              <label for="fg-competencia">Mês</label>
+              <select id="fg-competencia"><option value="">Todos</option></select>
+            </div>
+            <div>
+              <label for="fg-fornecedor">Fornecedor</label>
+              <select id="fg-fornecedor"><option value="">Todos</option></select>
+            </div>
+            <div>
+              <label for="fg-categoria">Categoria</label>
+              <select id="fg-categoria"><option value="">Todas</option></select>
+            </div>
+            <div>
+              <label for="fg-busca">Buscar</label>
+              <input type="text" id="fg-busca" placeholder="NF, descrição ou observação">
+            </div>
+          </div>
+          <div class="card-tabela">
+            <div class="tabela-scroll tabela-alta">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Data</th>
+                    <th style="text-align:left;">Fornecedor</th>
+                    <th style="text-align:left;">Categoria</th>
+                    <th style="text-align:left;">OS / Descrição</th>
+                    <th>Valor OS</th>
+                    <th>Valor Terceiro</th>
+                    <th>Margem</th>
+                    <th style="text-align:left;">NF</th>
+                    <th style="text-align:left;">Observação</th>
+                    <th id="col-acao-gasto"></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-gastos-filtro">
+                  <tr><td colspan="10" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">Margem = valor cobrado na OS menos o valor pago ao terceiro. Quem tem o lançamento de gastos liberado vê o botão Editar.</div>
+        </div>
+
+        <!-- ===== sub-aba: Resumo Anual ===== -->
+        <div id="assist-anual" class="oculto">
+          <h3 class="grupo-titulo">Gastos por fornecedor, mês a mês (valor pago a terceiros)</h3>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table id="tabela-anual-fornecedor"><tbody><tr><td class="estado-vazio">Carregando...</td></tr></tbody></table>
+            </div>
+          </div>
+
+          <h3 class="grupo-titulo">Visão geral do mês</h3>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table id="tabela-anual-geral"><tbody><tr><td class="estado-vazio">Carregando...</td></tr></tbody></table>
+            </div>
+          </div>
+          <div class="rodape-nota">Cobrado = soma dos valores de OS. Pago a terceiros = o que saiu para o fornecedor. Margem = a diferença.</div>
+        </div>
+
+      </div>
+
+      <!-- ===== CADASTRO: Lançar Gasto (aba "gastos") ===== -->
+      <div id="view-gastos" class="oculto">
+        <div id="gastos-sem-permissao" class="oculto">
+          <div class="caixa-login">
+            <h2>Sem permissão para esta área</h2>
+            <p class="sub">Sua conta não tem o lançamento de gastos liberado. Peça ao administrador do painel.</p>
+          </div>
+        </div>
+        <div id="gastos-liberada" class="oculto">
+          <div class="form-card">
+            <h2>Lançar Gasto</h2>
+            <p class="sub">Gasto com fornecedor da assistência. Cada envio adiciona um lançamento novo.</p>
+            <div id="aviso-gasto" class="aviso"></div>
+            <form id="form-gasto" autocomplete="off">
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="lg-data">Data</label>
+                  <input type="date" id="lg-data" required>
+                </div>
+                <div class="campo">
+                  <label for="lg-fornecedor">Fornecedor</label>
+                  <select id="lg-fornecedor" required><option value="" disabled selected>Carregando...</option></select>
+                </div>
+              </div>
+              <div class="campo">
+                <label for="lg-categoria">Categoria</label>
+                <select id="lg-categoria" required>
+                  <option value="" disabled selected>Selecione...</option>
+                  <option value="Assistência">Assistência</option>
+                  <option value="Coleta Motoboy">Coleta Motoboy</option>
+                  <option value="Concerto Interno">Concerto Interno</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="lg-os">Descrição / OS <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                <input type="text" id="lg-os" placeholder="Ex: OS 1234 - conserto balança">
+              </div>
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="lg-valor-os">Valor OS (R$) <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                  <input type="number" id="lg-valor-os" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                </div>
+                <div class="campo">
+                  <label for="lg-valor-terceiro">Valor Terceiro (R$)</label>
+                  <input type="number" id="lg-valor-terceiro" inputmode="decimal" step="0.01" min="0" placeholder="0,00">
+                </div>
+              </div>
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="lg-nf">NF <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                  <input type="text" id="lg-nf" placeholder="Número da nota fiscal">
+                </div>
+                <div class="campo">
+                  <label for="lg-obs">Observação <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                  <input type="text" id="lg-obs" placeholder="Alguma observação">
+                </div>
+              </div>
+              <button type="submit" id="btn-lancar-gasto" class="btn-full">Lançar gasto</button>
+            </form>
+          </div>
+
+          <h3 class="grupo-titulo">Últimos lançamentos</h3>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Data</th>
+                    <th style="text-align:left;">Fornecedor</th>
+                    <th style="text-align:left;">Categoria</th>
+                    <th style="text-align:left;">OS / Descrição</th>
+                    <th>Valor OS</th>
+                    <th>Valor Terceiro</th>
+                    <th style="text-align:left;">NF</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-gastos-recentes">
+                  <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">Mostrando os 30 lançamentos mais recentes. Use Editar para corrigir algo lançado errado.</div>
+        </div>
+      </div>
+
+      <!-- ===== CADASTRO: Fornecedores (aba "fornecedores") ===== -->
+      <div id="view-fornecedores" class="oculto">
+        <div id="fornecedores-sem-permissao" class="oculto">
+          <div class="caixa-login">
+            <h2>Sem permissão para esta área</h2>
+            <p class="sub">Sua conta não tem o cadastro de fornecedores liberado. Peça ao administrador do painel.</p>
+          </div>
+        </div>
+        <div id="fornecedores-liberada" class="oculto">
+          <div class="form-card">
+            <h2>Cadastro de Fornecedores</h2>
+            <p class="sub">Só fornecedor ativo aparece na lista do lançamento de gastos.</p>
+            <div id="aviso-fornecedor" class="aviso"></div>
+            <form id="form-novo-fornecedor" autocomplete="off">
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="cf-nome">Nome</label>
+                  <input type="text" id="cf-nome" placeholder="Ex: TECFRIO" required>
+                </div>
+                <div class="campo">
+                  <label for="cf-obs">Observação <span style="font-weight:400;color:var(--texto-suave);">(opcional)</span></label>
+                  <input type="text" id="cf-obs" placeholder="Ex: assistência de balanças">
+                </div>
+              </div>
+              <button type="submit" id="btn-novo-fornecedor" class="btn-full">Adicionar fornecedor</button>
+            </form>
+          </div>
+
+          <h3 class="grupo-titulo">Fornecedores cadastrados</h3>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Fornecedor</th>
+                    <th style="text-align:left;">Observação</th>
+                    <th>Ativo</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-fornecedores">
+                  <tr><td colspan="3" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">
+            Desmarcar "Ativo" tira o fornecedor da lista do lançamento, sem apagar nada já lançado.
+            Para renomear, desative o antigo e cadastre outro — trocar o nome aqui não corrige lançamentos antigos.
+          </div>
+        </div>
       </div>
 
       <!-- ===== ABA: Lançar Devolução (cadastro — exige login) ===== -->
@@ -1250,12 +1503,71 @@
 
           <div class="rodape-nota">
             Marcar ou desmarcar uma aba salva na hora e vale no ato — a pessoa não precisa sair e entrar de novo.
-            Desativar tira o acesso sem apagar a conta. Enquanto as telas de visualização ainda forem públicas,
-            a permissão vale para esconder as abas; o bloqueio no banco entra na etapa seguinte.
+            Desativar tira o acesso sem apagar a conta, e administrador vê todas as telas.
+            A permissão vale também no banco: sem a aba liberada, os dados não vêm nem por fora da tela.
           </div>
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ===== Janela de editar lançamento de gasto ===== -->
+  <div id="overlay-gasto" class="overlay oculto">
+    <div class="modal-gasto">
+      <h2>Editar lançamento</h2>
+      <div id="aviso-editar-gasto" class="aviso"></div>
+      <form id="form-editar-gasto" autocomplete="off">
+        <input type="hidden" id="ed-id">
+        <div class="linha-dupla">
+          <div class="campo">
+            <label for="ed-data">Data</label>
+            <input type="date" id="ed-data" required>
+          </div>
+          <div class="campo">
+            <label for="ed-fornecedor">Fornecedor</label>
+            <select id="ed-fornecedor" required></select>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="ed-categoria">Categoria</label>
+          <select id="ed-categoria" required>
+            <option value="Assistência">Assistência</option>
+            <option value="Coleta Motoboy">Coleta Motoboy</option>
+            <option value="Concerto Interno">Concerto Interno</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="ed-os">Descrição / OS</label>
+          <input type="text" id="ed-os">
+        </div>
+        <div class="linha-dupla">
+          <div class="campo">
+            <label for="ed-valor-os">Valor OS (R$)</label>
+            <input type="number" id="ed-valor-os" step="0.01" min="0">
+          </div>
+          <div class="campo">
+            <label for="ed-valor-terceiro">Valor Terceiro (R$)</label>
+            <input type="number" id="ed-valor-terceiro" step="0.01" min="0">
+          </div>
+        </div>
+        <div class="linha-dupla">
+          <div class="campo">
+            <label for="ed-nf">NF</label>
+            <input type="text" id="ed-nf">
+          </div>
+          <div class="campo">
+            <label for="ed-obs">Observação</label>
+            <input type="text" id="ed-obs">
+          </div>
+        </div>
+        <div class="modal-acoes">
+          <button type="submit" id="btn-salvar-gasto">Salvar alterações</button>
+          <button type="button" class="btn-secundario" id="btn-cancelar-gasto">Cancelar</button>
+          <button type="button" class="btn-excluir" id="btn-excluir-gasto">Excluir lançamento</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1287,6 +1599,11 @@
   const tabBtnClientes = document.getElementById("tab-btn-clientes");
   const tabBtnCobranca = document.getElementById("tab-btn-cobranca");
   const tabBtnUsuarios = document.getElementById("tab-btn-usuarios");
+  const tabBtnGastos = document.getElementById("tab-btn-gastos");
+  const tabBtnFornecedores = document.getElementById("tab-btn-fornecedores");
+  const menuCadastros = document.getElementById("menu-cadastros");
+  const btnMenuCadastros = document.getElementById("btn-menu-cadastros");
+  const listaCadastros = document.getElementById("lista-cadastros");
   const btnSenha = document.getElementById("btn-senha");
   const telaLogin = document.getElementById("tela-login");
   const semAcesso = document.getElementById("sem-acesso");
@@ -1324,6 +1641,8 @@
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
   const viewMetas = document.getElementById("view-metas");
+  const viewGastos = document.getElementById("view-gastos");
+  const viewFornecedores = document.getElementById("view-fornecedores");
   const metasBloqueada = document.getElementById("metas-bloqueada");
   const metasSemPermissao = document.getElementById("metas-sem-permissao");
   const metasLiberada = document.getElementById("metas-liberada");
@@ -1901,6 +2220,9 @@
       resumoAssistencia = resumo;
       gastosCarregados = true;
       preencherSeletorMesAssist(todosOsGastos);
+      filtrosGastosProntos = false;
+      if (assistSub === "lancamentos") renderGastosFiltro();
+      if (assistSub === "anual") renderResumoAnual();
       if (seletorMesAssist.value) {
         renderizarTabelaAssistencia(seletorMesAssist.value);
         renderResumoAssistencia(seletorMesAssist.value);
@@ -2080,17 +2402,21 @@
   let abaAtual = null;
   function mostrarAba(aba) {
     abaAtual = aba;
+    if (typeof fecharMenuCadastros === "function") fecharMenuCadastros();
+    if (btnMenuCadastros) btnMenuCadastros.classList.toggle("ativa", ABAS_CADASTRO.some(([cod]) => cod === aba));
     viewResultados.classList.toggle("oculto", aba !== "resultados");
     viewVendas.classList.toggle("oculto", aba !== "vendas");
     viewClientes.classList.toggle("oculto", aba !== "clientes");
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
     viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "clientes" || aba === "cobranca");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
+    viewGastos.classList.toggle("oculto", aba !== "gastos");
+    viewFornecedores.classList.toggle("oculto", aba !== "fornecedores");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
     tabBtnVendas.classList.toggle("ativa", aba === "vendas");
     tabBtnClientes.classList.toggle("ativa", aba === "clientes");
@@ -2101,6 +2427,8 @@
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
+    tabBtnGastos.classList.toggle("ativa", aba === "gastos");
+    tabBtnFornecedores.classList.toggle("ativa", aba === "fornecedores");
     if (aba === "vendas") iniciarVendas();
     if (aba === "clientes") iniciarClientes();
     if (aba === "cobranca") atualizarTelaCobranca();
@@ -2110,6 +2438,8 @@
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
     if (aba === "metas") atualizarTelaMetas();
+    if (aba === "gastos") atualizarTelaGastos();
+    if (aba === "fornecedores") atualizarTelaFornecedores();
   }
 
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
@@ -2117,6 +2447,24 @@
   tabBtnClientes.addEventListener("click", () => mostrarAba("clientes"));
   tabBtnCobranca.addEventListener("click", () => mostrarAba("cobranca"));
   tabBtnUsuarios.addEventListener("click", () => mostrarAba("usuarios"));
+  tabBtnGastos.addEventListener("click", () => mostrarAba("gastos"));
+  tabBtnFornecedores.addEventListener("click", () => mostrarAba("fornecedores"));
+
+  // --- menu Cadastros ---
+  function fecharMenuCadastros() {
+    listaCadastros.classList.add("oculto");
+    btnMenuCadastros.setAttribute("aria-expanded", "false");
+  }
+  btnMenuCadastros.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    const abrindo = listaCadastros.classList.contains("oculto");
+    listaCadastros.classList.toggle("oculto", !abrindo);
+    btnMenuCadastros.setAttribute("aria-expanded", abrindo ? "true" : "false");
+  });
+  document.addEventListener("click", (ev) => {
+    if (!menuCadastros.contains(ev.target)) fecharMenuCadastros();
+  });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharMenuCadastros(); });
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
@@ -2335,11 +2683,19 @@
   }
 
   // ordem das abas na tela; o código é o mesmo de painel_abas no banco
-  const ABAS = [
+  // barra de cima: só consulta e relatório
+  const ABAS_VISUALIZACAO = [
     ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["clientes", () => tabBtnClientes],
     ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo],
-    ["assistencia", () => tabBtnAssistencia], ["devolucao", () => tabBtnDevolucao], ["metas", () => tabBtnMetas]
+    ["assistencia", () => tabBtnAssistencia]
   ];
+  // menu Cadastros: tudo que grava alguma coisa
+  const ABAS_CADASTRO = [
+    ["gastos", () => tabBtnGastos], ["devolucao", () => tabBtnDevolucao],
+    ["fornecedores", () => tabBtnFornecedores], ["metas", () => tabBtnMetas],
+    ["usuarios", () => tabBtnUsuarios]
+  ];
+  const ABAS = ABAS_VISUALIZACAO.concat(ABAS_CADASTRO);
   function podeVerAba(codigo) {
     if (codigo === "usuarios") return meuAcesso.admin;
     return meuAcesso.admin || meuAcesso.abas.indexOf(codigo) >= 0;
@@ -2359,10 +2715,13 @@
     }
     const liberadas = ABAS.filter(([cod]) => podeVerAba(cod)).map(([cod]) => cod);
     ABAS.forEach(([cod, el]) => el().classList.toggle("oculto", !podeVerAba(cod)));
-    tabBtnUsuarios.classList.toggle("oculto", !meuAcesso.admin);
-    semAcesso.classList.toggle("oculto", liberadas.length > 0 || meuAcesso.admin);
+    // o botão Cadastros some inteiro se a pessoa não tem nenhum cadastro liberado
+    const temCadastro = ABAS_CADASTRO.some(([cod]) => podeVerAba(cod));
+    menuCadastros.classList.toggle("oculto", !temCadastro);
+    if (!temCadastro) fecharMenuCadastros();
+    semAcesso.classList.toggle("oculto", liberadas.length > 0);
     if (!abaAtual || abaAtual === "nenhuma" || !podeVerAba(abaAtual)) {
-      mostrarAba(liberadas.length ? liberadas[0] : (meuAcesso.admin ? "usuarios" : "nenhuma"));
+      mostrarAba(liberadas.length ? liberadas[0] : "nenhuma");
     }
   }
 
@@ -2449,9 +2808,19 @@
     }
   }
 
+  function caixasDeAbas(grupo, marcadas, atributos) {
+    const doGrupo = usuariosAbas.filter((a) => (a.grupo || "visualizacao") === grupo);
+    if (!doGrupo.length) return "";
+    const titulo = grupo === "cadastro" ? "Cadastros" : "Telas de consulta";
+    return '<div class="grupo-abas"><span class="grupo-abas-titulo">' + titulo + "</span>" +
+      '<div class="abas-grid">' + doGrupo.map((a) =>
+        '<label class="check-aba"><input type="checkbox" value="' + esc(a.codigo) + '"' + (atributos || "") +
+        (marcadas.indexOf(a.codigo) >= 0 ? " checked" : "") + "> " + esc(a.nome) + "</label>").join("") +
+      "</div></div>";
+  }
+
   function montarCheckboxesNovo() {
-    novoAbas.innerHTML = usuariosAbas.map((a) =>
-      '<label class="check-aba"><input type="checkbox" value="' + esc(a.codigo) + '"> ' + esc(a.nome) + "</label>").join("");
+    novoAbas.innerHTML = caixasDeAbas("visualizacao", [], "") + caixasDeAbas("cadastro", [], "");
   }
 
   function renderUsuarios() {
@@ -2462,12 +2831,11 @@
     corpoUsuarios.innerHTML = usuariosLista.map((u) => {
       const abas = u.admin
         ? '<span class="pill-tipo pill-novo">administrador — vê tudo</span>'
-        : usuariosAbas.map((a) =>
-            '<label class="check-aba"><input type="checkbox" data-user="' + u.user_id + '" value="' + esc(a.codigo) + '"' +
-            (u.abas.includes(a.codigo) ? " checked" : "") + "> " + esc(a.nome) + "</label>").join("");
+        : caixasDeAbas("visualizacao", u.abas, ' data-user="' + u.user_id + '"') +
+          caixasDeAbas("cadastro", u.abas, ' data-user="' + u.user_id + '"');
       return '<tr>' +
         "<td>" + esc(u.nome || "—") + '<div class="atividade-cliente">' + esc(u.email) + "</div></td>" +
-        '<td style="text-align:left;"><div class="abas-grid">' + abas + "</div></td>" +
+        '<td style="text-align:left;">' + abas + "</td>" +
         "<td>" + (u.ultimo_acesso ? fmtData(u.ultimo_acesso.slice(0, 10)) : "nunca entrou") + "</td>" +
         "<td>" + (u.ativo ? '<span class="pct-pill pct-verde">ativo</span>' : '<span class="pct-pill pct-vermelho">inativo</span>') + "</td>" +
         '<td><button type="button" class="btn-secundario" data-acao="ativar" data-user="' + u.user_id + '">' + (u.ativo ? "Desativar" : "Ativar") + "</button></td>" +
@@ -2604,6 +2972,407 @@
       btn.disabled = false;
     }
   });
+
+  // --- SEÇÃO: Gastos de fornecedores (lançar, cadastrar e corrigir) ---
+  // Veio do site "Gastos e Fornecedores", que virou duas telas do menu Cadastros.
+  // Permissões: aba "gastos" lança e corrige; aba "fornecedores" cadastra fornecedor;
+  // quem só tem "assistencia" enxerga os relatórios, mas não grava nada (a trava é do banco).
+  const CATEGORIAS_GASTO = ["Assistência", "Coleta Motoboy", "Concerto Interno", "Outro"];
+  const gastosSemPermissao = document.getElementById("gastos-sem-permissao");
+  const gastosLiberada = document.getElementById("gastos-liberada");
+  const avisoGasto = document.getElementById("aviso-gasto");
+  const formGasto = document.getElementById("form-gasto");
+  const lgFornecedor = document.getElementById("lg-fornecedor");
+  const corpoGastosRecentes = document.getElementById("corpo-gastos-recentes");
+  const fornecedoresSemPermissao = document.getElementById("fornecedores-sem-permissao");
+  const fornecedoresLiberada = document.getElementById("fornecedores-liberada");
+  const avisoFornecedor = document.getElementById("aviso-fornecedor");
+  const formNovoFornecedor = document.getElementById("form-novo-fornecedor");
+  const corpoFornecedores = document.getElementById("corpo-fornecedores");
+  const overlayGasto = document.getElementById("overlay-gasto");
+  const formEditarGasto = document.getElementById("form-editar-gasto");
+  const avisoEditarGasto = document.getElementById("aviso-editar-gasto");
+  let listaFornecedores = [];
+  let gastosRecentes = [];
+  let excluirGastoPendente = null;
+
+  function avisar(el, tipo, texto) { el.textContent = texto; el.className = "aviso mostrar " + tipo; }
+  function limparAviso(el) { el.className = "aviso"; }
+  function numeroOuNulo(v) { if (v === "" || v === null || v === undefined) return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
+  function textoOuNulo(v) { const t = (v || "").trim(); return t === "" ? null : t; }
+
+  async function buscarFornecedores(somenteAtivos) {
+    const filtro = somenteAtivos ? "&ativo=eq.true" : "";
+    const res = await leitura(SUPABASE_URL + "/rest/v1/fornecedores?select=*" + filtro + "&order=nome.asc");
+    if (!res.ok) throw new Error("HTTP " + res.status + " ao ler fornecedores");
+    return res.json();
+  }
+
+  // ---- Lançar Gasto ----
+  async function atualizarTelaGastos() {
+    const pode = podeVerAba("gastos");
+    gastosSemPermissao.classList.toggle("oculto", pode);
+    gastosLiberada.classList.toggle("oculto", !pode);
+    if (!pode) return;
+    document.getElementById("lg-data").value = hojeISO();
+    try {
+      listaFornecedores = await buscarFornecedores(true);
+      lgFornecedor.innerHTML = '<option value="" disabled selected>Selecione...</option>' +
+        listaFornecedores.map((f) => '<option value="' + esc(f.nome) + '">' + esc(f.nome) + "</option>").join("");
+      if (!listaFornecedores.length) {
+        lgFornecedor.innerHTML = '<option value="" disabled selected>Nenhum fornecedor ativo</option>';
+      }
+    } catch (err) {
+      avisar(avisoGasto, "erro", "Não foi possível carregar os fornecedores: " + err.message);
+    }
+    carregarGastosRecentes();
+  }
+
+  async function carregarGastosRecentes() {
+    try {
+      const res = await leitura(SUPABASE_URL + "/rest/v1/fornecedores_gastos?select=*&order=data.desc,id.desc&limit=30");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      gastosRecentes = await res.json();
+      corpoGastosRecentes.innerHTML = gastosRecentes.length ? gastosRecentes.map((l) =>
+        "<tr>" +
+          "<td>" + fmtData(l.data) + "</td>" +
+          '<td style="text-align:left;">' + esc(l.fornecedor) + "</td>" +
+          '<td style="text-align:left;">' + esc(l.categoria || "—") + "</td>" +
+          '<td style="text-align:left;">' + esc(l.os || "—") + "</td>" +
+          "<td>" + fmtMoeda(l.valor_os) + "</td>" +
+          "<td>" + fmtMoeda(l.valor_terceiro) + "</td>" +
+          '<td style="text-align:left;">' + esc(l.nf || "—") + "</td>" +
+          '<td><button type="button" class="btn-secundario" data-editar-gasto="' + l.id + '">Editar</button></td>' +
+        "</tr>").join("")
+        : '<tr><td colspan="8" class="estado-vazio">Nenhum lançamento ainda.</td></tr>';
+    } catch (err) {
+      corpoGastosRecentes.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(err.message) + "</small></td></tr>";
+    }
+  }
+
+  formGasto.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    limparAviso(avisoGasto);
+    const btn = document.getElementById("btn-lancar-gasto");
+    const data = document.getElementById("lg-data").value;
+    const corpo = {
+      data: data,
+      competencia: data ? data.slice(0, 8) + "01" : null,
+      fornecedor: lgFornecedor.value,
+      categoria: document.getElementById("lg-categoria").value,
+      os: textoOuNulo(document.getElementById("lg-os").value),
+      valor_os: numeroOuNulo(document.getElementById("lg-valor-os").value),
+      valor_terceiro: numeroOuNulo(document.getElementById("lg-valor-terceiro").value),
+      nf: textoOuNulo(document.getElementById("lg-nf").value),
+      observacao: textoOuNulo(document.getElementById("lg-obs").value)
+    };
+    btn.disabled = true;
+    try {
+      const res = await fetch(SUPABASE_URL + "/rest/v1/fornecedores_gastos", {
+        method: "POST", headers: headersEscrita(), body: JSON.stringify(corpo)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      formGasto.reset();
+      document.getElementById("lg-data").value = hojeISO();
+      avisar(avisoGasto, "sucesso", "Gasto lançado.");
+      gastosCarregados = false; // a aba de relatórios recarrega na próxima abertura
+      carregarGastosRecentes();
+    } catch (err) {
+      avisar(avisoGasto, "erro", "Não foi possível lançar: " + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- Cadastro de Fornecedores ----
+  async function atualizarTelaFornecedores() {
+    const pode = podeVerAba("fornecedores");
+    fornecedoresSemPermissao.classList.toggle("oculto", pode);
+    fornecedoresLiberada.classList.toggle("oculto", !pode);
+    if (!pode) return;
+    try {
+      const lista = await buscarFornecedores(false);
+      corpoFornecedores.innerHTML = lista.length ? lista.map((f) =>
+        "<tr>" +
+          "<td>" + esc(f.nome) + "</td>" +
+          '<td style="text-align:left;"><input type="text" class="obs-fornecedor" data-id="' + f.id + '" value="' + esc(f.observacao || "") + '" placeholder="sem observação"></td>' +
+          '<td><input type="checkbox" class="ativo-fornecedor" data-id="' + f.id + '"' + (f.ativo ? " checked" : "") + "></td>" +
+        "</tr>").join("")
+        : '<tr><td colspan="3" class="estado-vazio">Nenhum fornecedor cadastrado.</td></tr>';
+    } catch (err) {
+      corpoFornecedores.innerHTML = '<tr><td colspan="3" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(err.message) + "</small></td></tr>";
+    }
+  }
+
+  async function salvarFornecedor(id, mudanca) {
+    const res = await fetch(SUPABASE_URL + "/rest/v1/fornecedores?id=eq." + id, {
+      method: "PATCH", headers: headersEscrita(), body: JSON.stringify(mudanca)
+    });
+    if (!res.ok) throw new Error(await res.text());
+  }
+
+  corpoFornecedores.addEventListener("change", async (ev) => {
+    const chk = ev.target.closest("input.ativo-fornecedor");
+    if (!chk) return;
+    chk.disabled = true;
+    try {
+      await salvarFornecedor(chk.dataset.id, { ativo: chk.checked });
+      avisar(avisoFornecedor, "sucesso", chk.checked ? "Fornecedor ativado." : "Fornecedor desativado.");
+    } catch (err) {
+      chk.checked = !chk.checked;
+      avisar(avisoFornecedor, "erro", "Não foi possível salvar: " + err.message);
+    } finally {
+      chk.disabled = false;
+    }
+  });
+
+  let timerObs = null;
+  corpoFornecedores.addEventListener("input", (ev) => {
+    const inp = ev.target.closest("input.obs-fornecedor");
+    if (!inp) return;
+    clearTimeout(timerObs);
+    timerObs = setTimeout(async () => {
+      try {
+        await salvarFornecedor(inp.dataset.id, { observacao: inp.value.trim() || null });
+        avisar(avisoFornecedor, "sucesso", "Observação salva.");
+      } catch (err) {
+        avisar(avisoFornecedor, "erro", "Não foi possível salvar: " + err.message);
+      }
+    }, 800);
+  });
+
+  formNovoFornecedor.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    limparAviso(avisoFornecedor);
+    const btn = document.getElementById("btn-novo-fornecedor");
+    const nome = document.getElementById("cf-nome").value.trim();
+    const obs = document.getElementById("cf-obs").value.trim();
+    btn.disabled = true;
+    try {
+      const res = await fetch(SUPABASE_URL + "/rest/v1/fornecedores", {
+        method: "POST", headers: headersEscrita(),
+        body: JSON.stringify({ nome: nome, observacao: obs || null, ativo: true })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      formNovoFornecedor.reset();
+      avisar(avisoFornecedor, "sucesso", "Fornecedor cadastrado.");
+      atualizarTelaFornecedores();
+    } catch (err) {
+      avisar(avisoFornecedor, "erro", "Não foi possível cadastrar: " + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- corrigir um lançamento ----
+  function abrirEdicaoGasto(id) {
+    const l = (gastosRecentes.concat(todosOsGastos)).find((x) => String(x.id) === String(id));
+    if (!l) return;
+    limparAviso(avisoEditarGasto);
+    excluirGastoPendente = null;
+    document.getElementById("ed-id").value = l.id;
+    document.getElementById("ed-data").value = l.data || "";
+    document.getElementById("ed-categoria").value = CATEGORIAS_GASTO.indexOf(l.categoria) >= 0 ? l.categoria : "Outro";
+    document.getElementById("ed-os").value = l.os || "";
+    document.getElementById("ed-valor-os").value = l.valor_os == null ? "" : l.valor_os;
+    document.getElementById("ed-valor-terceiro").value = l.valor_terceiro == null ? "" : l.valor_terceiro;
+    document.getElementById("ed-nf").value = l.nf || "";
+    document.getElementById("ed-obs").value = l.observacao || "";
+    const sel = document.getElementById("ed-fornecedor");
+    const nomes = listaFornecedores.map((f) => f.nome);
+    if (l.fornecedor && nomes.indexOf(l.fornecedor) < 0) nomes.unshift(l.fornecedor);
+    sel.innerHTML = nomes.map((n) => '<option value="' + esc(n) + '">' + esc(n) + "</option>").join("");
+    sel.value = l.fornecedor || "";
+    overlayGasto.classList.remove("oculto");
+  }
+  function fecharEdicaoGasto() { overlayGasto.classList.add("oculto"); excluirGastoPendente = null; }
+  document.getElementById("btn-cancelar-gasto").addEventListener("click", fecharEdicaoGasto);
+  overlayGasto.addEventListener("click", (ev) => { if (ev.target === overlayGasto) fecharEdicaoGasto(); });
+  corpoGastosRecentes.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-editar-gasto]");
+    if (btn) abrirEdicaoGasto(btn.dataset.editarGasto);
+  });
+
+  formEditarGasto.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const id = document.getElementById("ed-id").value;
+    const data = document.getElementById("ed-data").value;
+    const corpo = {
+      data: data,
+      competencia: data ? data.slice(0, 8) + "01" : null,
+      fornecedor: document.getElementById("ed-fornecedor").value,
+      categoria: document.getElementById("ed-categoria").value,
+      os: textoOuNulo(document.getElementById("ed-os").value),
+      valor_os: numeroOuNulo(document.getElementById("ed-valor-os").value),
+      valor_terceiro: numeroOuNulo(document.getElementById("ed-valor-terceiro").value),
+      nf: textoOuNulo(document.getElementById("ed-nf").value),
+      observacao: textoOuNulo(document.getElementById("ed-obs").value)
+    };
+    try {
+      const res = await fetch(SUPABASE_URL + "/rest/v1/fornecedores_gastos?id=eq." + id, {
+        method: "PATCH", headers: headersEscrita(), body: JSON.stringify(corpo)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      fecharEdicaoGasto();
+      gastosCarregados = false;
+      carregarGastosRecentes();
+      if (abaAtual === "assistencia") iniciarAssistencia();
+    } catch (err) {
+      avisar(avisoEditarGasto, "erro", "Não foi possível salvar: " + err.message);
+    }
+  });
+
+  document.getElementById("btn-excluir-gasto").addEventListener("click", async () => {
+    const id = document.getElementById("ed-id").value;
+    if (excluirGastoPendente !== id) {
+      excluirGastoPendente = id;
+      avisar(avisoEditarGasto, "erro", "Clique em Excluir de novo para confirmar. Isso não tem volta.");
+      return;
+    }
+    try {
+      const res = await fetch(SUPABASE_URL + "/rest/v1/fornecedores_gastos?id=eq." + id, {
+        method: "DELETE", headers: headersEscrita()
+      });
+      if (!res.ok) throw new Error(await res.text());
+      fecharEdicaoGasto();
+      gastosCarregados = false;
+      carregarGastosRecentes();
+      if (abaAtual === "assistencia") iniciarAssistencia();
+    } catch (err) {
+      avisar(avisoEditarGasto, "erro", "Não foi possível excluir: " + err.message);
+    }
+  });
+
+  // --- sub-abas da aba Gastos e Assistência ---
+  const assistSubabas = document.getElementById("assist-subabas");
+  const assistMes = document.getElementById("assist-mes");
+  const assistLancamentos = document.getElementById("assist-lancamentos");
+  const assistAnual = document.getElementById("assist-anual");
+  const corpoGastosFiltro = document.getElementById("corpo-gastos-filtro");
+  const gastosKpis = document.getElementById("gastos-kpis");
+  let assistSub = "mes";
+  let filtrosGastosProntos = false;
+
+  function mostrarSubAssist(sub) {
+    assistSub = sub;
+    assistMes.classList.toggle("oculto", sub !== "mes");
+    assistLancamentos.classList.toggle("oculto", sub !== "lancamentos");
+    assistAnual.classList.toggle("oculto", sub !== "anual");
+    assistSubabas.querySelectorAll("button").forEach((b) => b.classList.toggle("ativa", b.dataset.sub === sub));
+    if (sub === "lancamentos") renderGastosFiltro();
+    if (sub === "anual") renderResumoAnual();
+  }
+  assistSubabas.addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-sub]");
+    if (b) mostrarSubAssist(b.dataset.sub);
+  });
+
+  function margemGasto(l) {
+    const os = n(l.valor_os), t = n(l.valor_terceiro);
+    return (l.valor_os == null && l.valor_terceiro == null) ? null : os - t;
+  }
+
+  function prepararFiltrosGastos() {
+    if (filtrosGastosProntos) return;
+    const comp = [...new Set(todosOsGastos.map((l) => l.competencia).filter(Boolean))].sort().reverse();
+    document.getElementById("fg-competencia").innerHTML = '<option value="">Todos</option>' +
+      comp.map((c) => '<option value="' + c + '">' + nomeMes(c) + "</option>").join("");
+    const forn = [...new Set(todosOsGastos.map((l) => l.fornecedor).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    document.getElementById("fg-fornecedor").innerHTML = '<option value="">Todos</option>' +
+      forn.map((f) => '<option value="' + esc(f) + '">' + esc(f) + "</option>").join("");
+    const cat = [...new Set(todosOsGastos.map((l) => l.categoria).filter(Boolean))].sort();
+    document.getElementById("fg-categoria").innerHTML = '<option value="">Todas</option>' +
+      cat.map((c) => '<option value="' + esc(c) + '">' + esc(c) + "</option>").join("");
+    ["fg-competencia", "fg-fornecedor", "fg-categoria"].forEach((id) =>
+      document.getElementById(id).addEventListener("change", renderGastosFiltro));
+    document.getElementById("fg-busca").addEventListener("input", renderGastosFiltro);
+    filtrosGastosProntos = true;
+  }
+
+  function renderGastosFiltro() {
+    if (!gastosCarregados) return;
+    prepararFiltrosGastos();
+    const comp = document.getElementById("fg-competencia").value;
+    const forn = document.getElementById("fg-fornecedor").value;
+    const cat = document.getElementById("fg-categoria").value;
+    const busca = document.getElementById("fg-busca").value.trim().toLowerCase();
+    const podeEditar = podeVerAba("gastos");
+    document.getElementById("col-acao-gasto").textContent = podeEditar ? "Ação" : "";
+
+    const linhas = todosOsGastos.filter((l) => {
+      if (comp && l.competencia !== comp) return false;
+      if (forn && l.fornecedor !== forn) return false;
+      if (cat && l.categoria !== cat) return false;
+      if (busca) {
+        const alvo = ((l.nf || "") + " " + (l.os || "") + " " + (l.observacao || "") + " " + (l.fornecedor || "")).toLowerCase();
+        if (!alvo.includes(busca)) return false;
+      }
+      return true;
+    });
+
+    const totOs = linhas.reduce((s, l) => s + n(l.valor_os), 0);
+    const totTerceiro = linhas.reduce((s, l) => s + n(l.valor_terceiro), 0);
+    gastosKpis.innerHTML = [
+      { rotulo: "Lançamentos", valor: linhas.length.toLocaleString("pt-BR"), nota: comp ? nomeMes(comp) : "todos os meses" },
+      { rotulo: "Total cobrado (OS)", valor: fmtMoeda(totOs), nota: "" },
+      { rotulo: "Total pago a terceiros", valor: fmtMoeda(totTerceiro), nota: "" },
+      { rotulo: "Margem", valor: fmtMoeda(totOs - totTerceiro), nota: totOs ? Math.round((totOs - totTerceiro) / totOs * 100) + "% do cobrado" : "" }
+    ].map((k) => '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>").join("");
+
+    corpoGastosFiltro.innerHTML = linhas.length ? linhas.map((l) => {
+      const m = margemGasto(l);
+      return "<tr>" +
+        "<td>" + fmtData(l.data) + "</td>" +
+        '<td style="text-align:left;">' + esc(l.fornecedor) + "</td>" +
+        '<td style="text-align:left;">' + esc(l.categoria || "—") + "</td>" +
+        '<td style="text-align:left;">' + esc(l.os || "—") + "</td>" +
+        "<td>" + fmtMoeda(l.valor_os) + "</td>" +
+        "<td>" + fmtMoeda(l.valor_terceiro) + "</td>" +
+        "<td>" + (m == null ? "—" : fmtMoeda(m)) + "</td>" +
+        '<td style="text-align:left;">' + esc(l.nf || "—") + "</td>" +
+        '<td style="text-align:left;">' + esc(l.observacao || "—") + "</td>" +
+        "<td>" + (podeEditar ? '<button type="button" class="btn-secundario" data-editar-gasto="' + l.id + '">Editar</button>' : "") + "</td>" +
+      "</tr>";
+    }).join("") : '<tr><td colspan="10" class="estado-vazio">Nenhum lançamento com esses filtros.</td></tr>';
+  }
+
+  corpoGastosFiltro.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-editar-gasto]");
+    if (btn && podeVerAba("gastos")) abrirEdicaoGasto(btn.dataset.editarGasto);
+  });
+
+  function renderResumoAnual() {
+    if (!gastosCarregados) return;
+    const meses = [...new Set(todosOsGastos.map((l) => l.competencia).filter(Boolean))].sort().reverse().slice(0, 12);
+    const mesesAsc = [...meses].sort();
+    const fornecedores = [...new Set(todosOsGastos.map((l) => l.fornecedor).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+    const soma = (filtro, campo) => todosOsGastos.filter(filtro).reduce((s, l) => s + n(l[campo]), 0);
+    let html = "<thead><tr><th style='text-align:left;'>Fornecedor</th>" +
+      mesesAsc.map((m) => "<th>" + nomeMes(m).replace(" / ", "/") + "</th>").join("") + "<th>Total</th></tr></thead><tbody>";
+    fornecedores.forEach((f) => {
+      const total = soma((l) => l.fornecedor === f && mesesAsc.includes(l.competencia), "valor_terceiro");
+      if (!total) return;
+      html += "<tr><td>" + esc(f) + "</td>" +
+        mesesAsc.map((m) => "<td>" + fmtMoeda(soma((l) => l.fornecedor === f && l.competencia === m, "valor_terceiro")) + "</td>").join("") +
+        "<td><strong>" + fmtMoeda(total) + "</strong></td></tr>";
+    });
+    html += "<tr class='total'><td>TOTAL</td>" +
+      mesesAsc.map((m) => "<td>" + fmtMoeda(soma((l) => l.competencia === m, "valor_terceiro")) + "</td>").join("") +
+      "<td>" + fmtMoeda(soma((l) => mesesAsc.includes(l.competencia), "valor_terceiro")) + "</td></tr></tbody>";
+    document.getElementById("tabela-anual-fornecedor").innerHTML = html;
+
+    let g = "<thead><tr><th style='text-align:left;'>Mês</th><th>Lançamentos</th><th>Cobrado (OS)</th><th>Pago a terceiros</th><th>Margem</th><th>% margem</th></tr></thead><tbody>";
+    mesesAsc.slice().reverse().forEach((m) => {
+      const doMes = todosOsGastos.filter((l) => l.competencia === m);
+      const os = doMes.reduce((s, l) => s + n(l.valor_os), 0);
+      const t = doMes.reduce((s, l) => s + n(l.valor_terceiro), 0);
+      g += "<tr><td>" + nomeMes(m) + "</td><td>" + doMes.length + "</td><td>" + fmtMoeda(os) + "</td><td>" + fmtMoeda(t) +
+           "</td><td>" + fmtMoeda(os - t) + "</td><td>" + (os ? Math.round((os - t) / os * 100) + "%" : "—") + "</td></tr>";
+    });
+    g += "</tbody>";
+    document.getElementById("tabela-anual-geral").innerHTML = g;
+  }
 
   // --- SEÇÃO: Em Aberto (cobrança) — exige login + claim pode_ver_cobranca ---
   // Os dados vêm da função cobranca_titulos_vencidos() (security definer), que confere o claim
