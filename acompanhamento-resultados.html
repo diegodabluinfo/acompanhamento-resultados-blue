@@ -651,6 +651,7 @@
         </div>
 
         <div class="rodape-nota" id="nota-vendas"></div>
+        <div class="rodape-nota">Clique no nome do vendedor para ver os pedidos que formaram o faturamento do dia.</div>
       </div>
 
       <!-- ===== ABA: Performance (esforço x venda) ===== -->
@@ -3655,7 +3656,68 @@
     return [...mapa.entries()].filter((e) => e[1] > 0).sort((a, b) => a[0] < b[0] ? -1 : 1);
   }
 
+  // --- pedidos do vendedor no dia (abre ao clicar na linha) ---
+  const pedidosDoDia = new Map();      // "data|codigo" -> lista de pedidos
+  let vendasAbertos = new Set();       // códigos abertos no dia que está na tela
+
+  async function carregarPedidosDoVendedor(dataISO, codigo) {
+    const chave = dataISO + "|" + codigo;
+    if (pedidosDoDia.has(chave)) return;
+    pedidosDoDia.set(chave, "carregando");
+    try {
+      const campos = "pedido,nota_fiscal,cliente,cidade,uf,faturado,lucro,margem_pct,hora_fatura,itens,forma_pagamento,so_servico,e_commerce,market_place,os";
+      const res = await leitura(SUPABASE_URL + "/rest/v1/v_pedidos_dia?select=" + campos +
+        "&data=eq." + dataISO + "&codigo=eq." + codigo + "&order=hora_fatura.asc");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      pedidosDoDia.set(chave, await res.json());
+    } catch (err) {
+      pedidosDoDia.set(chave, { erro: (err && err.message) ? err.message : String(err) });
+    }
+    if (vendasDataSel === dataISO) renderVendasDia(dataISO);
+  }
+
+  function linhaDetalhePedidos(dataISO, codigo) {
+    const dados = pedidosDoDia.get(dataISO + "|" + codigo);
+    let interno;
+    if (dados === "carregando" || dados === undefined) {
+      interno = '<div class="estado-vazio" style="padding:14px;">Carregando os pedidos...</div>';
+    } else if (dados && dados.erro) {
+      interno = '<div class="estado-vazio" style="padding:14px;">Não foi possível carregar os pedidos.<br><small style="color:var(--erro)">' + esc(dados.erro) + "</small></div>";
+    } else if (!dados.length) {
+      interno = '<div class="estado-vazio" style="padding:14px;">Nenhum pedido faturado.</div>';
+    } else {
+      const totalFat = dados.reduce((t, x) => t + n(x.faturado), 0);
+      const totalLucro = dados.reduce((t, x) => t + n(x.lucro), 0);
+      interno = '<div class="tabela-scroll"><table class="subtabela"><thead><tr>' +
+        '<th>Hora</th><th>Pedido</th><th>NF</th><th style="text-align:left;">Cliente</th><th>Itens</th><th>Faturado</th><th>Margem</th><th style="text-align:left;">Pagamento</th>' +
+        "</tr></thead><tbody>" +
+        dados.map((x) => {
+          const selos =
+            (x.so_servico === "S" ? ' <span class="pill-tipo pill-novo">serviço</span>' : "") +
+            (x.e_commerce === "S" ? ' <span class="pill-tipo pill-reativado">e-commerce</span>' : "") +
+            (x.market_place === "S" ? ' <span class="pill-tipo pill-reativado">marketplace</span>' : "");
+          return "<tr>" +
+            "<td>" + hhmm(x.hora_fatura) + "</td>" +
+            "<td>" + esc(x.pedido) + (x.os ? ' <span class="atividade-cliente">OS ' + esc(x.os) + "</span>" : "") + "</td>" +
+            "<td>" + esc(x.nota_fiscal || "—") + "</td>" +
+            '<td style="text-align:left;">' + esc(x.cliente || "—") + selos +
+              (x.cidade ? '<div class="atividade-cliente">' + esc([x.cidade, x.uf].filter(Boolean).join(" / ")) + "</div>" : "") + "</td>" +
+            "<td>" + fmtInt(x.itens) + "</td>" +
+            "<td>" + fmtMoeda(x.faturado) + "</td>" +
+            "<td>" + (x.margem_pct === null || x.margem_pct === undefined ? "—" : fmtDec(n(x.margem_pct) * 100, 1) + "%") + "</td>" +
+            '<td style="text-align:left;">' + esc(x.forma_pagamento || "—") + "</td>" +
+          "</tr>";
+        }).join("") +
+        '<tr class="total"><td colspan="5">' + dados.length + (dados.length === 1 ? " pedido" : " pedidos") + "</td>" +
+        "<td>" + fmtMoeda(totalFat) + "</td>" +
+        "<td>" + (totalFat ? fmtDec((totalLucro / totalFat) * 100, 1) + "%" : "—") + "</td><td></td></tr>" +
+        "</tbody></table></div>";
+    }
+    return '<tr class="detalhe-dia"><td colspan="8">' + interno + "</td></tr>";
+  }
+
   function renderVendasDia(dataISO) {
+    if (dataISO !== vendasDataSel) vendasAbertos = new Set();
     vendasDataSel = dataISO;
     seletorDataVendas.value = dataISO;
     const linhas = vendasLinhas.filter((l) => l.data === dataISO)
@@ -3696,7 +3758,10 @@
       const fat = n(l.faturado);
       const largura = maiorFat > 0 ? Math.max(0, (fat / maiorFat) * 100) : 0;
       const margem = l.margem_pct === null || l.margem_pct === undefined ? "—" : fmtDec(n(l.margem_pct) * 100, 1) + "%";
-      return '<tr' + (fat > 0 ? "" : ' class="sem-venda"') + ' title="' + esc(l.nome_completo) + '">' +
+      const aberto = vendasAbertos.has(String(l.codigo));
+      const classes = fat > 0 ? ("dia-clicavel" + (aberto ? " aberta" : "")) : "sem-venda";
+      return '<tr class="' + classes + '"' + (fat > 0 ? ' data-codigo="' + esc(l.codigo) + '"' : "") +
+        ' title="' + esc(l.nome_completo) + (fat > 0 ? " — clique para ver os pedidos" : "") + '">' +
         "<td>" + esc(l.nome_curto) + "</td>" +
         '<td class="celula-barra"><div class="barra-part" style="width:' + largura.toFixed(1) + '%"></div><span>' + fmtMoeda(fat) + "</span></td>" +
         "<td>" + (fat > 0 ? fmtDec(n(l.participacao) * 100, 1) + "%" : "—") + "</td>" +
@@ -3705,7 +3770,7 @@
         "<td>" + fmtInt(l.clientes) + "</td>" +
         "<td>" + margem + "</td>" +
         "<td>" + hhmm(l.ultima_venda) + "</td>" +
-        "</tr>";
+        "</tr>" + (aberto ? linhaDetalhePedidos(dataISO, l.codigo) : "");
     }).join("") +
       '<tr class="total"><td>TOTAL</td><td>' + fmtMoeda(faturado) + "</td><td>100,0%</td><td>" + fmtInt(pedidos) +
       "</td><td>" + (pedidos ? fmtMoeda(faturado / pedidos) : "—") + "</td><td>" + fmtInt(clientes) +
@@ -3713,6 +3778,20 @@
 
     renderGraficoDias();
   }
+
+  corpoVendas.addEventListener("click", (ev) => {
+    const tr = ev.target.closest("tr.dia-clicavel");
+    if (!tr || !tr.dataset.codigo) return;
+    const codigo = tr.dataset.codigo;
+    if (vendasAbertos.has(codigo)) {
+      vendasAbertos.delete(codigo);
+      renderVendasDia(vendasDataSel);
+    } else {
+      vendasAbertos.add(codigo);
+      renderVendasDia(vendasDataSel);
+      carregarPedidosDoVendedor(vendasDataSel, codigo);
+    }
+  });
 
   function renderGraficoDias() {
     const dias = diasComVenda().slice(-20);
