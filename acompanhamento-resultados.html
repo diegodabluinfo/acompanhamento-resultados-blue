@@ -313,6 +313,8 @@
   .atraso-velho { background: #eef1f6; color: var(--texto-suave); }
   .atraso-avencer { background: #e4eefc; color: #1a4f94; }
   .pill-protesto { background: var(--vermelho); color: #fff; }
+  .subtabela tr.tit-protestado td { background: var(--vermelho-fundo); }
+  .subtabela .col-protesto { text-align: center; color: var(--texto-suave, #9aa3b2); }
   .pill-bloq { background: #eef1f6; color: var(--texto-suave); }
   tr.cli-clicavel { cursor: pointer; }
   tr.cli-clicavel:hover td { background: #f1f6ff; }
@@ -3577,18 +3579,18 @@
       "</div>";
     const titulos = [...c.titulos].sort((a, b) => (b.dias ?? -1) - (a.dias ?? -1));
     const linhas = titulos.map((t) =>
-      '<tr class="' + (t.dias == null ? "a-vencer" : "") + '">' +
+      '<tr class="' + [t.dias == null ? "a-vencer" : "", t.protesto === "S" ? "tit-protestado" : ""].join(" ").trim() + '">' +
         "<td>" + esc(t.titulo) + "</td>" +
         "<td>" + esc(t.nf || "—") + "</td>" +
         "<td>" + fmtData(t.emissao) + "</td>" +
         "<td>" + (t.vencimento ? fmtData(t.vencimento) : "data inválida") + "</td>" +
         "<td>" + pillAtraso(t.dias) + "</td>" +
+        '<td class="col-protesto">' + (t.protesto === "S" ? '<span class="pill-tipo pill-protesto">protestado</span>' : "—") + "</td>" +
         "<td>" + fmtMoeda(t.valor) + "</td>" +
         "<td>" + esc(t.nossonr || "—") + "</td>" +
-        "<td>" + (t.protesto === "S" ? '<span class="pill-tipo pill-protesto">protestado</span>' : "") + "</td>" +
       "</tr>").join("");
     return '<tr class="detalhe-cli"><td colspan="8">' + contato +
-      '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Atraso</th><th>A receber</th><th>Nosso nº</th><th></th></tr></thead><tbody>' +
+      '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Atraso</th><th class="col-protesto">Protesto</th><th>A receber</th><th>Nosso nº</th></tr></thead><tbody>' +
       linhas + "</tbody></table></div></td></tr>";
   }
 
