@@ -329,6 +329,17 @@
   .subtabela td, .subtabela th { text-align: right; }
   .subtabela td:first-child, .subtabela th:first-child { text-align: left; }
   .subtabela .col-boleto { text-align: center; }
+  #cobranca-por-vendedor-card { margin-bottom: 16px; }
+  .resumo-vend-titulo { padding: 12px 14px 4px; font-weight: 700; font-size: 0.9rem; color: var(--texto); }
+  .resumo-vend-titulo span { font-weight: 400; font-size: 0.76rem; color: var(--texto-suave); margin-left: 8px; }
+  tr.vend-clicavel { cursor: pointer; }
+  tr.vend-clicavel:hover td { background: #f1f6ff; }
+  tr.vend-clicavel.selecionado td { background: #e4eefc; }
+  tr.vend-clicavel.selecionado td:first-child { box-shadow: inset 3px 0 0 var(--azul); }
+  .tabela-resumo-vend .col-barra { min-width: 220px; text-align: left; }
+  .barra-vend { position: relative; height: 22px; display: flex; align-items: center; }
+  .barra-vend span { position: absolute; left: 0; top: 3px; bottom: 3px; background: #dbe7fb; border-radius: 4px; }
+  .barra-vend b { position: relative; padding-left: 6px; font-variant-numeric: tabular-nums; }
   .btn-2via { font: inherit; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); cursor: pointer; white-space: nowrap; }
   .btn-2via:hover { background: var(--azul); color: #fff; }
   .acoes-boleto { display: inline-flex; gap: 6px; }
@@ -860,6 +871,26 @@
           </div>
 
           <div class="kpi-grid" id="cobranca-kpis"></div>
+
+          <div class="card-tabela" id="cobranca-por-vendedor-card">
+            <div class="resumo-vend-titulo">Vencido por vendedor <span>clique no vendedor para ver só a carteira dele</span></div>
+            <div class="tabela-scroll">
+              <table class="tabela-resumo-vend">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Vendedor</th>
+                    <th>Clientes</th>
+                    <th>Títulos</th>
+                    <th style="text-align:left;">Vencido</th>
+                    <th>% do total</th>
+                    <th>Há mais de 30 dias</th>
+                    <th>Maior atraso</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-cobranca-vendedor"></tbody>
+              </table>
+            </div>
+          </div>
 
           <div class="card-tabela">
             <div class="tabela-scroll">
@@ -3505,8 +3536,54 @@
   }
   function fmtIntBR(n) { return Number(n || 0).toLocaleString("pt-BR"); }
 
+  // Resumo por vendedor: respeita a faixa de atraso, ignora o filtro de vendedor e a busca (é a visão geral).
+  function renderResumoVendedor() {
+    const corpo = document.getElementById("corpo-cobranca-vendedor");
+    const mapa = new Map();
+    for (const c of cobrancaLinhas) {
+      const venc = c.titulos.filter((t) => naFaixa(t.dias));
+      if (!venc.length) continue;
+      let v = mapa.get(c.vendedor);
+      if (!v) { v = { nome: c.vendedor, clientes: 0, titulos: 0, vencido: 0, mais30: 0, maior: 0 }; mapa.set(c.vendedor, v); }
+      v.clientes++;
+      v.titulos += venc.length;
+      for (const t of venc) {
+        v.vencido += t.valor;
+        if (t.dias > 30) v.mais30 += t.valor;
+        if (t.dias > v.maior) v.maior = t.dias;
+      }
+    }
+    const lista = [...mapa.values()].sort((a, b) => b.vencido - a.vencido);
+    const total = lista.reduce((s, v) => s + v.vencido, 0);
+    const maxV = lista.length ? lista[0].vencido : 0;
+    const sel = cobVendedor.value;
+    if (!lista.length) { corpo.innerHTML = '<tr><td colspan="7" class="estado-vazio">Nenhum título vencido nesta faixa.</td></tr>'; return; }
+    corpo.innerHTML = lista.map((v) => {
+      const pct = total ? v.vencido / total * 100 : 0;
+      return '<tr class="vend-clicavel' + (sel === v.nome ? " selecionado" : "") + '" data-vendedor="' + esc(v.nome) + '">' +
+        '<td style="text-align:left;"><strong>' + esc(v.nome) + "</strong></td>" +
+        "<td>" + fmtIntBR(v.clientes) + "</td>" +
+        "<td>" + fmtIntBR(v.titulos) + "</td>" +
+        '<td class="col-barra"><div class="barra-vend"><span style="width:' + (maxV ? (v.vencido / maxV * 100).toFixed(1) : 0) + '%"></span><b>' + fmtMoeda(v.vencido) + "</b></div></td>" +
+        "<td>" + pct.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%</td>" +
+        "<td>" + (v.mais30 ? fmtMoeda(v.mais30) : "—") + "</td>" +
+        "<td>" + pillAtraso(v.maior) + "</td>" +
+        "</tr>";
+    }).join("") +
+      '<tr class="total"><td style="text-align:left;">TOTAL</td><td>' + fmtIntBR(lista.reduce((s, v) => s + v.clientes, 0)) + "</td><td>" +
+      fmtIntBR(lista.reduce((s, v) => s + v.titulos, 0)) + '</td><td style="text-align:left;">' + fmtMoeda(total) + "</td><td>100%</td><td>" +
+      fmtMoeda(lista.reduce((s, v) => s + v.mais30, 0)) + "</td><td></td></tr>";
+  }
+  document.getElementById("corpo-cobranca-vendedor").addEventListener("click", (ev) => {
+    const tr = ev.target.closest("tr.vend-clicavel");
+    if (!tr) return;
+    cobVendedor.value = cobVendedor.value === tr.dataset.vendedor ? "" : tr.dataset.vendedor;
+    renderCobranca();
+  });
+
   function renderCobranca() {
     if (!cobrancaLinhas) return;
+    renderResumoVendedor();
     const vend = cobVendedor.value;
     const busca = cobBusca.value.trim().toLowerCase();
     const buscaDig = busca.replace(/\D/g, "");
