@@ -328,6 +328,10 @@
   .contato-cli b { color: var(--texto); }
   .subtabela td, .subtabela th { text-align: right; }
   .subtabela td:first-child, .subtabela th:first-child { text-align: left; }
+  .subtabela .col-boleto { text-align: center; }
+  .btn-2via { font: inherit; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); cursor: pointer; white-space: nowrap; }
+  .btn-2via:hover { background: var(--azul); color: #fff; }
+  .sv-nao { font-size: 0.72rem; color: var(--texto-suave); }
   tr.a-vencer td { color: var(--texto-suave); }
   /* --- Aba Ritmo Comercial --- */
   #view-ritmo {
@@ -3591,13 +3595,16 @@
         '<td class="col-protesto">' + (t.protesto === "S" ? '<span class="pill-tipo pill-protesto">protestado</span>' : "—") + "</td>" +
         "<td>" + fmtMoeda(t.valor) + "</td>" +
         "<td>" + esc(t.nossonr || "—") + "</td>" +
+        '<td class="col-boleto">' + botaoSegundaVia(t) + "</td>" +
       "</tr>").join("");
     return '<tr class="detalhe-cli"><td colspan="8">' + contato +
-      '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Atraso</th><th class="col-protesto">Protesto</th><th>A receber</th><th>Nosso nº</th></tr></thead><tbody>' +
+      '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Atraso</th><th class="col-protesto">Protesto</th><th>A receber</th><th>Nosso nº</th><th class="col-boleto">Boleto</th></tr></thead><tbody>' +
       linhas + "</tbody></table></div></td></tr>";
   }
 
   corpoCobranca.addEventListener("click", (ev) => {
+    const bol = ev.target.closest("button[data-segunda-via]");
+    if (bol) { ev.stopPropagation(); gerarSegundaVia(bol.dataset.segundaVia); return; }
     const tr = ev.target.closest("tr.cli-clicavel");
     if (!tr) return;
     const cod = Number(tr.dataset.cod);
@@ -3614,6 +3621,192 @@
     renderCobranca();
   });
   document.getElementById("btn-atualizar-cobranca").addEventListener("click", () => carregarCobranca());
+
+  // --- 2ª via de boleto (Banco do Brasil, carteira 17, convênio de 7 dígitos) ---
+  // Só reimprime título JÁ REGISTRADO no BB: usa o nosso número e o vencimento que vieram do ERP.
+  // Não registra nada no banco; boleto novo ou com outro vencimento/valor tem de ser feito no ERP ou no BB.
+  const BOLETO_BENEF = {
+    nome: "BLUE DISTRIBUIDORA & IMPORTADORA LTDA ME",
+    cnpj: "17.878.215/0001-02",
+    endereco: "RUA GENERAL OSORIO 2690 ANEXO 2698 - ÁGUA VERDE - BLUMENAU-SC- CEP: 89041-604",
+    agenciaCodigo: "0095-7/107052-5",
+    convenio: "3005544",
+    multaPct: 4,          // multa após o vencimento
+    jurosDiaPct: 0.5,     // R$ 1,40/dia num título de R$ 279,90, igual ao boleto do ERP
+    diasProtesto: 3
+  };
+
+  const Boleto = {
+    mod10(num) {
+      let soma = 0, peso = 2;
+      for (let i = num.length - 1; i >= 0; i--) {
+        let p = Number(num[i]) * peso;
+        if (p > 9) p = Math.floor(p / 10) + (p % 10);
+        soma += p;
+        peso = peso === 2 ? 1 : 2;
+      }
+      return (10 - (soma % 10)) % 10;
+    },
+    mod11Barras(num) {
+      let soma = 0, peso = 2;
+      for (let i = num.length - 1; i >= 0; i--) {
+        soma += Number(num[i]) * peso;
+        peso = peso === 9 ? 2 : peso + 1;
+      }
+      const r = 11 - (soma % 11);
+      return (r === 0 || r === 10 || r === 11) ? 1 : r;
+    },
+    // Fator de vencimento: reiniciou em 1000 no dia 22/02/2025 (base anterior: 07/10/1997).
+    fator(iso) {
+      const [a, m, d] = iso.slice(0, 10).split("-").map(Number);
+      const dia = Date.UTC(a, m - 1, d) / 86400000;
+      const novaBase = Date.UTC(2025, 1, 22) / 86400000;
+      const velhaBase = Date.UTC(1997, 9, 7) / 86400000;
+      const f = dia >= novaBase ? 1000 + (dia - novaBase) : (dia - velhaBase);
+      return String(f).padStart(4, "0");
+    },
+    // Nosso número BB convênio 7: 17 dígitos (convênio + sequencial de 10). O ERP guarda "…-DV".
+    nossoNumero(nossonr) {
+      const base = String(nossonr || "").split("-")[0].replace(/\D/g, "");
+      return base.length === 17 ? base : null;
+    },
+    codigoBarras({ nossoNumero, carteira, valor, vencimento }) {
+      const centavos = String(Math.round(Number(valor) * 100)).padStart(10, "0");
+      const campoLivre = "000000" + nossoNumero + String(carteira).padStart(2, "0");
+      const semDv = "001" + "9" + this.fator(vencimento) + centavos + campoLivre;
+      const dv = this.mod11Barras(semDv);
+      return semDv.slice(0, 4) + dv + semDv.slice(4);
+    },
+    linhaDigitavel(cb) {
+      const cl = cb.slice(19);
+      const c1 = cb.slice(0, 4) + cl.slice(0, 5);
+      const c2 = cl.slice(5, 15);
+      const c3 = cl.slice(15, 25);
+      const f1 = c1 + this.mod10(c1), f2 = c2 + this.mod10(c2), f3 = c3 + this.mod10(c3);
+      return f1.slice(0, 5) + "." + f1.slice(5) + " " +
+             f2.slice(0, 5) + "." + f2.slice(5) + " " +
+             f3.slice(0, 5) + "." + f3.slice(5) + " " +
+             cb[4] + " " + cb.slice(5, 19);
+    },
+    // Código de barras "2 de 5 intercalado" em SVG (estreita = 1, larga = 3).
+    svgBarras(cb) {
+      const pad = ["00110", "10001", "01001", "11000", "00101", "10100", "01100", "00011", "10010", "01010"];
+      const larg = (b) => (b === "1" ? 3 : 1);
+      let seq = [1, 1, 1, 1]; // início: barra, espaço, barra, espaço estreitos
+      for (let i = 0; i < cb.length; i += 2) {
+        const b = pad[cb[i]], e = pad[cb[i + 1]];
+        for (let k = 0; k < 5; k++) seq.push(larg(b[k]), larg(e[k]));
+      }
+      seq.push(3, 1, 1); // fim: barra larga, espaço, barra
+      let x = 0, rects = "";
+      seq.forEach((w, i) => { if (i % 2 === 0) rects += '<rect x="' + x + '" y="0" width="' + w + '" height="50"/>'; x += w; });
+      return '<svg class="barras" viewBox="0 0 ' + x + ' 50" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" fill="#000">' + rects + "</svg>";
+    }
+  };
+
+  function boletoData(iso) { const [a, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m + "/" + a; }
+  function boletoSomaDias(iso, n) {
+    const [a, m, d] = String(iso).slice(0, 10).split("-").map(Number);
+    const t = new Date(Date.UTC(a, m - 1, d + n));
+    return t.toISOString().slice(0, 10);
+  }
+  function boletoMoeda(v) { return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+  function htmlBoleto(t) {
+    const nn = Boleto.nossoNumero(t.nossonr);
+    const carteira = String(t.carteira || "17").split("-")[0];
+    const cb = Boleto.codigoBarras({ nossoNumero: nn, carteira, valor: t.valor, vencimento: t.vencimento });
+    const linha = Boleto.linhaDigitavel(cb);
+    const hoje = new Date();
+    const hojeISO = hoje.getFullYear() + "-" + String(hoje.getMonth() + 1).padStart(2, "0") + "-" + String(hoje.getDate()).padStart(2, "0");
+    const venc = boletoData(t.vencimento);
+    const juros = Math.round(Number(t.valor) * BOLETO_BENEF.jurosDiaPct) / 100;
+    const protesta = t.protesto === "A" || t.protesto === "E";
+    const instr = [
+      (protesta ? "Protestar em " + boletoData(boletoSomaDias(t.vencimento, BOLETO_BENEF.diasProtesto)) + " - " : "") +
+        "Após o vencimento cobrar multa de " + BOLETO_BENEF.multaPct + "%",
+      "Cobrar juros de R$ " + boletoMoeda(juros) + " por dia de atraso para pagamento após " + venc
+    ];
+    if (protesta) instr.push("Caso o boleto não seja pago o mesmo será protestado apartir " + BOLETO_BENEF.diasProtesto + " dias");
+    const end1 = [t.logradouro, t.numero].filter(Boolean).join(", ") + (t.complemento ? "  " + t.complemento : "");
+    const end2 = [t.cep, t.bairro, t.cidade, t.uf].filter(Boolean).join("   ");
+    const vencido = t.vencimento < hojeISO;
+
+    const corpo = (titulo, comLinha) =>
+      '<div class="cab"><div class="banco">BANCO DO BRASIL</div><div class="cod">001-9</div>' +
+        '<div class="ld">' + (comLinha ? linha : '<span class="recibo">Recibo do Pagador</span>') + "</div></div>" +
+      '<table class="grade">' +
+        '<tr><td colspan="6"><i>Local de Pagamento</i>Pagável em qualquer banco.</td><td class="dir"><i>Vencimento</i><b class="real">' + venc + "</b></td></tr>" +
+        '<tr><td colspan="6"><i>Nome do Beneficiário / CNPJ / Endereço</i>' + esc(BOLETO_BENEF.nome) + ' <span class="cnpj">' + BOLETO_BENEF.cnpj + "</span><br>" + esc(BOLETO_BENEF.endereco) + '</td><td class="dir"><i>Agência / Código Beneficiário</i>' + BOLETO_BENEF.agenciaCodigo + "</td></tr>" +
+        "<tr><td><i>Data do Documento</i>" + boletoData(t.emissao) + '</td><td colspan="2"><i>Número do Documento</i>' + esc(t.nfiscal || t.titulo) + "</td><td><i>Espécie Doc.</i>DM</td><td><i>Aceite</i>N</td><td><i>Data do Processamento</i>" + boletoData(hojeISO) + '</td><td class="dir"><i>Nosso Número</i>' + nn + "</td></tr>" +
+        "<tr><td><i>Uso do Banco</i>&nbsp;</td><td><i>Carteira</i>" + esc(carteira) + "</td><td><i>Espécie</i>R$</td><td><i>Quantidade</i>&nbsp;</td><td colspan=\"2\"><i>Valor</i>&nbsp;</td><td class=\"dir\"><i>(=) Valor do Documento</i><b class=\"real\">" + boletoMoeda(t.valor) + "</b></td></tr>" +
+        '<tr><td colspan="6" rowspan="4" class="instr"><i>Instruções (Instruções de responsabilidade do beneficiário. Qualquer dúvida sobre este boleto, contate o beneficiário)</i>' + instr.map(esc).join("<br>") + '</td><td class="dir"><i>(-) Desconto / Abatimento</i>&nbsp;</td></tr>' +
+        '<tr><td class="dir"><i>(-) Outras Deduções</i>&nbsp;</td></tr>' +
+        '<tr><td class="dir"><i>(+) Mora / Multa</i>&nbsp;</td></tr>' +
+        '<tr><td class="dir"><i>(=) Valor Cobrado</i>&nbsp;</td></tr>' +
+        '<tr><td colspan="6" class="pag"><i>Pagador</i>' + esc(t.razao_social || "") + "<br>" + esc(end1) + "<br>" + esc(end2) + '</td><td class="dir"><i>CPF / CNPJ</i>' + esc(t.cnpj_cpf || "") + '<i style="margin-top:4px">Código de Baixa</i>' + esc(t.nossonr) + "</td></tr>" +
+      "</table>" +
+      '<div class="aut">' + titulo + "</div>";
+
+    return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Boleto ' + esc(t.titulo) + " - " + esc(t.razao_social || "") + "</title><style>" +
+      "@page{size:A4;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;padding:12px;background:#fff}" +
+      ".folha{max-width:190mm;margin:0 auto}.aviso{max-width:190mm;margin:0 auto 14px;padding:10px 14px;border-radius:8px;font-size:13px;background:#eef4ff;border:1px solid #bcd2f5}" +
+      ".aviso.alerta{background:#fff4e5;border-color:#f3c27a}.aviso button{font-size:14px;padding:7px 16px;margin-right:8px;cursor:pointer}" +
+      ".cab{display:flex;align-items:flex-end;border-bottom:2px solid #000;height:11mm}.banco{width:40mm;font-size:13px;font-weight:bold;padding-bottom:3px}" +
+      ".cod{width:22mm;font-size:20px;font-weight:bold;border-left:2px solid #000;border-right:2px solid #000;text-align:center;height:100%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:1px}" +
+      ".ld{flex:1;text-align:right;font-size:14.5px;font-weight:bold;padding-bottom:3px;letter-spacing:.2px}.recibo{font-weight:normal;font-size:15px}" +
+      "table.grade{width:100%;border-collapse:collapse;font-size:10.5px}.grade td{border:1px solid #000;border-top:0;padding:1px 4px 2px;vertical-align:top}" +
+      ".grade td:first-child{border-left:0}.grade i{display:block;font-style:normal;font-size:7.5px;color:#333}.grade td.dir{width:48mm;border-right:0;text-align:right}" +
+      ".grade td.dir i{text-align:left}.real{background:#ff0;padding:0 3px}.cnpj{float:right}.instr{height:26mm;font-size:10.5px}.pag{height:15mm}" +
+      ".aut{text-align:right;font-size:9px;margin-top:2px}.corte{border-top:1px dashed #000;margin:10mm 0 6mm}.barras{width:103mm;height:13mm;display:block;margin-top:3mm}" +
+      "@media print{.aviso{display:none}body{padding:0}}" +
+      "</style></head><body>" +
+      '<div class="aviso' + (vencido ? " alerta" : "") + '"><button onclick="window.print()">Imprimir / Salvar PDF</button>' +
+        (vencido ? "<b>Título vencido em " + venc + ".</b> O cliente pode pagar este boleto; o banco soma a multa e os juros das instruções. Para mudar o vencimento, peça ao financeiro (ERP/BB)."
+                 : "2ª via do boleto registrado no Banco do Brasil.") +
+      "</div>" +
+      '<div class="folha">' + corpo("Autenticação Mecânica", false) + '<div class="corte"></div>' +
+        corpo("Autenticação Mecânica / Ficha de Compensação", true) + Boleto.svgBarras(cb) + "</div>" +
+      "</body></html>";
+  }
+
+  async function gerarSegundaVia(titulo) {
+    // Abre a janela já no clique (depois do await o navegador bloquearia o pop-up).
+    const janela = window.open("", "_blank");
+    if (!janela) { alert("O navegador bloqueou a janela do boleto. Libere pop-ups para este site."); return; }
+    janela.document.write('<p style="font-family:Arial;padding:20px">Gerando 2ª via...</p>');
+    try {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/boleto_segunda_via", {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_titulo: titulo })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 200));
+      const [t] = await res.json();
+      if (!t) throw new Error("Título " + titulo + " não está mais em aberto (pode ter sido pago).");
+      if (Number(t.banco) !== 1 || !Boleto.nossoNumero(t.nossonr) || !String(t.nossonr).startsWith(BOLETO_BENEF.convenio))
+        throw new Error("Este título não é boleto do Banco do Brasil (convênio " + BOLETO_BENEF.convenio + "). Gere a 2ª via pelo ERP.");
+      if (t.protesto === "S") throw new Error("Título protestado: o pagamento é feito no cartório, não por boleto.");
+      if (!t.vencimento || !(Number(t.valor) > 0)) throw new Error("Título sem vencimento ou valor válido no ERP. Gere a 2ª via pelo ERP.");
+      janela.document.open();
+      janela.document.write(htmlBoleto(t));
+      janela.document.close();
+    } catch (err) {
+      console.error("Erro na 2ª via:", err);
+      janela.document.open();
+      janela.document.write('<p style="font-family:Arial;padding:20px;color:#b3261e">Não foi possível gerar a 2ª via.<br><small>' + esc(err.message || err) + "</small></p>");
+      janela.document.close();
+    }
+  }
+
+  function botaoSegundaVia(t) {
+    if (t.protesto === "S") return '<span class="sv-nao" title="Título protestado: pagamento no cartório">cartório</span>';
+    if (!Boleto.nossoNumero(t.nossonr) || !String(t.nossonr).startsWith(BOLETO_BENEF.convenio))
+      return '<span class="sv-nao" title="Não é boleto do Banco do Brasil: gerar pelo ERP">ERP</span>';
+    return '<button type="button" class="btn-2via" data-segunda-via="' + esc(t.titulo) + '" title="Abrir a 2ª via para imprimir ou salvar em PDF">2ª via</button>';
+  }
 
   // --- SEÇÃO: Vendas do Dia (pública, só leitura) ---
   const seletorDataVendas = document.getElementById("seletor-data-vendas");
