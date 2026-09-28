@@ -331,6 +331,9 @@
   .subtabela .col-boleto { text-align: center; }
   .btn-2via { font: inherit; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); cursor: pointer; white-space: nowrap; }
   .btn-2via:hover { background: var(--azul); color: #fff; }
+  .acoes-boleto { display: inline-flex; gap: 6px; }
+  .btn-2via.ok, .btn-2via.ok:hover { background: #1baf7a; border-color: #1baf7a; color: #fff; }
+  .btn-2via:disabled { cursor: default; }
   .sv-nao { font-size: 0.72rem; color: var(--texto-suave); }
   tr.a-vencer td { color: var(--texto-suave); }
   /* --- Aba Ritmo Comercial --- */
@@ -3605,6 +3608,8 @@
   corpoCobranca.addEventListener("click", (ev) => {
     const bol = ev.target.closest("button[data-segunda-via]");
     if (bol) { ev.stopPropagation(); gerarSegundaVia(bol.dataset.segundaVia); return; }
+    const msg = ev.target.closest("button[data-copiar-msg]");
+    if (msg) { ev.stopPropagation(); copiarMensagem(msg); return; }
     const tr = ev.target.closest("tr.cli-clicavel");
     if (!tr) return;
     const cod = Number(tr.dataset.cod);
@@ -3776,20 +3781,7 @@
     if (!janela) { alert("O navegador bloqueou a janela do boleto. Libere pop-ups para este site."); return; }
     janela.document.write('<p style="font-family:Arial;padding:20px">Gerando 2ª via...</p>');
     try {
-      sessao = await garantirSessaoValida();
-      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
-      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/boleto_segunda_via", {
-        method: "POST",
-        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
-        body: JSON.stringify({ p_titulo: titulo })
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 200));
-      const [t] = await res.json();
-      if (!t) throw new Error("Título " + titulo + " não está mais em aberto (pode ter sido pago).");
-      if (Number(t.banco) !== 1 || !Boleto.nossoNumero(t.nossonr) || !String(t.nossonr).startsWith(BOLETO_BENEF.convenio))
-        throw new Error("Este título não é boleto do Banco do Brasil (convênio " + BOLETO_BENEF.convenio + "). Gere a 2ª via pelo ERP.");
-      if (t.protesto === "S") throw new Error("Título protestado: o pagamento é feito no cartório, não por boleto.");
-      if (!t.vencimento || !(Number(t.valor) > 0)) throw new Error("Título sem vencimento ou valor válido no ERP. Gere a 2ª via pelo ERP.");
+      const t = await buscarTituloBoleto(titulo);
       janela.document.open();
       janela.document.write(htmlBoleto(t));
       janela.document.close();
@@ -3805,7 +3797,98 @@
     if (t.protesto === "S") return '<span class="sv-nao" title="Título protestado: pagamento no cartório">cartório</span>';
     if (!Boleto.nossoNumero(t.nossonr) || !String(t.nossonr).startsWith(BOLETO_BENEF.convenio))
       return '<span class="sv-nao" title="Não é boleto do Banco do Brasil: gerar pelo ERP">ERP</span>';
-    return '<button type="button" class="btn-2via" data-segunda-via="' + esc(t.titulo) + '" title="Abrir a 2ª via para imprimir ou salvar em PDF">2ª via</button>';
+    return '<span class="acoes-boleto"><button type="button" class="btn-2via" data-segunda-via="' + esc(t.titulo) + '" title="Abrir a 2ª via para imprimir ou salvar em PDF">2ª via</button>' +
+      '<button type="button" class="btn-2via btn-msg" data-copiar-msg="' + esc(t.titulo) + '" title="Copiar mensagem para o WhatsApp com a linha digitável. Título vencido: a mensagem junta todos os boletos vencidos do cliente.">Copiar msg</button></span>';
+  }
+
+  // Mensagem de cobrança pronta (formal, sem pressão), com a linha digitável do boleto.
+  // Recebe um ou mais títulos do mesmo cliente. Vários = todos os vencidos numa mensagem só, com o total.
+  function mensagemCobranca(lista) {
+    lista = [].concat(lista).sort((a, b) => String(a.vencimento).localeCompare(String(b.vencimento)));
+    const linhaDe = (t) => Boleto.linhaDigitavel(Boleto.codigoBarras({
+      nossoNumero: Boleto.nossoNumero(t.nossonr), carteira: String(t.carteira || "17").split("-")[0],
+      valor: t.valor, vencimento: t.vencimento }));
+    const hoje = new Date();
+    const hojeISO = hoje.getFullYear() + "-" + String(hoje.getMonth() + 1).padStart(2, "0") + "-" + String(hoje.getDate()).padStart(2, "0");
+    const vencido = lista.some((t) => t.vencimento < hojeISO);
+    const nome = (lista[0].razao_social || "").trim();
+    const partes = ["Olá" + (nome ? ", *" + nome + "*" : "") + "! Tudo bem?"];
+    if (lista.length === 1) {
+      const t = lista[0];
+      const nf = t.nfiscal ? " da NF " + t.nfiscal : "";
+      partes.push(vencido
+        ? "Consta em aberto o boleto" + nf + ", vencido em " + boletoData(t.vencimento) + ", no valor de R$ " + boletoMoeda(t.valor) + "."
+        : "Lembrete do boleto" + nf + ", com vencimento em " + boletoData(t.vencimento) + ", no valor de R$ " + boletoMoeda(t.valor) + ".");
+      partes.push("Segue a linha digitável para pagamento:\n" + linhaDe(t));
+    } else {
+      partes.push("Constam em aberto os boletos abaixo:");
+      for (const t of lista)
+        partes.push("*" + (t.nfiscal ? "NF " + t.nfiscal : "Título " + t.titulo) + "* - vencido em " + boletoData(t.vencimento) +
+          " - R$ " + boletoMoeda(t.valor) + "\nLinha digitável:\n" + linhaDe(t));
+      partes.push("*Total: R$ " + boletoMoeda(lista.reduce((s, t) => s + Number(t.valor), 0)) + "*");
+    }
+    partes.push((vencido ? "Pedimos a gentileza de realizar o pagamento assim que possível. " : "") + "Caso já tenha pago, favor desconsiderar.");
+    partes.push("Obrigado!\n*Blue Distribuidora*");
+    return partes.join("\n\n");
+  }
+
+  // Quais títulos entram na mensagem: se o clicado está vencido, todos os vencidos do cliente que têm
+  // boleto BB (protestado e de outro banco ficam de fora); se está a vencer, só ele.
+  function titulosDaMensagem(titulo) {
+    const cli = (cobrancaLinhas || []).find((c) => c.titulos.some((t) => t.titulo === titulo));
+    const clicado = cli && cli.titulos.find((t) => t.titulo === titulo);
+    if (!clicado || clicado.dias == null) return [titulo];
+    const temBoleto = (t) => t.protesto !== "S" && Boleto.nossoNumero(t.nossonr) && String(t.nossonr).startsWith(BOLETO_BENEF.convenio);
+    return cli.titulos.filter((t) => t.dias != null && temBoleto(t)).map((t) => t.titulo);
+  }
+
+  async function buscarTituloBoleto(titulo) {
+    sessao = await garantirSessaoValida();
+    if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+    const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/boleto_segunda_via", {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_titulo: titulo })
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 200));
+    const [t] = await res.json();
+    if (!t) throw new Error("Título " + titulo + " não está mais em aberto (pode ter sido pago).");
+    if (Number(t.banco) !== 1 || !Boleto.nossoNumero(t.nossonr) || !String(t.nossonr).startsWith(BOLETO_BENEF.convenio))
+      throw new Error("Este título não é boleto do Banco do Brasil (convênio " + BOLETO_BENEF.convenio + ").");
+    if (t.protesto === "S") throw new Error("Título protestado: o pagamento é feito no cartório, não por boleto.");
+    if (!t.vencimento || !(Number(t.valor) > 0)) throw new Error("Título sem vencimento ou valor válido no ERP.");
+    return t;
+  }
+
+  async function copiarMensagem(btn) {
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Copiando...";
+    const textoPromessa = garantirSessaoValida().then(() => Promise.all(titulosDaMensagem(btn.dataset.copiarMsg).map(buscarTituloBoleto))).then(mensagemCobranca);
+    try {
+      // ClipboardItem com promessa mantém o "clique do usuário" válido enquanto busca os dados.
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+        await navigator.clipboard.write([new ClipboardItem({ "text/plain": textoPromessa.then((t) => new Blob([t], { type: "text/plain" })) })]);
+      } else {
+        await navigator.clipboard.writeText(await textoPromessa);
+      }
+      btn.textContent = "Copiado ✓";
+      btn.classList.add("ok");
+    } catch (err) {
+      let texto = null;
+      try { texto = await textoPromessa; } catch (e) { err = e; }
+      if (texto) {
+        // Sem permissão de área de transferência: mostra o texto para copiar à mão.
+        window.prompt("Copie a mensagem (Ctrl+C):", texto);
+        btn.textContent = original;
+      } else {
+        console.error("Erro ao copiar mensagem:", err);
+        alert("Não foi possível montar a mensagem.\n" + (err.message || err));
+        btn.textContent = original;
+      }
+    } finally {
+      setTimeout(() => { btn.textContent = original; btn.classList.remove("ok"); btn.disabled = false; }, 2200);
+    }
   }
 
   // --- SEÇÃO: Vendas do Dia (pública, só leitura) ---
