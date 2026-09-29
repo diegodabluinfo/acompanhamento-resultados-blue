@@ -310,6 +310,14 @@
   .bolha.empresa { align-self: flex-end; background: #dcf3e4; }
   .bolha.bot { align-self: flex-end; background: #eceff4; color: #4a5566; font-size: 0.76rem; }
   .hist-mais { text-align: center; margin: 10px 0 2px; }
+  .hist-grupo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -4px 0 12px; font-size: 0.76rem; color: var(--texto-suave); }
+  .chip-cod { font: inherit; font-size: 0.72rem; font-weight: 600; padding: 2px 9px; border-radius: 14px; border: 1px solid var(--borda); background: #fff; color: #3d4b5c; cursor: pointer; white-space: nowrap; }
+  .chip-cod:hover { border-color: var(--azul); }
+  .chip-cod.ativo { background: var(--azul); border-color: var(--azul); color: #fff; }
+  .chip-cod .qtd { opacity: .7; font-weight: 400; margin-left: 3px; }
+  .cod-at { display: inline-block; padding: 1px 7px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; background: #eef1f6; color: #3d4b5c; white-space: nowrap; }
+  .cod-at.proprio { background: #e4eefc; color: #1a4f94; }
+  .hist-contato { color: var(--texto-suave); font-size: 0.72rem; }
   /* --- Ordens de serviço (Gastos e Assistência) --- */
   .os-faixa { margin-bottom: 14px; }
   .os-faixa-titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
@@ -3526,7 +3534,7 @@
     }
 
     async function abrir(cod, nome, grupo) {
-      atual = { cod: Number(cod), nome: nome || "", grupo: !!grupo, limite: 20, dados: null, abertos: new Set() };
+      atual = { cod: Number(cod), nome: nome || "", grupo: !!grupo, limite: 20, dados: null, abertos: new Set(), filtro: null };
       document.getElementById("hist-titulo").innerHTML = "Histórico · " + esc(nome || ("cliente " + cod)) + ' <span class="cod-cliente">(' + Number(cod) + ")</span>";
       document.getElementById("hist-corpo").innerHTML = '<div class="estado-vazio">Carregando conversas…</div>';
       document.getElementById("overlay-hist").classList.remove("oculto");
@@ -3563,8 +3571,28 @@
         "<div><i>Abrir na Sonax</i>" + (linksSonax(d.contatos) || "contato ainda não identificado") + "</div>" +
       "</div>";
 
-      const itens = at.map((a) => ({ tipo: "at", em: a.aberto_em, a }))
-        .concat(lg.map((l) => ({ tipo: "lig", em: l.iniciada_em, l })))
+      // grupo: de qual CNPJ é cada atendimento (e filtro por CNPJ)
+      const membros = d.membros || [];
+      const nomeCod = new Map(membros.map((m) => [Number(m.cod), m.nome]));
+      const ehGrupo = membros.length > 1;
+      const contaCod = new Map();
+      at.forEach((a) => contaCod.set(Number(a.codcliente), (contaCod.get(Number(a.codcliente)) || 0) + 1));
+      lg.forEach((l) => contaCod.set(Number(l.codcliente), (contaCod.get(Number(l.codcliente)) || 0) + 1));
+      const curto = (t) => { t = String(t || "").replace(/^[\d.\s]+(?=[A-Za-zÀ-ú])/, ""); return t.length > 26 ? t.slice(0, 25) + "…" : t; };
+      const chipCod = (cod) => {
+        cod = Number(cod);
+        if (!ehGrupo || !cod) return "";
+        return '<span class="cod-at' + (cod === atual.cod ? " proprio" : "") + '" title="' + esc(nomeCod.get(cod) || "") + '">' + cod + " · " + esc(curto(nomeCod.get(cod) || "")) + "</span>";
+      };
+      const grupoHtml = ehGrupo ? '<div class="hist-grupo"><span>Grupo com ' + membros.length + " CNPJs:</span>" +
+        '<button type="button" class="chip-cod' + (atual.filtro == null ? " ativo" : "") + '" data-hist-filtro="">Todos</button>' +
+        membros.map((m) => '<button type="button" class="chip-cod' + (atual.filtro === Number(m.cod) ? " ativo" : "") + '" data-hist-filtro="' + Number(m.cod) + '" title="' + esc(m.nome) + (m.principal ? " (principal do grupo)" : "") + '">' +
+          Number(m.cod) + " · " + esc(curto(m.nome)) + (m.principal ? " ★" : "") + '<span class="qtd">' + (contaCod.get(Number(m.cod)) || 0) + "</span></button>").join("") +
+        "</div>" : "";
+
+      const noFiltro = (cod) => atual.filtro == null || Number(cod) === atual.filtro;
+      const itens = at.filter((a) => noFiltro(a.codcliente)).map((a) => ({ tipo: "at", em: a.aberto_em, a }))
+        .concat(lg.filter((l) => noFiltro(l.codcliente)).map((l) => ({ tipo: "lig", em: l.iniciada_em, l })))
         .sort((x, y) => String(y.em).localeCompare(String(x.em)));
 
       const linhas = itens.map((it) => {
@@ -3574,7 +3602,7 @@
           return '<div class="hist-linha"><div class="hist-cab" style="cursor:default">' +
             '<span class="data">' + dataHoraBR(l.iniciada_em) + "</span>" +
             '<span class="hist-tag lig">ligação ' + esc(l.sentido || "") + "</span>" +
-            '<span class="quem">' + esc(l.agente_nome || "—") + "</span>" +
+            '<span class="quem">' + esc(l.agente_nome || "—") + "</span>" + chipCod(l.codcliente) +
             "<span>" + (l.atendida === false ? "não atendida" : Math.floor(dur / 60) + "min " + String(dur % 60).padStart(2, "0") + "s") + "</span>" +
             (l.obs && l.obs.trim() ? '<span class="extra">' + esc(l.obs.trim()) + "</span>" : "") +
           "</div></div>";
@@ -3596,14 +3624,15 @@
           '<span class="data">' + dataHoraBR(a.aberto_em) + "</span>" +
           '<span class="hist-tag ' + (a.receptivo ? "rec" : "atv") + '">' + (a.receptivo ? "cliente chamou" : "ativo") + "</span>" +
           '<span class="quem">' + esc(a.atendente_nome || "sem atendente") + "</span>" +
-          '<span class="cod-cliente">' + esc(a.canal || "") + (a.fila ? " · " + esc(a.fila) : "") + "</span> " + tags +
+          '<span class="cod-cliente">' + esc(a.canal || "") + (a.fila ? " · " + esc(a.fila) : "") + "</span> " + tags + chipCod(a.codcliente) +
+          (ehGrupo && a.contato_nome ? '<span class="hist-contato" title="Contato na Sonax">' + esc(curto(a.contato_nome)) + "</span>" : "") +
           '<span class="extra">' + (a.qtd_mensagens ? a.qtd_mensagens + " msgs " : "") + (aberto ? "▾" : "▸") + "</span>" +
         "</div>" + conversa + "</div>";
       }).join("");
 
       const temMais = (d.total_atendimentos > at.length) || (d.total_ligacoes > lg.length);
-      document.getElementById("hist-corpo").innerHTML = resumoHtml +
-        (linhas || '<div class="estado-vazio">Nenhum atendimento ou ligação deste cliente na Sonax.</div>') +
+      document.getElementById("hist-corpo").innerHTML = resumoHtml + grupoHtml +
+        (linhas || '<div class="estado-vazio">' + (atual.filtro != null ? "Nenhum atendimento ou ligação deste CNPJ entre os carregados." : "Nenhum atendimento ou ligação deste cliente na Sonax.") + "</div>") +
         (temMais ? '<div class="hist-mais"><button type="button" class="btn-secundario" id="btn-hist-mais">Carregar mais antigos</button></div>' : "");
     }
 
@@ -3611,6 +3640,8 @@
 
     document.getElementById("hist-corpo").addEventListener("click", (ev) => {
       if (ev.target.closest("a")) return;
+      const f = ev.target.closest("[data-hist-filtro]");
+      if (f && atual) { atual.filtro = f.dataset.histFiltro === "" ? null : Number(f.dataset.histFiltro); render(); return; }
       const cab = ev.target.closest("[data-hist-proto]");
       if (cab && atual) {
         const p = cab.dataset.histProto;
