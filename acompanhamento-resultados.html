@@ -274,6 +274,53 @@
   .modal-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
   #corpo-fornecedores input[type="text"] { padding: 6px 8px; font-size: 0.82rem; }
   #assist-subabas { margin-top: 2px; }
+  /* --- Ordens de serviço (Gastos e Assistência) --- */
+  .os-faixa { margin-bottom: 14px; }
+  .os-faixa-titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
+  .os-faixa-titulo h3 { margin: 0; font-size: 0.95rem; color: var(--azul-escuro); }
+  .os-faixa-titulo small { color: var(--texto-suave); font-size: 0.76rem; }
+  .os-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .os-card { text-align: left; font: inherit; background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 11px 13px; cursor: pointer; box-shadow: 0 1px 3px rgba(20,40,70,0.06); transition: border-color .15s, box-shadow .15s; }
+  .os-card:hover { border-color: var(--azul); box-shadow: 0 2px 8px rgba(30,95,191,0.15); }
+  .os-card.ativa { border-color: var(--azul); box-shadow: inset 0 0 0 1px var(--azul); }
+  .os-card .rotulo { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--texto-suave); font-weight: 700; }
+  .os-card .valor { font-size: 1.35rem; font-weight: 700; color: var(--azul-escuro); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .os-card .nota { font-size: 0.72rem; color: var(--texto-suave); margin-top: 2px; }
+  .os-card.alerta .valor { color: var(--vermelho); }
+  .os-card.alerta { border-left: 4px solid var(--vermelho); }
+  .os-card.destaque { border-left: 4px solid var(--verde); }
+  .os-card.destaque .valor { color: var(--verde); }
+  .os-card.discreto .valor { font-size: 1.1rem; color: var(--texto-suave); }
+  .os-controles { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin: 12px 0; }
+  .os-controles input[type="text"] { min-width: 260px; padding: 9px 10px; }
+  #view-assistencia #tabela-os { font-size: 0.82rem; }
+  #tabela-os td, #tabela-os th { padding: 8px 10px; }
+  #tabela-os td.esq, #tabela-os th.esq { text-align: left; white-space: normal; }
+  .pill-os { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+  .os-st-1 { background: #eef1f6; color: #3d4b5c; }
+  .os-st-2 { background: #e4eefc; color: #1a4f94; }
+  .os-st-3 { background: var(--amarelo-fundo); color: var(--amarelo); }
+  .os-st-4 { background: #efe6fb; color: #5b2e91; }
+  .os-st-7 { background: #dff3e7; color: var(--verde); }
+  .os-st-5, .os-st-A { background: #f3f3f3; color: #666; }
+  .prazo-ok { color: var(--verde); font-weight: 600; }
+  .prazo-atraso { color: var(--vermelho); font-weight: 700; }
+  .modal-os { max-width: 760px; }
+  .modal-os .os-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .modal-os .os-cab h2 { margin: 0; }
+  .os-ficha { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; font-size: 0.85rem; }
+  .os-ficha .campo { min-width: 0; }
+  .os-ficha .campo.inteiro { grid-column: 1 / -1; }
+  .os-ficha .campo i { display: block; font-style: normal; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--texto-suave); font-weight: 700; margin-bottom: 2px; }
+  .os-ficha .campo div { white-space: pre-wrap; word-break: break-word; }
+  .os-ficha .caixa { background: #f7faff; border: 1px solid var(--borda); border-radius: 8px; padding: 8px 10px; }
+  .os-valores { display: flex; gap: 18px; flex-wrap: wrap; }
+  .os-valores b { font-size: 1.05rem; color: var(--azul-escuro); }
+  .os-aviso-prazo { border-radius: 8px; padding: 8px 12px; font-size: 0.84rem; margin-bottom: 12px; }
+  .os-aviso-prazo.ruim { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .os-aviso-prazo.bom { background: #dff3e7; color: var(--verde); }
+  .os-aviso-prazo.neutro { background: #eef1f6; color: #3d4b5c; }
+  @media (max-width: 640px) { .os-ficha { grid-template-columns: 1fr; } }
   /* --- Menu Cadastros --- */
   .menu-cadastros { position: relative; display: inline-block; }
   #btn-menu-cadastros .seta { font-size: 0.7rem; margin-left: 2px; }
@@ -995,10 +1042,56 @@
 
       <!-- ===== ABA: Assistência / Fornecedores ===== -->
       <div id="view-assistencia" class="oculto">
+        <div class="os-faixa" id="os-faixa">
+          <div class="os-faixa-titulo">
+            <h3>Ordens de serviço agora</h3>
+            <small id="os-faixa-nota">Carregando...</small>
+          </div>
+          <div class="os-cards" id="os-cards-resumo"></div>
+        </div>
+
         <div class="filtro-periodo" id="assist-subabas" style="margin-bottom:14px;">
           <button data-sub="mes" class="ativa">Mês</button>
           <button data-sub="lancamentos">Lançamentos</button>
           <button data-sub="anual">Resumo Anual</button>
+          <button data-sub="os">Ordens de Serviço</button>
+        </div>
+
+        <!-- ===== sub-aba: Ordens de Serviço ===== -->
+        <div id="assist-os" class="oculto">
+          <div class="os-cards" id="os-cards-grupos"></div>
+          <div class="os-controles">
+            <div>
+              <label for="os-busca">Buscar</label>
+              <input type="text" id="os-busca" placeholder="Nº da OS, cliente, equipamento, técnico" autocomplete="off">
+            </div>
+            <button type="button" class="btn-secundario" id="btn-atualizar-os">Atualizar</button>
+            <span class="freshness" id="freshness-os"></span>
+          </div>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table id="tabela-os">
+                <thead>
+                  <tr>
+                    <th class="esq">OS</th>
+                    <th class="esq">Entrada</th>
+                    <th class="esq">Cliente</th>
+                    <th class="esq">Equipamento</th>
+                    <th class="esq">Técnico</th>
+                    <th class="esq">Situação</th>
+                    <th id="os-col-prazo">Prazo</th>
+                    <th>Valor</th>
+                  </tr>
+                </thead>
+                <tbody id="corpo-os"><tr><td colspan="8" class="estado-vazio">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">
+            Prazo do orçamento: <strong>48 horas úteis = 2 dias úteis</strong> de expediente (seg a sex, 08:00–12:00 e 13:15–18:00, sem feriados), medido da abertura da OS
+            enquanto ela está <em>Em aguardo</em> ou <em>Na bancada</em>. Orçamento com o cliente e aguardando peça não contam como atraso nosso.
+            Clique numa OS para abrir a ficha. "Sem defeito" e "Recusado" só aparecem enquanto o ERP não registra a saída — muitas já foram devolvidas sem baixa.
+          </div>
         </div>
 
         <div id="assist-mes">
@@ -1553,6 +1646,17 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ===== Ficha da ordem de serviço ===== -->
+  <div id="overlay-os" class="overlay oculto">
+    <div class="modal-gasto modal-os" role="dialog" aria-modal="true" aria-labelledby="os-ficha-titulo">
+      <div class="os-cab">
+        <h2 id="os-ficha-titulo">OS</h2>
+        <button type="button" class="btn-secundario" id="btn-fechar-os">Fechar</button>
+      </div>
+      <div id="os-ficha-corpo"></div>
     </div>
   </div>
 
@@ -2252,6 +2356,7 @@
   }
 
   async function iniciarAssistencia() {
+    setTimeout(() => OSAssist.carregar(), 0); // OSAssist é declarado mais abaixo no script
     if (gastosCarregados) return;
     corpoTabelaAssist.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>';
     corpoResumoAssistencia.innerHTML = '<tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>';
@@ -3287,6 +3392,180 @@
     }
   });
 
+
+  // --- Ordens de serviço (faixa no topo + sub-aba) ---
+  // Fonte: v_os_assistencia (security definer com trava pode_ver_aba('assistencia'|'gastos'); anon não lê).
+  // O prazo de 48 h úteis e as horas úteis já vêm calculados do banco (horas_uteis / os_prazo_orcamento_horas).
+  const OSAssist = (() => {
+    const GRUPOS = [
+      { cod: "atrasadas", rotulo: "Orçamento atrasado", filtro: (o) => o.atrasada, classe: "alerta", nota: (l) => l.length ? "passou das 48 h úteis" : "tudo dentro do prazo" },
+      { cod: "aguardo", rotulo: "Em aguardo", filtro: (o) => o.grupo === "aguardo", nota: (l) => atrasoNota(l) },
+      { cod: "bancada", rotulo: "Na bancada", filtro: (o) => o.grupo === "bancada", nota: (l) => atrasoNota(l) },
+      { cod: "aguardando_pecas", rotulo: "Aguardando peça", filtro: (o) => o.grupo === "aguardando_pecas", nota: (l) => maisAntiga(l) },
+      { cod: "orcamento_pendente", rotulo: "Orçamento com o cliente", filtro: (o) => o.grupo === "orcamento_pendente", nota: (l) => valorNota(l) },
+      { cod: "pronto_nao_retirado", rotulo: "Pronto, não retirado", filtro: (o) => o.grupo === "pronto_nao_retirado", classe: "destaque", nota: (l) => valorNota(l) + " a receber" },
+      { cod: "recusado_nao_retirado", rotulo: "Recusado, a devolver", filtro: (o) => o.grupo === "recusado_nao_retirado", classe: "discreto", nota: () => "sem baixa de saída" },
+      { cod: "sem_defeito_nao_retirado", rotulo: "Sem defeito, a devolver", filtro: (o) => o.grupo === "sem_defeito_nao_retirado", classe: "discreto", nota: () => "sem baixa de saída" }
+    ];
+    // Na faixa do topo entram só os grupos que pedem ação; recusado/sem defeito ficam na sub-aba.
+    const NA_FAIXA = ["atrasadas", "aguardo", "bancada", "aguardando_pecas", "orcamento_pendente", "pronto_nao_retirado"];
+    const HORAS_DIA = 8.75;
+    let dados = null, carregando = false, grupoAtual = "atrasadas", erro = null;
+
+    function valorNota(l) { const v = l.reduce((s, o) => s + Number(o.total || 0), 0); return v ? fmtMoeda(v) : "sem valor lançado"; }
+    function atrasoNota(l) { const a = l.filter((o) => o.atrasada).length; return a ? a + " fora do prazo" : (l.length ? "no prazo" : "—"); }
+    function maisAntiga(l) { return l.length ? "mais antiga: " + Math.max(...l.map((o) => o.dias_corridos || 0)) + " dias" : "—"; }
+    function horasTxt(h) {
+      h = Number(h || 0);
+      if (h >= HORAS_DIA) { const d = h / HORAS_DIA; return d.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + (d < 2 ? " dia útil" : " dias úteis"); }
+      return h.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " h úteis";
+    }
+    function diasDesde(iso) {
+      if (!iso) return null;
+      const d = new Date(String(iso).length <= 10 ? iso + "T12:00:00" : iso);
+      return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+    }
+    function dataHora(iso) {
+      if (!iso) return "—";
+      if (String(iso).length <= 10) return fmtData(iso);
+      return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    }
+    function equip(o) { return [o.equipamento, o.marca, o.modelo].filter(Boolean).join(" · ") || "—"; }
+    function pill(o) { return '<span class="pill-os os-st-' + esc(o.status) + '">' + esc(o.status_descricao || o.status) + "</span>"; }
+    function prazoCelula(o) {
+      if (o.status === "1" || o.status === "2") {
+        return o.atrasada ? '<span class="prazo-atraso">atrasada ' + horasTxt(o.horas_uteis_atraso) + "</span>"
+                          : '<span class="prazo-ok">faltam ' + horasTxt(o.horas_uteis_restantes) + "</span>";
+      }
+      if (o.status === "7") { const d = diasDesde(o.finalizada_em); return d == null ? (o.dias_corridos + " dias") : d === 0 ? "pronta hoje" : "pronta há " + d + (d === 1 ? " dia" : " dias"); }
+      return (o.dias_corridos ?? "—") + (o.dias_corridos === 1 ? " dia" : " dias");
+    }
+
+    async function carregar(forcar) {
+      if (carregando || (dados && !forcar)) { renderFaixa(); return; }
+      carregando = true; erro = null;
+      document.getElementById("os-faixa-nota").textContent = "Carregando...";
+      try {
+        const res = await leitura(SUPABASE_URL + "/rest/v1/v_os_assistencia?select=*&order=id_os.desc");
+        if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 200));
+        dados = await res.json();
+        const d = new Date();
+        document.getElementById("freshness-os").textContent = "Consultado às " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      } catch (e) {
+        console.error("Erro ao carregar OS:", e);
+        erro = e; dados = null;
+      } finally {
+        carregando = false;
+      }
+      renderFaixa();
+      if (!document.getElementById("assist-os").classList.contains("oculto")) renderLista();
+    }
+
+    function card(g, lista, ativo) {
+      return '<button type="button" class="os-card ' + (g.classe || "") + (ativo ? " ativa" : "") + '" data-os-grupo="' + g.cod + '">' +
+        '<div class="rotulo">' + g.rotulo + '</div><div class="valor">' + fmtIntBR(lista.length) + '</div><div class="nota">' + g.nota(lista) + "</div></button>";
+    }
+
+    function renderFaixa() {
+      const alvo = document.getElementById("os-cards-resumo");
+      const nota = document.getElementById("os-faixa-nota");
+      if (erro) { alvo.innerHTML = ""; nota.textContent = /401|403|permission|42501/.test(erro.message) ? "Sem permissão para ver as ordens de serviço." : "Não foi possível carregar as OS."; return; }
+      if (!dados) return;
+      alvo.innerHTML = GRUPOS.filter((g) => NA_FAIXA.includes(g.cod)).map((g) => card(g, dados.filter(g.filtro), false)).join("");
+      nota.textContent = "prazo do orçamento: 48 h úteis (2 dias úteis, seg a sex) · clique num card para ver as OS";
+    }
+
+    function renderLista() {
+      const cards = document.getElementById("os-cards-grupos");
+      const corpo = document.getElementById("corpo-os");
+      if (erro) { corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar as OS.<br><small style="color:var(--erro)">' + esc(erro.message) + "</small></td></tr>"; cards.innerHTML = ""; return; }
+      if (!dados) { corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>'; if (!carregando) carregar(); return; }
+      cards.innerHTML = GRUPOS.map((g) => card(g, dados.filter(g.filtro), g.cod === grupoAtual)).join("");
+      const g = GRUPOS.find((x) => x.cod === grupoAtual) || GRUPOS[0];
+      const busca = document.getElementById("os-busca").value.trim().toLowerCase();
+      let lista = dados.filter(g.filtro);
+      if (busca) lista = lista.filter((o) => (o.id_os + " " + (o.cliente_nome || "") + " " + equip(o) + " " + (o.tecnico || "") + " " + (o.serie || "")).toLowerCase().includes(busca));
+      // atrasadas: a mais atrasada primeiro; aguardo/bancada: a que vence primeiro; o resto: a mais antiga primeiro
+      if (g.cod === "atrasadas") lista.sort((a, b) => Number(b.horas_uteis_atraso) - Number(a.horas_uteis_atraso));
+      else if (g.cod === "aguardo" || g.cod === "bancada") lista.sort((a, b) => (b.atrasada - a.atrasada) || (Number(b.horas_uteis_atraso) - Number(a.horas_uteis_atraso)) || (Number(a.horas_uteis_restantes) - Number(b.horas_uteis_restantes)));
+      else lista.sort((a, b) => (b.dias_corridos || 0) - (a.dias_corridos || 0));
+      document.getElementById("os-col-prazo").textContent = (g.cod === "atrasadas" || g.cod === "aguardo" || g.cod === "bancada") ? "Prazo do orçamento" : g.cod === "pronto_nao_retirado" ? "Pronta há" : "Dias desde a entrada";
+      if (!lista.length) { corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhuma OS ' + (busca ? "com essa busca " : "") + "neste grupo.</td></tr>"; return; }
+      const total = lista.reduce((s, o) => s + Number(o.total || 0), 0);
+      corpo.innerHTML = lista.map((o) =>
+        '<tr class="clicavel" data-os="' + o.id_os + '">' +
+          '<td class="esq"><strong>' + o.id_os + "</strong></td>" +
+          '<td class="esq">' + fmtData(o.data_entrada) + "</td>" +
+          '<td class="esq">' + esc(o.cliente_nome || "—") + "</td>" +
+          '<td class="esq">' + esc(equip(o)) + "</td>" +
+          '<td class="esq">' + esc(o.tecnico || "—") + "</td>" +
+          '<td class="esq">' + pill(o) + "</td>" +
+          "<td>" + prazoCelula(o) + "</td>" +
+          "<td>" + (Number(o.total) ? fmtMoeda(Number(o.total)) : "—") + "</td>" +
+        "</tr>").join("") +
+        '<tr class="total"><td class="esq">TOTAL</td><td class="esq">' + fmtIntBR(lista.length) + ' OS</td><td></td><td></td><td></td><td></td><td></td><td>' + (total ? fmtMoeda(total) : "—") + "</td></tr>";
+    }
+
+    function abrirFicha(id) {
+      const o = (dados || []).find((x) => String(x.id_os) === String(id));
+      if (!o) return;
+      const campo = (rot, val, cls) => '<div class="campo ' + (cls || "") + '"><i>' + rot + "</i><div>" + (val == null || val === "" ? "—" : val) + "</div></div>";
+      const fone = String(o.cliente_fone || "").replace(/\D/g, "");
+      const foneFmt = fone.length === 11 ? "(" + fone.slice(0, 2) + ") " + fone.slice(2, 7) + "-" + fone.slice(7) : fone.length === 10 ? "(" + fone.slice(0, 2) + ") " + fone.slice(2, 6) + "-" + fone.slice(6) : fone;
+      const foneHtml = fone ? esc(foneFmt) + (fone.length >= 10 ? ' · <a href="https://wa.me/55' + fone + '" target="_blank" rel="noopener">abrir WhatsApp</a>' : "") : null;
+      let aviso = "";
+      if (o.status === "1" || o.status === "2") {
+        aviso = o.atrasada
+          ? '<div class="os-aviso-prazo ruim">Orçamento atrasado: passou <strong>' + horasTxt(o.horas_uteis_atraso) + "</strong> do prazo de 48 h úteis (aberta há " + horasTxt(o.horas_uteis_aberta) + ").</div>"
+          : '<div class="os-aviso-prazo bom">Dentro do prazo: faltam <strong>' + horasTxt(o.horas_uteis_restantes) + "</strong> para as 48 h úteis do orçamento.</div>";
+      } else if (o.status === "7") {
+        const d = diasDesde(o.finalizada_em);
+        aviso = '<div class="os-aviso-prazo bom">Reparo pronto' + (d != null ? " há <strong>" + d + " dias</strong>" : "") + (Number(o.total) ? " · <strong>" + fmtMoeda(Number(o.total)) + "</strong> a receber" : "") + ". Cliente ainda não retirou.</div>";
+      } else if (o.status === "3") {
+        aviso = '<div class="os-aviso-prazo neutro">Orçamento pronto, aguardando a aprovação do cliente (' + (o.dias_corridos ?? "—") + " dias desde a entrada).</div>";
+      } else if (o.status === "4") {
+        aviso = '<div class="os-aviso-prazo neutro">Aguardando peça ou serviço de terceiro (' + (o.dias_corridos ?? "—") + " dias desde a entrada).</div>";
+      }
+      document.getElementById("os-ficha-titulo").innerHTML = "OS " + o.id_os + " " + pill(o);
+      document.getElementById("os-ficha-corpo").innerHTML = aviso +
+        '<div class="os-ficha">' +
+          campo("Cliente", esc(o.cliente_nome) + (o.codcliente ? ' <span class="cod-cliente">(' + o.codcliente + ")</span>" : "")) +
+          campo("Telefone", foneHtml) +
+          campo("E-mail", o.cliente_email ? esc(o.cliente_email) : null) +
+          campo("Técnico", o.tecnico ? esc(o.tecnico) : null) +
+          campo("Equipamento", esc(equip(o))) +
+          campo("Nº de série", o.serie ? esc(o.serie) : null) +
+          campo("Acessórios", o.acessorios ? esc(o.acessorios) : null) +
+          campo("Garantia", o.garantia === "S" ? "Sim" : o.garantia === "N" ? "Não" : (o.garantia ? esc(o.garantia) : null)) +
+          campo("Defeito relatado", o.defeito ? '<div class="caixa">' + esc(o.defeito) + "</div>" : null, "inteiro") +
+          campo("Serviço executado", o.servico ? '<div class="caixa">' + esc(o.servico) + "</div>" : null, "inteiro") +
+          (o.observacoes ? campo("Observações", '<div class="caixa">' + esc(o.observacoes) + "</div>", "inteiro") : "") +
+          campo("Última anotação do técnico", o.ultima_anotacao ? '<div class="caixa">' + esc(o.ultima_anotacao) + "</div>" : null, "inteiro") +
+          campo("Entrada", fmtData(o.data_entrada) + (o.aberta_em ? " · aberta em " + dataHora(o.aberta_em) : "")) +
+          campo("Orçamento aprovado", o.orcamento_aprovado_em ? dataHora(o.orcamento_aprovado_em) : null) +
+          campo("Finalizada", o.finalizada_em ? dataHora(o.finalizada_em) : null) +
+          campo("Saída", o.saida_em ? dataHora(o.saida_em) : null) +
+          campo("Valores", '<div class="os-valores"><span>Peças<br><b>' + fmtMoeda(Number(o.valorpeca || 0)) + "</b></span><span>Serviço<br><b>" + fmtMoeda(Number(o.valorservico || 0)) + "</b></span><span>Total<br><b>" + fmtMoeda(Number(o.total || 0)) + "</b></span></div>", "inteiro") +
+          ((o.pedido_pecas || o.pedido_servico) ? campo("Pedidos gerados", [o.pedido_pecas ? "peças " + esc(o.pedido_pecas) : "", o.pedido_servico ? "serviço " + esc(o.pedido_servico) : ""].filter(Boolean).join(" · ")) : "") +
+        "</div>";
+      document.getElementById("overlay-os").classList.remove("oculto");
+    }
+    function fecharFicha() { document.getElementById("overlay-os").classList.add("oculto"); }
+
+    function irParaGrupo(cod) { grupoAtual = cod; mostrarSubAssist("os"); document.getElementById("assist-os").scrollIntoView({ behavior: "smooth", block: "start" }); }
+
+    document.getElementById("os-cards-resumo").addEventListener("click", (ev) => { const b = ev.target.closest("[data-os-grupo]"); if (b) irParaGrupo(b.dataset.osGrupo); });
+    document.getElementById("os-cards-grupos").addEventListener("click", (ev) => { const b = ev.target.closest("[data-os-grupo]"); if (b) { grupoAtual = b.dataset.osGrupo; renderLista(); } });
+    document.getElementById("corpo-os").addEventListener("click", (ev) => { const tr = ev.target.closest("tr[data-os]"); if (tr) abrirFicha(tr.dataset.os); });
+    document.getElementById("os-busca").addEventListener("input", () => renderLista());
+    document.getElementById("btn-atualizar-os").addEventListener("click", () => carregar(true));
+    document.getElementById("btn-fechar-os").addEventListener("click", fecharFicha);
+    document.getElementById("overlay-os").addEventListener("click", (ev) => { if (ev.target.id === "overlay-os") fecharFicha(); });
+    document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !document.getElementById("overlay-os").classList.contains("oculto")) fecharFicha(); });
+
+    return { carregar, renderLista, abrirFicha, _dados: () => dados };
+  })();
+
   // --- sub-abas da aba Gastos e Assistência ---
   const assistSubabas = document.getElementById("assist-subabas");
   const assistMes = document.getElementById("assist-mes");
@@ -3302,7 +3581,9 @@
     assistMes.classList.toggle("oculto", sub !== "mes");
     assistLancamentos.classList.toggle("oculto", sub !== "lancamentos");
     assistAnual.classList.toggle("oculto", sub !== "anual");
+    document.getElementById("assist-os").classList.toggle("oculto", sub !== "os");
     assistSubabas.querySelectorAll("button").forEach((b) => b.classList.toggle("ativa", b.dataset.sub === sub));
+    if (sub === "os") OSAssist.renderLista();
     if (sub === "lancamentos") renderGastosFiltro();
     if (sub === "anual") renderResumoAnual();
   }
