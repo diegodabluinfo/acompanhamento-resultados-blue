@@ -274,6 +274,42 @@
   .modal-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
   #corpo-fornecedores input[type="text"] { padding: 6px 8px; font-size: 0.82rem; }
   #assist-subabas { margin-top: 2px; }
+  /* --- Histórico do cliente (conversas e ligações da Sonax) --- */
+  .link-hist { color: var(--azul); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .link-hist:hover { text-decoration-style: solid; }
+  .link-sonax { font-weight: 600; color: var(--azul); }
+  .ult-contato { font-size: 0.78rem; line-height: 1.3; }
+  .ult-contato .quando { font-weight: 700; }
+  .ult-contato .quem { color: var(--texto-suave); font-size: 0.72rem; }
+  .ult-velho .quando { color: var(--vermelho); }
+  .ult-medio .quando { color: var(--amarelo); }
+  .ult-recente .quando { color: var(--verde); }
+  .btn-hist { font: inherit; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); cursor: pointer; }
+  .btn-hist:hover { background: var(--azul); color: #fff; }
+  #overlay-hist { z-index: 60; }
+  .modal-hist { max-width: 860px; }
+  .modal-hist .os-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .modal-hist .os-cab h2 { margin: 0; }
+  .hist-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin: 4px 0 12px; }
+  .hist-resumo > div { background: #f7faff; border: 1px solid var(--borda); border-radius: 10px; padding: 8px 10px; font-size: 0.8rem; }
+  .hist-resumo i { display: block; font-style: normal; font-size: 0.66rem; text-transform: uppercase; letter-spacing: .03em; color: var(--texto-suave); font-weight: 700; margin-bottom: 2px; }
+  .hist-linha { border: 1px solid var(--borda); border-radius: 10px; margin-bottom: 8px; background: #fff; }
+  .hist-cab { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 12px; cursor: pointer; font-size: 0.82rem; }
+  .hist-cab:hover { background: #f7faff; }
+  .hist-cab .data { font-weight: 700; min-width: 118px; font-variant-numeric: tabular-nums; }
+  .hist-cab .quem { font-weight: 600; }
+  .hist-cab .extra { color: var(--texto-suave); font-size: 0.74rem; margin-left: auto; }
+  .hist-tag { display: inline-block; padding: 1px 7px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; background: #eef1f6; color: #3d4b5c; }
+  .hist-tag.rec { background: #e4eefc; color: #1a4f94; }
+  .hist-tag.atv { background: #fdeadf; color: #a2461c; }
+  .hist-tag.lig { background: #efe6fb; color: #5b2e91; }
+  .hist-conversa { border-top: 1px solid var(--borda); padding: 10px 12px; background: #f4f6fa; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .bolha { max-width: 78%; padding: 6px 10px; border-radius: 10px; font-size: 0.82rem; white-space: pre-wrap; word-break: break-word; box-shadow: 0 1px 1px rgba(0,0,0,.05); }
+  .bolha small { display: block; font-size: 0.66rem; color: var(--texto-suave); margin-top: 2px; }
+  .bolha.cliente { align-self: flex-start; background: #fff; }
+  .bolha.empresa { align-self: flex-end; background: #dcf3e4; }
+  .bolha.bot { align-self: flex-end; background: #eceff4; color: #4a5566; font-size: 0.76rem; }
+  .hist-mais { text-align: center; margin: 10px 0 2px; }
   /* --- Ordens de serviço (Gastos e Assistência) --- */
   .os-faixa { margin-bottom: 14px; }
   .os-faixa-titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; }
@@ -952,10 +988,11 @@
                     <th>Vence mais antigo</th>
                     <th>A vencer</th>
                     <th>Pontualidade histórica</th>
+                    <th title="Última conversa ou ligação registrada na Sonax">Último contato</th>
                   </tr>
                 </thead>
                 <tbody id="corpo-cobranca">
-                  <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+                  <tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1646,6 +1683,17 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ===== Histórico do cliente ===== -->
+  <div id="overlay-hist" class="overlay oculto">
+    <div class="modal-gasto modal-hist" role="dialog" aria-modal="true" aria-labelledby="hist-titulo">
+      <div class="os-cab">
+        <h2 id="hist-titulo">Histórico do cliente</h2>
+        <button type="button" class="btn-secundario" id="btn-fechar-hist">Fechar</button>
+      </div>
+      <div id="hist-corpo"></div>
     </div>
   </div>
 
@@ -3393,6 +3441,198 @@
   });
 
 
+  // --- Histórico do cliente: conversas, protocolos e ligações da Sonax (gravados no nosso banco) ---
+  // Fontes: rpc ultimo_contato_clientes (resumo de vários clientes) e rpc historico_cliente (tudo de um).
+  // As duas conferem a permissão no banco (quem vê cobrança, assistência, gastos, clientes ou vendas).
+  const HistCliente = (() => {
+    const SONAX_CONTATO = "https://chat.sonax.net.br/omnichannel-chat/contacts/view/";
+    const resumos = new Map();     // codcliente -> linha de ultimo_contato_clientes
+    let atual = null;              // { cod, nome, grupo, limite, dados }
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo)
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 200));
+      return res.json();
+    }
+
+    async function buscarResumos(cods) {
+      const falta = [...new Set(cods.map(Number).filter((c) => c && !resumos.has(c)))];
+      for (let i = 0; i < falta.length; i += 300) {
+        const linhas = await rpc("ultimo_contato_clientes", { p_cods: falta.slice(i, i + 300) });
+        falta.slice(i, i + 300).forEach((c) => resumos.set(c, null));
+        for (const l of linhas) resumos.set(Number(l.codcliente), l);
+      }
+      return resumos;
+    }
+    function resumo(cod) { return resumos.get(Number(cod)); }
+
+    function diasAtras(iso) {
+      if (!iso) return null;
+      const d0 = new Date(iso); const hoje = new Date();
+      const a = Date.UTC(d0.getFullYear(), d0.getMonth(), d0.getDate()), b = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      return Math.round((b - a) / 86400000);
+    }
+    function textoDias(d) { return d == null ? "—" : d === 0 ? "hoje" : d === 1 ? "ontem" : "há " + d + " dias"; }
+    function dataHoraBR(iso) {
+      if (!iso) return "—";
+      return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+    function primeiroNome(n) { if (!n) return ""; const p = String(n).trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[1][0] + "." : p[0]; }
+
+    // "conversa" -> tela do contato na Sonax (um link por contato do cliente)
+    function linksSonax(contatos) {
+      if (!contatos || !contatos.length) return "";
+      return contatos.slice(0, 4).map((c) =>
+        '<a class="link-sonax" href="' + SONAX_CONTATO + encodeURIComponent(c.id) + '" target="_blank" rel="noopener" title="' + esc((c.nome || "") + (c.celular ? " · " + c.celular : "")) + '">conversa</a>' +
+        (contatos.length > 1 ? ' <small class="cod-cliente">' + esc(primeiroNome(c.nome)) + "</small>" : "")
+      ).join(" · ");
+    }
+
+    // célula curta de "último contato" para tabelas
+    function celulaUltimo(cod) {
+      const r = resumo(cod);
+      if (r === undefined) return '<span class="cod-cliente">…</span>';
+      const quando = r && (r.ultimo_com_atendente_em || r.ultimo_em);
+      if (!quando && !(r && r.ultima_ligacao_em)) return '<span class="cod-cliente">sem registro</span>';
+      const ult = [quando, r.ultima_ligacao_em].filter(Boolean).sort().pop();
+      const foiLigacao = ult === r.ultima_ligacao_em && ult !== quando;
+      const d = diasAtras(ult);
+      const cls = d > 30 ? "ult-velho" : d > 7 ? "ult-medio" : "ult-recente";
+      const quem = foiLigacao ? "ligação · " + primeiroNome(r.ultima_ligacao_agente) : primeiroNome(r.atendente_humano || r.atendente);
+      return '<div class="ult-contato ' + cls + '"><span class="quando">' + textoDias(d) + '</span><div class="quem">' + esc(quem || "") + "</div></div>";
+    }
+
+    // bloco de resumo para fichas (detalhe do cliente, OS)
+    function blocoResumo(cod) {
+      const r = resumo(cod);
+      if (r === undefined) return '<span class="cod-cliente">carregando histórico…</span>';
+      if (!r || (!r.ultimo_em && !r.ultima_ligacao_em)) return "Sem conversa ou ligação registrada na Sonax" + (r && r.contatos ? " · " + linksSonax(r.contatos) : "");
+      const partes = [];
+      if (r.ultimo_com_atendente_em || r.ultimo_em)
+        partes.push("Último atendimento: <b>" + dataHoraBR(r.ultimo_com_atendente_em || r.ultimo_em) + "</b> (" + textoDias(diasAtras(r.ultimo_com_atendente_em || r.ultimo_em)) + ") com <b>" + esc(r.atendente_humano || r.atendente || "—") + "</b>");
+      if (r.ultima_ligacao_em) partes.push("Última ligação: <b>" + dataHoraBR(r.ultima_ligacao_em) + "</b>" + (r.ultima_ligacao_agente ? " · " + esc(primeiroNome(r.ultima_ligacao_agente)) : ""));
+      if (r.contatos && r.contatos.length) partes.push(linksSonax(r.contatos));
+      return partes.join(" · ");
+    }
+
+    function marcador(cod, nome, grupo) {
+      return 'data-hist-cod="' + Number(cod) + '" data-hist-nome="' + esc(nome || "") + '"' + (grupo ? ' data-hist-grupo="1"' : "");
+    }
+
+    async function abrir(cod, nome, grupo) {
+      atual = { cod: Number(cod), nome: nome || "", grupo: !!grupo, limite: 20, dados: null, abertos: new Set() };
+      document.getElementById("hist-titulo").innerHTML = "Histórico · " + esc(nome || ("cliente " + cod)) + ' <span class="cod-cliente">(' + Number(cod) + ")</span>";
+      document.getElementById("hist-corpo").innerHTML = '<div class="estado-vazio">Carregando conversas…</div>';
+      document.getElementById("overlay-hist").classList.remove("oculto");
+      await carregar();
+    }
+
+    async function carregar() {
+      const alvo = atual;
+      try {
+        const d = await rpc("historico_cliente", { p_codcliente: alvo.cod, p_limite: alvo.limite, p_grupo: alvo.grupo });
+        if (atual !== alvo) return;
+        alvo.dados = d;
+        if (alvo.abertos.size === 0 && d.atendimentos && d.atendimentos[0]) alvo.abertos.add(d.atendimentos[0].protocolo_numero);
+        render();
+      } catch (e) {
+        console.error("Erro no histórico do cliente:", e);
+        document.getElementById("hist-corpo").innerHTML = '<div class="estado-vazio">Não foi possível carregar o histórico.<br><small style="color:var(--erro)">' + esc(e.message) + "</small></div>";
+      }
+    }
+
+    function textoMsg(t) {
+      return esc(t || "").replace(/&lt;br\s*\/?&gt;/gi, "\n");
+    }
+
+    function render() {
+      const d = atual.dados;
+      if (d.nome && !atual.nome) document.getElementById("hist-titulo").innerHTML = "Histórico · " + esc(d.nome) + ' <span class="cod-cliente">(' + atual.cod + ")</span>";
+      const at = d.atendimentos || [], lg = d.ligacoes || [];
+      const ultAt = at.find((a) => a.atendente_nome) || at[0];
+      const resumoHtml = '<div class="hist-resumo">' +
+        "<div><i>Último atendimento</i>" + (ultAt ? "<b>" + dataHoraBR(ultAt.aberto_em) + "</b> · " + textoDias(diasAtras(ultAt.aberto_em)) + "<br>" + esc(ultAt.atendente_nome || "sem atendente") : "nenhum") + "</div>" +
+        "<div><i>Última ligação</i>" + (lg[0] ? "<b>" + dataHoraBR(lg[0].iniciada_em) + "</b> · " + textoDias(diasAtras(lg[0].iniciada_em)) + "<br>" + esc(lg[0].agente_nome || "") : "nenhuma") + "</div>" +
+        "<div><i>No banco</i>" + fmtIntBR(d.total_atendimentos) + " atendimentos · " + fmtIntBR(d.total_ligacoes) + " ligações" + (d.codigos && d.codigos.length > 1 ? "<br>grupo com " + d.codigos.length + " códigos" : "") + "</div>" +
+        "<div><i>Abrir na Sonax</i>" + (linksSonax(d.contatos) || "contato ainda não identificado") + "</div>" +
+      "</div>";
+
+      const itens = at.map((a) => ({ tipo: "at", em: a.aberto_em, a }))
+        .concat(lg.map((l) => ({ tipo: "lig", em: l.iniciada_em, l })))
+        .sort((x, y) => String(y.em).localeCompare(String(x.em)));
+
+      const linhas = itens.map((it) => {
+        if (it.tipo === "lig") {
+          const l = it.l;
+          const dur = Number(l.duracao_seg || 0);
+          return '<div class="hist-linha"><div class="hist-cab" style="cursor:default">' +
+            '<span class="data">' + dataHoraBR(l.iniciada_em) + "</span>" +
+            '<span class="hist-tag lig">ligação ' + esc(l.sentido || "") + "</span>" +
+            '<span class="quem">' + esc(l.agente_nome || "—") + "</span>" +
+            "<span>" + (l.atendida === false ? "não atendida" : Math.floor(dur / 60) + "min " + String(dur % 60).padStart(2, "0") + "s") + "</span>" +
+            (l.obs && l.obs.trim() ? '<span class="extra">' + esc(l.obs.trim()) + "</span>" : "") +
+          "</div></div>";
+        }
+        const a = it.a;
+        const aberto = atual.abertos.has(a.protocolo_numero);
+        const tags = (a.tags || []).filter(Boolean).slice(0, 3).map((t) => '<span class="hist-tag">' + esc(String(t).trim()) + "</span>").join(" ");
+        let conversa = "";
+        if (aberto) {
+          const msgs = a.mensagens || [];
+          conversa = '<div class="hist-conversa">' + (msgs.length ? msgs.map((m) =>
+            '<div class="bolha ' + m.de + '">' + (textoMsg(m.texto) || (m.arquivo ? "" : "<i>(sem texto)</i>")) +
+              (m.arquivo ? (m.texto ? "<br>" : "") + '<a href="' + esc(m.arquivo) + '" target="_blank" rel="noopener">arquivo (' + esc(m.tipo || "anexo") + ")</a>" : "") +
+              "<small>" + (m.de === "cliente" ? "cliente" : m.de === "bot" ? "bot/sistema" : "Blue") + " · " + dataHoraBR(m.em) + "</small></div>").join("")
+            : '<div class="estado-vazio" style="padding:8px">' + (a.conversa_baixada ? "Protocolo sem mensagens." : "Conversa ainda sendo importada da Sonax (a carga do histórico roda em segundo plano).") + "</div>") +
+          "</div>";
+        }
+        return '<div class="hist-linha"><div class="hist-cab" data-hist-proto="' + esc(a.protocolo_numero) + '">' +
+          '<span class="data">' + dataHoraBR(a.aberto_em) + "</span>" +
+          '<span class="hist-tag ' + (a.receptivo ? "rec" : "atv") + '">' + (a.receptivo ? "cliente chamou" : "ativo") + "</span>" +
+          '<span class="quem">' + esc(a.atendente_nome || "sem atendente") + "</span>" +
+          '<span class="cod-cliente">' + esc(a.canal || "") + (a.fila ? " · " + esc(a.fila) : "") + "</span> " + tags +
+          '<span class="extra">' + (a.qtd_mensagens ? a.qtd_mensagens + " msgs " : "") + (aberto ? "▾" : "▸") + "</span>" +
+        "</div>" + conversa + "</div>";
+      }).join("");
+
+      const temMais = (d.total_atendimentos > at.length) || (d.total_ligacoes > lg.length);
+      document.getElementById("hist-corpo").innerHTML = resumoHtml +
+        (linhas || '<div class="estado-vazio">Nenhum atendimento ou ligação deste cliente na Sonax.</div>') +
+        (temMais ? '<div class="hist-mais"><button type="button" class="btn-secundario" id="btn-hist-mais">Carregar mais antigos</button></div>' : "");
+    }
+
+    function fechar() { document.getElementById("overlay-hist").classList.add("oculto"); atual = null; }
+
+    document.getElementById("hist-corpo").addEventListener("click", (ev) => {
+      if (ev.target.closest("a")) return;
+      const cab = ev.target.closest("[data-hist-proto]");
+      if (cab && atual) {
+        const p = cab.dataset.histProto;
+        if (atual.abertos.has(p)) atual.abertos.delete(p); else atual.abertos.add(p);
+        render(); return;
+      }
+      if (ev.target.id === "btn-hist-mais" && atual) { atual.limite += 30; ev.target.textContent = "Carregando…"; carregar(); }
+    });
+    document.getElementById("btn-fechar-hist").addEventListener("click", fechar);
+    document.getElementById("overlay-hist").addEventListener("click", (ev) => { if (ev.target.id === "overlay-hist") fechar(); });
+    document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !document.getElementById("overlay-hist").classList.contains("oculto")) { ev.stopImmediatePropagation(); fechar(); } }, true);
+    // qualquer elemento com data-hist-cod abre o histórico (captura: não deixa o clique abrir/fechar a linha da tabela)
+    document.addEventListener("click", (ev) => {
+      const el = ev.target.closest("[data-hist-cod]");
+      if (!el || ev.target.closest("a")) return;
+      ev.preventDefault(); ev.stopPropagation();
+      abrir(el.dataset.histCod, el.dataset.histNome, el.dataset.histGrupo === "1");
+    }, true);
+
+    return { buscarResumos, resumo, celulaUltimo, blocoResumo, linksSonax, marcador, abrir };
+  })();
+
   // --- Ordens de serviço (faixa no topo + sub-aba) ---
   // Fonte: v_os_assistencia (security definer com trava pode_ver_aba('assistencia'|'gastos'); anon não lê).
   // O prazo de 48 h úteis e as horas úteis já vêm calculados do banco (horas_uteis / os_prazo_orcamento_horas).
@@ -3512,7 +3752,7 @@
       const campo = (rot, val, cls) => '<div class="campo ' + (cls || "") + '"><i>' + rot + "</i><div>" + (val == null || val === "" ? "—" : val) + "</div></div>";
       const fone = String(o.cliente_fone || "").replace(/\D/g, "");
       const foneFmt = fone.length === 11 ? "(" + fone.slice(0, 2) + ") " + fone.slice(2, 7) + "-" + fone.slice(7) : fone.length === 10 ? "(" + fone.slice(0, 2) + ") " + fone.slice(2, 6) + "-" + fone.slice(6) : fone;
-      const foneHtml = fone ? esc(foneFmt) + (fone.length >= 10 ? ' · <a href="https://wa.me/55' + fone + '" target="_blank" rel="noopener">abrir WhatsApp</a>' : "") : null;
+      const foneHtml = fone ? esc(foneFmt) : null;
       let aviso = "";
       if (o.status === "1" || o.status === "2") {
         aviso = o.atrasada
@@ -3528,6 +3768,9 @@
       }
       document.getElementById("os-ficha-titulo").innerHTML = "OS " + o.id_os + " " + pill(o);
       document.getElementById("os-ficha-corpo").innerHTML = aviso +
+        (o.codcliente ? '<div class="os-aviso-prazo neutro" id="os-hist-resumo" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between">' +
+          '<span id="os-hist-texto">' + HistCliente.blocoResumo(o.codcliente) + "</span>" +
+          '<button type="button" class="btn-hist" ' + HistCliente.marcador(o.codcliente, o.cliente_nome) + '>Ver conversas e ligações</button></div>' : "") +
         '<div class="os-ficha">' +
           campo("Cliente", esc(o.cliente_nome) + (o.codcliente ? ' <span class="cod-cliente">(' + o.codcliente + ")</span>" : "")) +
           campo("Telefone", foneHtml) +
@@ -3549,6 +3792,12 @@
           ((o.pedido_pecas || o.pedido_servico) ? campo("Pedidos gerados", [o.pedido_pecas ? "peças " + esc(o.pedido_pecas) : "", o.pedido_servico ? "serviço " + esc(o.pedido_servico) : ""].filter(Boolean).join(" · ")) : "") +
         "</div>";
       document.getElementById("overlay-os").classList.remove("oculto");
+      if (o.codcliente && HistCliente.resumo(o.codcliente) === undefined) {
+        HistCliente.buscarResumos([o.codcliente]).then(() => {
+          const el = document.getElementById("os-hist-texto");
+          if (el) el.innerHTML = HistCliente.blocoResumo(o.codcliente);
+        }).catch((e) => { const el = document.getElementById("os-hist-texto"); if (el) el.textContent = "Histórico indisponível."; console.error(e); });
+      }
     }
     function fecharFicha() { document.getElementById("overlay-os").classList.add("oculto"); }
 
@@ -3740,7 +3989,7 @@
   async function carregarCobranca() {
     if (cobrancaCarregando) return;
     cobrancaCarregando = true;
-    corpoCobranca.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>';
+    corpoCobranca.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>';
     try {
       sessao = await garantirSessaoValida();
       if (!sessao) { atualizarAreaConta(); atualizarTelaCobranca(); return; }
@@ -3756,12 +4005,15 @@
       const linhas = await res.json();
       cobrancaLinhas = agruparCobranca(linhas);
       preencherVendedoresCobranca();
+      // último contato na Sonax de todos os clientes da lista (uma chamada só); a tabela redesenha quando chegar
+      HistCliente.buscarResumos(cobrancaLinhas.map((c) => c.cod)).then(() => renderCobranca())
+        .catch((e) => console.error("Último contato indisponível:", e));
       const d = new Date();
       freshnessCobranca.textContent = "Consultado às " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
       renderCobranca();
     } catch (err) {
       console.error("Erro ao carregar cobrança:", err);
-      corpoCobranca.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">' + esc(err.message || err) + "</small></td></tr>";
+      corpoCobranca.innerHTML = '<tr><td colspan="9" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">' + esc(err.message || err) + "</small></td></tr>";
     } finally {
       cobrancaCarregando = false;
     }
@@ -3903,7 +4155,7 @@
     ].map((k) => '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>").join("");
 
     if (!lista.length) {
-      corpoCobranca.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhum cliente com título vencido neste filtro.</td></tr>';
+      corpoCobranca.innerHTML = '<tr><td colspan="9" class="estado-vazio">Nenhum cliente com título vencido neste filtro.</td></tr>';
       return;
     }
 
@@ -3927,10 +4179,11 @@
         "<td>" + fmtData(x.maisAntigo) + "</td>" +
         "<td>" + (x.aVencer ? fmtMoeda(x.aVencer) : "—") + "</td>" +
         "<td>" + pct + (c.pagos ? '<div class="atividade-cliente">' + fmtIntBR(c.pagos) + " pagos</div>" : "") + "</td>" +
+        "<td>" + HistCliente.celulaUltimo(c.cod) + "</td>" +
         "</tr>";
       if (aberto) html += detalheCobranca(c);
     }
-    html += '<tr class="total"><td>TOTAL</td><td></td><td>' + fmtMoeda(totVenc) + "</td><td>" + fmtIntBR(totTit) + "</td><td></td><td></td><td></td><td></td></tr>";
+    html += '<tr class="total"><td>TOTAL</td><td></td><td>' + fmtMoeda(totVenc) + "</td><td>" + fmtIntBR(totTit) + "</td><td></td><td></td><td></td><td></td><td></td></tr>";
     corpoCobranca.innerHTML = html;
   }
 
@@ -3944,6 +4197,10 @@
       "<span>E-mail: <b>" + esc(c.email || "—") + "</b></span>" +
       "<span>Cidade: <b>" + esc([c.cidade, c.uf].filter(Boolean).join(" / ") || "—") + "</b></span>" +
       "<span>Histórico: <b>" + atraso + "</b></span>" +
+      "</div>" +
+      '<div class="contato-cli">' +
+      "<span>" + HistCliente.blocoResumo(c.cod) + "</span>" +
+      '<button type="button" class="btn-hist" ' + HistCliente.marcador(c.cod, c.nome) + '>Ver conversas e ligações</button>' +
       "</div>";
     const titulos = [...c.titulos].sort((a, b) => (b.dias ?? -1) - (a.dias ?? -1));
     const linhas = titulos.map((t) =>
@@ -3958,7 +4215,7 @@
         "<td>" + esc(t.nossonr || "—") + "</td>" +
         '<td class="col-boleto">' + botaoSegundaVia(t) + "</td>" +
       "</tr>").join("");
-    return '<tr class="detalhe-cli"><td colspan="8">' + contato +
+    return '<tr class="detalhe-cli"><td colspan="9">' + contato +
       '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Atraso</th><th class="col-protesto">Protesto</th><th>A receber</th><th>Nosso nº</th><th class="col-boleto">Boleto</th></tr></thead><tbody>' +
       linhas + "</tbody></table></div></td></tr>";
   }
@@ -4304,7 +4561,7 @@
     if (pedidosDoDia.has(chave)) return;
     pedidosDoDia.set(chave, "carregando");
     try {
-      const campos = "pedido,nota_fiscal,cliente,cidade,uf,faturado,lucro,margem_pct,hora_fatura,itens,forma_pagamento,so_servico,e_commerce,market_place,os";
+      const campos = "pedido,nota_fiscal,cod_cliente,cliente,cidade,uf,faturado,lucro,margem_pct,hora_fatura,itens,forma_pagamento,so_servico,e_commerce,market_place,os";
       const res = await leitura(SUPABASE_URL + "/rest/v1/v_pedidos_dia?select=" + campos +
         "&data=eq." + dataISO + "&codigo=eq." + codigo + "&order=hora_fatura.asc");
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -4339,7 +4596,7 @@
             "<td>" + hhmm(x.hora_fatura) + "</td>" +
             "<td>" + esc(x.pedido) + (x.os ? ' <span class="atividade-cliente">OS ' + esc(x.os) + "</span>" : "") + "</td>" +
             "<td>" + esc(x.nota_fiscal || "—") + "</td>" +
-            '<td style="text-align:left;">' + esc(x.cliente || "—") + selos +
+            '<td style="text-align:left;">' + (x.cod_cliente ? '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" : esc(x.cliente || "—")) + selos +
               (x.cidade ? '<div class="atividade-cliente">' + esc([x.cidade, x.uf].filter(Boolean).join(" / ")) + "</div>" : "") + "</td>" +
             "<td>" + fmtInt(x.itens) + "</td>" +
             "<td>" + fmtMoeda(x.faturado) + "</td>" +
@@ -4714,7 +4971,8 @@
 
   // código do ERP antes do nome, atividade logo abaixo
   function celulaCliente(l) {
-    return "<td>" + '<span class="cod-cliente">' + esc(String(l.grupo_id)) + "</span> " + esc(l.cliente) +
+    return "<td>" + '<span class="cod-cliente">' + esc(String(l.grupo_id)) + "</span> " +
+      '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(l.grupo_id, l.cliente, true) + ">" + esc(l.cliente) + "</span>" +
       rotuloGrupo(l.clientes_no_grupo) +
       (l.atividade ? '<div class="atividade-cliente">' + esc(l.atividade) + "</div>" : "") + "</td>";
   }
