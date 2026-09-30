@@ -415,6 +415,23 @@
   tr.detalhe-cli > td > .contato-cli, tr.detalhe-cli > td > .tabela-scroll { width: 0; min-width: 100%; box-sizing: border-box; }
   #view-cobranca .subtabela th, #view-cobranca .subtabela td { padding: 7px 10px; }
   .pill-bloq { background: #eef1f6; color: var(--texto-suave); }
+  /* --- Inadimplência no resultado do vendedor --- */
+  .inad-debito { color: var(--vermelho); }
+  .inad-credito { color: var(--verde); }
+  tr.vend-clicavel { cursor: pointer; }
+  tr.vend-clicavel:hover td { background: #f1f6ff; }
+  tr.vend-clicavel td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--texto-suave); }
+  tr.vend-clicavel.aberta td:first-child::before { content: "▾"; color: var(--azul); }
+  tr.detalhe-vend > td { background: #f7faff; padding: 6px 12px 14px; text-align: left; white-space: normal; font-weight: 400; }
+  tr.detalhe-vend .det-vend-box > * { width: 0; min-width: 100%; box-sizing: border-box; }
+  .det-vend-nota { margin: 6px 0; font-size: 0.8rem; color: var(--texto-suave); }
+  .det-vend-resumo { font-size: 0.82rem; color: var(--texto-suave); margin: 6px 0 8px; }
+  .det-vend-box .subtabela { font-size: 0.82rem; }
+  .det-vend-box .subtabela th, .det-vend-box .subtabela td { padding: 7px 10px; }
+  .det-vend-box td.det-cli { text-align: left; white-space: normal; font-weight: 400; }
+  .pill-inad { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; }
+  .pill-inad-deb { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .pill-inad-cre { background: var(--verde-fundo); color: var(--verde); }
   tr.cli-clicavel { cursor: pointer; }
   tr.cli-clicavel:hover td { background: #f1f6ff; }
   tr.cli-clicavel td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--texto-suave); }
@@ -711,13 +728,14 @@
                   <th>Produzido</th>
                   <th>Créditos</th>
                   <th>Devoluções</th>
+                  <th title="Títulos vencidos no mês anterior que seguiam em aberto no fim do mês (débito) e títulos já debitados que o cliente pagou depois (crédito)">Inadimplência</th>
                   <th>Falta</th>
                   <th>Final</th>
                   <th>% Atingido</th>
                 </tr>
               </thead>
               <tbody id="corpo-tabela">
-                <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+                <tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2212,30 +2230,34 @@
       });
 
     if (!linhas.length) {
-      corpoTabela.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhum dado para este mês.</td></tr>';
+      corpoTabela.innerHTML = '<tr><td colspan="9" class="estado-vazio">Nenhum dado para este mês.</td></tr>';
       return;
     }
 
-    let somaObjetivo = 0, somaProduzido = 0, somaCreditos = 0, somaDevolucoes = 0, somaFinal = 0;
+    let somaObjetivo = 0, somaProduzido = 0, somaCreditos = 0, somaDevolucoes = 0, somaInadimplencia = 0, somaFinal = 0;
+    const competenciaAtual = competencia;
 
     corpoTabela.innerHTML = linhas.map(l => {
       const objetivo = Number(l.objetivo || 0);
       const produzido = Number(l.produzido || 0);
       const creditos = Number(l.creditos || 0);
       const devolucoes = Number(l.devolucoes || 0);
+      const inadimplencia = Number(l.inadimplencia || 0);
       const final = Number(l.final || 0);
       const falta = Math.max(objetivo - final, 0);
       somaObjetivo += objetivo;
       somaProduzido += produzido;
       somaCreditos += creditos;
       somaDevolucoes += devolucoes;
+      somaInadimplencia += inadimplencia;
       somaFinal += final;
-      return `<tr>
+      return `<tr class="vend-clicavel" data-vendedor="${l.vendedor_id}" data-competencia="${competenciaAtual}">
         <td title="${l.nome_completo}">${l.nome_curto || l.nome_completo}</td>
         <td>${fmtMoeda(objetivo)}</td>
         <td>${fmtMoeda(produzido)}</td>
         <td>${fmtMoeda(creditos)}</td>
         <td>${fmtMoeda(devolucoes)}</td>
+        <td class="${classeInadimplencia(inadimplencia)}">${fmtMoeda(inadimplencia)}</td>
         <td>${fmtMoeda(falta)}</td>
         <td>${fmtMoeda(final)}</td>
         <td><span class="pct-pill ${classePct(l.pct_atingido)}">${fmtPct(l.pct_atingido)}</span></td>
@@ -2250,6 +2272,7 @@
         <td>${fmtMoeda(somaProduzido)}</td>
         <td>${fmtMoeda(somaCreditos)}</td>
         <td>${fmtMoeda(somaDevolucoes)}</td>
+        <td class="${classeInadimplencia(somaInadimplencia)}">${fmtMoeda(somaInadimplencia)}</td>
         <td>${fmtMoeda(faltaTotal)}</td>
         <td>${fmtMoeda(somaFinal)}</td>
         <td><span class="pct-pill ${classePct(pctTotal)}">${fmtPct(pctTotal)}</span></td>
@@ -2263,7 +2286,7 @@
   let appIniciado = false;
   async function iniciarApp() {
     appIniciado = true;
-    corpoTabela.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>';
+    corpoTabela.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>';
     try {
       const [linhas, cutoff, sincronizacao] = await Promise.all([
         buscarResultados(),
@@ -2293,11 +2316,73 @@
     } catch (err) {
       console.error("Erro ao carregar acompanhamento de resultados:", err);
       const mensagem = (err && err.message) ? err.message : String(err);
-      corpoTabela.innerHTML = `<tr><td colspan="8" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">${mensagem.replace(/</g,"&lt;")}</small></td></tr>`;
+      corpoTabela.innerHTML = `<tr><td colspan="9" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">${mensagem.replace(/</g,"&lt;")}</small></td></tr>`;
     }
   }
 
   seletorMes.addEventListener("change", () => renderizarTabela(seletorMes.value));
+
+  // --- Inadimplência: detalhe por vendedor (clique na linha) ---
+  function classeInadimplencia(v) {
+    if (v < 0) return "inad-debito";
+    if (v > 0) return "inad-credito";
+    return "";
+  }
+
+  corpoTabela.addEventListener("click", async (ev) => {
+    const tr = ev.target.closest("tr.vend-clicavel");
+    if (!tr) return;
+    const prox = tr.nextElementSibling;
+    if (prox && prox.classList.contains("detalhe-vend")) {
+      prox.remove();
+      tr.classList.remove("aberta");
+      return;
+    }
+    corpoTabela.querySelectorAll("tr.detalhe-vend").forEach(x => x.remove());
+    corpoTabela.querySelectorAll("tr.vend-clicavel.aberta").forEach(x => x.classList.remove("aberta"));
+    tr.classList.add("aberta");
+    const det = document.createElement("tr");
+    det.className = "detalhe-vend";
+    det.innerHTML = '<td colspan="9"><div class="det-vend-box">Carregando...</div></td>';
+    tr.after(det);
+    const box = det.querySelector(".det-vend-box");
+    const vend = tr.dataset.vendedor, comp = tr.dataset.competencia;
+    if (!mesCorteAutomatico || comp < mesCorteAutomatico) {
+      box.innerHTML = '<p class="det-vend-nota">A regra de inadimplência vale a partir dos meses automáticos. Este mês foi lançado manualmente.</p>';
+      return;
+    }
+    try {
+      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_inadimplencia_detalhe?select=*&vendedor_id=eq.${encodeURIComponent(vend)}&competencia=eq.${encodeURIComponent(comp)}&order=tipo.desc,vencimento.asc`);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const itens = await res.json();
+      const mesAtual = hojeISO().slice(0, 7) + "-01";
+      const nota = comp === mesAtual
+        ? '<p class="det-vend-nota">Prévia: o débito do mês só fecha no último dia. Títulos pagos até lá saem da lista.</p>'
+        : "";
+      if (!itens.length) {
+        box.innerHTML = nota + '<p class="det-vend-nota">Sem débitos ou créditos de inadimplência neste mês.</p>';
+        return;
+      }
+      const deb = itens.filter(i => i.tipo === "debito").reduce((s, i) => s + Number(i.valor), 0);
+      const cre = itens.filter(i => i.tipo === "credito").reduce((s, i) => s + Number(i.valor), 0);
+      const linhas = itens.map(i => `<tr>
+          <td><span class="pill-inad ${i.tipo === "debito" ? "pill-inad-deb" : "pill-inad-cre"}">${i.tipo === "debito" ? "débito" : "crédito"}</span></td>
+          <td class="det-cli" title="${esc(i.cliente || "")}">${esc(i.codcliente)} ${esc(i.cliente || "")}</td>
+          <td>${esc(i.titulo)}</td>
+          <td>${esc(i.nfiscal || "—")}</td>
+          <td>${fmtData(i.vencimento)}</td>
+          <td>${i.dataquitacao ? fmtData(i.dataquitacao) : "em aberto"}</td>
+          <td class="${classeInadimplencia(Number(i.valor))}">${fmtMoeda(Number(i.valor))}</td>
+        </tr>`).join("");
+      box.innerHTML = nota +
+        `<div class="det-vend-resumo">Débitos: <b class="inad-debito">${fmtMoeda(deb)}</b> · Créditos: <b class="inad-credito">${fmtMoeda(cre)}</b> · Saldo: <b class="${classeInadimplencia(deb + cre)}">${fmtMoeda(deb + cre)}</b></div>` +
+        '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Tipo</th><th>Cliente</th><th>Título</th><th>NF</th><th>Vencimento</th><th>Pago em</th><th>Valor</th></tr></thead><tbody>' +
+        linhas + "</tbody></table></div>";
+    } catch (e) {
+      console.error("Erro ao buscar inadimplência:", e);
+      box.innerHTML = '<p class="det-vend-nota" style="color:var(--erro)">Não foi possível carregar o detalhe.</p>';
+    }
+  });
 
   // --- dados: Assistência / Fornecedores ---
   async function buscarGastosAssistencia() {
