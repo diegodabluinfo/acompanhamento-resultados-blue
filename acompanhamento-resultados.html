@@ -340,6 +340,11 @@
   #view-assistencia #tabela-os { font-size: 0.82rem; }
   #tabela-os td, #tabela-os th { padding: 8px 10px; }
   #tabela-os td.esq, #tabela-os th.esq { text-align: left; white-space: normal; }
+  #tabela-os th[data-ord] { cursor: pointer; user-select: none; }
+  #tabela-os th[data-ord]:hover { color: var(--azul); }
+  #tabela-os th .seta-ord { font-size: 0.7rem; margin-left: 3px; color: var(--azul); }
+  #tabela-os .data-pronto { display: block; font-size: 0.72rem; color: var(--texto-suave); }
+  #tabela-os td.col-servico { color: var(--texto-suave); }
   .pill-os { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
   .os-st-1 { background: #eef1f6; color: #3d4b5c; }
   .os-st-2 { background: #e4eefc; color: #1a4f94; }
@@ -1117,18 +1122,20 @@
             <div class="tabela-scroll">
               <table id="tabela-os">
                 <thead>
-                  <tr>
-                    <th class="esq">OS</th>
-                    <th class="esq">Entrada</th>
-                    <th class="esq">Cliente</th>
-                    <th class="esq">Equipamento</th>
-                    <th class="esq">Técnico</th>
-                    <th class="esq">Situação</th>
-                    <th id="os-col-prazo">Prazo</th>
-                    <th>Valor</th>
+                  <tr id="os-cabecalho">
+                    <th class="esq" data-ord="os">OS</th>
+                    <th class="esq" data-ord="entrada">Entrada</th>
+                    <th class="esq" data-ord="cliente">Cliente</th>
+                    <th class="esq" data-ord="equip">Equipamento</th>
+                    <th class="esq" data-ord="tecnico">Técnico</th>
+                    <th class="esq" data-ord="situacao">Situação</th>
+                    <th data-ord="prazo"><span id="os-col-prazo">Prazo</span></th>
+                    <th data-ord="contato" title="Última conversa ou ligação registrada na Sonax">Último contato</th>
+                    <th data-ord="servico" title="Valor do serviço (mão de obra) lançado na OS">Serviço</th>
+                    <th data-ord="total" title="Peças + serviço">Valor total</th>
                   </tr>
                 </thead>
-                <tbody id="corpo-os"><tr><td colspan="8" class="estado-vazio">Carregando...</td></tr></tbody>
+                <tbody id="corpo-os"><tr><td colspan="10" class="estado-vazio">Carregando...</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -1136,6 +1143,8 @@
             Prazo do orçamento: <strong>48 horas úteis = 2 dias úteis</strong> de expediente (seg a sex, 08:00–12:00 e 13:15–18:00, sem feriados), medido da abertura da OS
             enquanto ela está <em>Em aguardo</em> ou <em>Na bancada</em>. Orçamento com o cliente e aguardando peça não contam como atraso nosso.
             Clique numa OS para abrir a ficha. "Sem defeito" e "Recusado" só aparecem enquanto o ERP não registra a saída — muitas já foram devolvidas sem baixa.
+            <br><strong>Último contato</strong>: a última conversa ou ligação com o cliente (ou o grupo dele) registrada na Sonax. <strong>Serviço</strong> é a mão de obra lançada na OS; o <strong>Valor total</strong> soma peças e serviço.
+            Nas prontas, a lista vem da mais antiga para a mais recente pela data em que ficou pronta. Clique no título de qualquer coluna para ordenar por ela.
           </div>
         </div>
 
@@ -3469,8 +3478,9 @@
       return res.json();
     }
 
-    async function buscarResumos(cods) {
-      const falta = [...new Set(cods.map(Number).filter((c) => c && !resumos.has(c)))];
+    // forcar = busca de novo mesmo quem já está no cache (botão Atualizar); o valor antigo fica até chegar o novo
+    async function buscarResumos(cods, forcar) {
+      const falta = [...new Set(cods.map(Number).filter((c) => c && (forcar || !resumos.has(c))))];
       for (let i = 0; i < falta.length; i += 300) {
         const linhas = await rpc("ultimo_contato_clientes", { p_cods: falta.slice(i, i + 300) });
         falta.slice(i, i + 300).forEach((c) => resumos.set(c, null));
@@ -3681,7 +3691,18 @@
     // Na faixa do topo entram só os grupos que pedem ação; recusado/sem defeito ficam na sub-aba.
     const NA_FAIXA = ["atrasadas", "aguardo", "bancada", "aguardando_pecas", "orcamento_pendente", "pronto_nao_retirado"];
     const HORAS_DIA = 8.75;
+    // grupos que já saíram da bancada: a coluna de prazo mostra há quanto tempo a OS foi finalizada
+    const GRUPOS_FINALIZADOS = ["pronto_nao_retirado", "recusado_nao_retirado", "sem_defeito_nao_retirado"];
+    // sentido do 1º clique em cada coluna (true = do maior para o menor)
+    const ORD_DESC_INICIAL = { os: true, entrada: false, cliente: false, equip: false, tecnico: false, situacao: false, prazo: true, contato: false, servico: true, total: true };
     let dados = null, carregando = false, grupoAtual = "atrasadas", erro = null;
+    let ordem = ordemPadrao(grupoAtual);
+    let contatoVisto = new Set(), buscandoContato = false, contatoErro = false;   // último contato (Sonax), buscado sob demanda
+
+    // atrasadas/aguardo/bancada: ordem própria do prazo; os demais: o que está parado há mais tempo primeiro
+    // (nos finalizados, isso é a data em que ficou pronta)
+    function ordemPadrao(g) { return ["atrasadas", "aguardo", "bancada"].includes(g) ? { chave: null, desc: false } : { chave: "prazo", desc: true }; }
+    function mudarGrupo(cod) { if (cod !== grupoAtual) ordem = ordemPadrao(cod); grupoAtual = cod; }
 
     function valorNota(l) { const v = l.reduce((s, o) => s + Number(o.total || 0), 0); return v ? fmtMoeda(v) : "sem valor lançado"; }
     function atrasoNota(l) { const a = l.filter((o) => o.atrasada).length; return a ? a + " fora do prazo" : (l.length ? "no prazo" : "—"); }
@@ -3691,10 +3712,14 @@
       if (h >= HORAS_DIA) { const d = h / HORAS_DIA; return d.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + (d < 2 ? " dia útil" : " dias úteis"); }
       return h.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " h úteis";
     }
+    // dias de calendário (fuso de São Paulo) entre a data e hoje: finalizada ontem = 1 dia, a qualquer hora
+    function diaUTC(ymd) { const p = ymd.split("-").map(Number); return Date.UTC(p[0], p[1] - 1, p[2]); }
     function diasDesde(iso) {
       if (!iso) return null;
-      const d = new Date(String(iso).length <= 10 ? iso + "T12:00:00" : iso);
-      return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+      const s = String(iso);
+      const dia = s.length <= 10 ? s : new Date(s).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+      const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+      return Math.max(0, Math.round((diaUTC(hoje) - diaUTC(dia)) / 86400000));
     }
     function dataHora(iso) {
       if (!iso) return "—";
@@ -3708,8 +3733,65 @@
         return o.atrasada ? '<span class="prazo-atraso">atrasada ' + horasTxt(o.horas_uteis_atraso) + "</span>"
                           : '<span class="prazo-ok">faltam ' + horasTxt(o.horas_uteis_restantes) + "</span>";
       }
-      if (o.status === "7") { const d = diasDesde(o.finalizada_em); return d == null ? (o.dias_corridos + " dias") : d === 0 ? "pronta hoje" : "pronta há " + d + (d === 1 ? " dia" : " dias"); }
+      if (GRUPOS_FINALIZADOS.includes(o.grupo)) {
+        const d = diasDesde(o.finalizada_em);
+        if (d == null) return '<span class="cod-cliente">sem data de finalização</span><span class="data-pronto">entrada há ' + (o.dias_corridos ?? "—") + " dias</span>";
+        const pref = o.status === "7" ? "pronta " : "";
+        return (d === 0 ? pref + "hoje" : pref + "há " + d + (d === 1 ? " dia" : " dias")) + '<span class="data-pronto">em ' + fmtData(o.finalizada_em) + "</span>";
+      }
       return (o.dias_corridos ?? "—") + (o.dias_corridos === 1 ? " dia" : " dias");
+    }
+
+    function contatoCelula(o) {
+      if (!o.codcliente) return '<span class="cod-cliente">—</span>';
+      if (contatoErro && HistCliente.resumo(o.codcliente) === undefined) return '<span class="cod-cliente">indisponível</span>';
+      return HistCliente.celulaUltimo(o.codcliente);
+    }
+    // instante do último contato (atendimento ou ligação); sem registro conta como o mais antigo
+    function ultimoContatoMs(o) {
+      const r = o.codcliente ? HistCliente.resumo(o.codcliente) : null;
+      if (!r) return -Infinity;
+      const ts = [r.ultimo_com_atendente_em || r.ultimo_em, r.ultima_ligacao_em].filter(Boolean).map((t) => Date.parse(t)).filter((t) => !isNaN(t));
+      return ts.length ? Math.max(...ts) : -Infinity;
+    }
+    function valorOrd(o, chave) {
+      switch (chave) {
+        case "os": return Number(o.id_os);
+        case "entrada": return o.data_entrada || null;
+        case "cliente": return o.cliente_nome || null;
+        case "equip": return equip(o);
+        case "tecnico": return o.tecnico || null;
+        case "situacao": return o.status_descricao || o.status;
+        case "prazo":
+          if (o.status === "1" || o.status === "2") return Number(o.horas_uteis_atraso || 0) - Number(o.horas_uteis_restantes || 0);
+          if (GRUPOS_FINALIZADOS.includes(o.grupo)) return diasDesde(o.finalizada_em);
+          return o.dias_corridos;
+        case "contato": return ultimoContatoMs(o);
+        case "servico": return Number(o.valorservico || 0);
+        case "total": return Number(o.total || 0);
+      }
+      return null;
+    }
+    // sem valor fica sempre no fim; empate desempata pelo nº da OS
+    function comparar(a, b, chave, desc) {
+      const va = valorOrd(a, chave), vb = valorOrd(b, chave);
+      if (va == null || vb == null) return (va == null) - (vb == null) || Number(a.id_os) - Number(b.id_os);
+      let r = typeof va === "string" ? va.localeCompare(vb, "pt-BR") : (va === vb ? 0 : va < vb ? -1 : 1);
+      if (desc) r = -r;
+      return r || Number(a.id_os) - Number(b.id_os);
+    }
+
+    // busca o último contato de quem ainda não foi consultado desde a última carga (o Atualizar zera a lista)
+    function buscarContatos(lista) {
+      if (buscandoContato) return;
+      const pedir = [...new Set(lista.map((o) => Number(o.codcliente)).filter((c) => c && !contatoVisto.has(c)))];
+      if (!pedir.length) return;
+      buscandoContato = true;
+      pedir.forEach((c) => contatoVisto.add(c));
+      HistCliente.buscarResumos(pedir, true)
+        .then(() => { contatoErro = false; })
+        .catch((e) => { contatoErro = true; console.error("Último contato indisponível:", e); })
+        .finally(() => { buscandoContato = false; if (!document.getElementById("assist-os").classList.contains("oculto")) renderLista(); });
     }
 
     async function carregar(forcar) {
@@ -3720,6 +3802,7 @@
         const res = await leitura(SUPABASE_URL + "/rest/v1/v_os_assistencia?select=*&order=id_os.desc");
         if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 200));
         dados = await res.json();
+        if (forcar) contatoVisto = new Set();   // Atualizar: o último contato também é consultado de novo
         const d = new Date();
         document.getElementById("freshness-os").textContent = "Consultado às " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
       } catch (e) {
@@ -3749,20 +3832,27 @@
     function renderLista() {
       const cards = document.getElementById("os-cards-grupos");
       const corpo = document.getElementById("corpo-os");
-      if (erro) { corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar as OS.<br><small style="color:var(--erro)">' + esc(erro.message) + "</small></td></tr>"; cards.innerHTML = ""; return; }
-      if (!dados) { corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>'; if (!carregando) carregar(); return; }
+      if (erro) { corpo.innerHTML = '<tr><td colspan="10" class="estado-vazio">Não foi possível carregar as OS.<br><small style="color:var(--erro)">' + esc(erro.message) + "</small></td></tr>"; cards.innerHTML = ""; return; }
+      if (!dados) { corpo.innerHTML = '<tr><td colspan="10" class="estado-vazio">Carregando...</td></tr>'; if (!carregando) carregar(); return; }
       cards.innerHTML = GRUPOS.map((g) => card(g, dados.filter(g.filtro), g.cod === grupoAtual)).join("");
       const g = GRUPOS.find((x) => x.cod === grupoAtual) || GRUPOS[0];
       const busca = document.getElementById("os-busca").value.trim().toLowerCase();
       let lista = dados.filter(g.filtro);
+      buscarContatos(lista);
       if (busca) lista = lista.filter((o) => (o.id_os + " " + (o.cliente_nome || "") + " " + equip(o) + " " + (o.tecnico || "") + " " + (o.serie || "")).toLowerCase().includes(busca));
-      // atrasadas: a mais atrasada primeiro; aguardo/bancada: a que vence primeiro; o resto: a mais antiga primeiro
-      if (g.cod === "atrasadas") lista.sort((a, b) => Number(b.horas_uteis_atraso) - Number(a.horas_uteis_atraso));
-      else if (g.cod === "aguardo" || g.cod === "bancada") lista.sort((a, b) => (b.atrasada - a.atrasada) || (Number(b.horas_uteis_atraso) - Number(a.horas_uteis_atraso)) || (Number(a.horas_uteis_restantes) - Number(b.horas_uteis_restantes)));
-      else lista.sort((a, b) => (b.dias_corridos || 0) - (a.dias_corridos || 0));
-      document.getElementById("os-col-prazo").textContent = (g.cod === "atrasadas" || g.cod === "aguardo" || g.cod === "bancada") ? "Prazo do orçamento" : g.cod === "pronto_nao_retirado" ? "Pronta há" : "Dias desde a entrada";
-      if (!lista.length) { corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Nenhuma OS ' + (busca ? "com essa busca " : "") + "neste grupo.</td></tr>"; return; }
+      if (ordem.chave) lista.sort((a, b) => comparar(a, b, ordem.chave, ordem.desc));
+      // padrão de atrasadas: a mais atrasada primeiro; aguardo/bancada: atrasadas e depois a que vence primeiro
+      else if (g.cod === "atrasadas") lista.sort((a, b) => Number(b.horas_uteis_atraso) - Number(a.horas_uteis_atraso));
+      else lista.sort((a, b) => (b.atrasada - a.atrasada) || (Number(b.horas_uteis_atraso) - Number(a.horas_uteis_atraso)) || (Number(a.horas_uteis_restantes) - Number(b.horas_uteis_restantes)));
+      document.getElementById("os-col-prazo").textContent = (g.cod === "atrasadas" || g.cod === "aguardo" || g.cod === "bancada") ? "Prazo do orçamento"
+        : g.cod === "pronto_nao_retirado" ? "Pronta há" : GRUPOS_FINALIZADOS.includes(g.cod) ? "Liberada há" : "Dias desde a entrada";
+      document.querySelectorAll("#os-cabecalho th[data-ord]").forEach((th) => {
+        const s = th.querySelector(".seta-ord"); if (s) s.remove();
+        if (th.dataset.ord === ordem.chave) th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (ordem.desc ? "▼" : "▲") + "</span>");
+      });
+      if (!lista.length) { corpo.innerHTML = '<tr><td colspan="10" class="estado-vazio">Nenhuma OS ' + (busca ? "com essa busca " : "") + "neste grupo.</td></tr>"; return; }
       const total = lista.reduce((s, o) => s + Number(o.total || 0), 0);
+      const totServ = lista.reduce((s, o) => s + Number(o.valorservico || 0), 0);
       corpo.innerHTML = lista.map((o) =>
         '<tr class="clicavel" data-os="' + o.id_os + '">' +
           '<td class="esq"><strong>' + o.id_os + "</strong></td>" +
@@ -3772,9 +3862,12 @@
           '<td class="esq">' + esc(o.tecnico || "—") + "</td>" +
           '<td class="esq">' + pill(o) + "</td>" +
           "<td>" + prazoCelula(o) + "</td>" +
+          "<td>" + contatoCelula(o) + "</td>" +
+          '<td class="col-servico">' + (Number(o.valorservico) ? fmtMoeda(Number(o.valorservico)) : "—") + "</td>" +
           "<td>" + (Number(o.total) ? fmtMoeda(Number(o.total)) : "—") + "</td>" +
         "</tr>").join("") +
-        '<tr class="total"><td class="esq">TOTAL</td><td class="esq">' + fmtIntBR(lista.length) + ' OS</td><td></td><td></td><td></td><td></td><td></td><td>' + (total ? fmtMoeda(total) : "—") + "</td></tr>";
+        '<tr class="total"><td class="esq">TOTAL</td><td class="esq">' + fmtIntBR(lista.length) + ' OS</td><td></td><td></td><td></td><td></td><td></td><td></td><td>' +
+          (totServ ? fmtMoeda(totServ) : "—") + "</td><td>" + (total ? fmtMoeda(total) : "—") + "</td></tr>";
     }
 
     function abrirFicha(id) {
@@ -3832,10 +3925,19 @@
     }
     function fecharFicha() { document.getElementById("overlay-os").classList.add("oculto"); }
 
-    function irParaGrupo(cod) { grupoAtual = cod; mostrarSubAssist("os"); document.getElementById("assist-os").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    function irParaGrupo(cod) { mudarGrupo(cod); mostrarSubAssist("os"); document.getElementById("assist-os").scrollIntoView({ behavior: "smooth", block: "start" }); }
 
     document.getElementById("os-cards-resumo").addEventListener("click", (ev) => { const b = ev.target.closest("[data-os-grupo]"); if (b) irParaGrupo(b.dataset.osGrupo); });
-    document.getElementById("os-cards-grupos").addEventListener("click", (ev) => { const b = ev.target.closest("[data-os-grupo]"); if (b) { grupoAtual = b.dataset.osGrupo; renderLista(); } });
+    document.getElementById("os-cards-grupos").addEventListener("click", (ev) => { const b = ev.target.closest("[data-os-grupo]"); if (b) { mudarGrupo(b.dataset.osGrupo); renderLista(); } });
+    // clique no cabeçalho ordena pela coluna; clicar de novo inverte
+    document.querySelectorAll("#os-cabecalho th[data-ord]").forEach((th) => { th.title = (th.title ? th.title + " · " : "") + "clique para ordenar"; });
+    document.getElementById("os-cabecalho").addEventListener("click", (ev) => {
+      const th = ev.target.closest("th[data-ord]");
+      if (!th) return;
+      const k = th.dataset.ord;
+      ordem = ordem.chave === k ? { chave: k, desc: !ordem.desc } : { chave: k, desc: ORD_DESC_INICIAL[k] };
+      renderLista();
+    });
     document.getElementById("corpo-os").addEventListener("click", (ev) => { const tr = ev.target.closest("tr[data-os]"); if (tr) abrirFicha(tr.dataset.os); });
     document.getElementById("os-busca").addEventListener("input", () => renderLista());
     document.getElementById("btn-atualizar-os").addEventListener("click", () => carregar(true));
