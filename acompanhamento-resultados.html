@@ -424,6 +424,7 @@
   /* --- Inadimplência no resultado do vendedor --- */
   .inad-debito { color: var(--vermelho); }
   .inad-credito { color: var(--verde); }
+  .pill-sem-meta { background: #eef1f6; color: var(--texto-suave); font-weight: 600; }
   tr.vend-clicavel { cursor: pointer; }
   tr.vend-clicavel:hover td { background: #f1f6ff; }
   tr.vend-clicavel td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--texto-suave); }
@@ -2230,8 +2231,13 @@
   function renderizarTabela(competencia) {
     const linhas = todasAsLinhas.filter(l => l.competencia === competencia)
       .sort((a, b) => {
-        const diff = Number(b.pct_atingido || 0) - Number(a.pct_atingido || 0);
-        if (diff !== 0) return diff;
+        // quem já tem meta cadastrada vem primeiro, ordenado pelo % atingido;
+        // quem ainda não tem meta aparece depois, do maior faturamento para o menor
+        const metaA = a.tem_meta === false ? 0 : 1, metaB = b.tem_meta === false ? 0 : 1;
+        if (metaA !== metaB) return metaB - metaA;
+        const chave = metaA ? Number(b.pct_atingido || 0) - Number(a.pct_atingido || 0)
+                            : Number(b.final || 0) - Number(a.final || 0);
+        if (chave !== 0) return chave;
         return (a.nome_curto || a.nome_completo).localeCompare(b.nome_curto || b.nome_completo, "pt-BR");
       });
 
@@ -2250,6 +2256,7 @@
       const devolucoes = Number(l.devolucoes || 0);
       const inadimplencia = Number(l.inadimplencia || 0);
       const final = Number(l.final || 0);
+      const semMeta = l.tem_meta === false;
       const falta = Math.max(objetivo - final, 0);
       somaObjetivo += objetivo;
       somaProduzido += produzido;
@@ -2258,15 +2265,15 @@
       somaInadimplencia += inadimplencia;
       somaFinal += final;
       return `<tr class="vend-clicavel" data-vendedor="${l.vendedor_id}" data-competencia="${competenciaAtual}">
-        <td title="${l.nome_completo}">${l.nome_curto || l.nome_completo}</td>
-        <td>${fmtMoeda(objetivo)}</td>
+        <td title="${l.nome_completo}">${l.nome_curto || l.nome_completo}${semMeta ? ' <span class="pill-tipo pill-sem-meta">sem meta</span>' : ""}</td>
+        <td>${semMeta ? "—" : fmtMoeda(objetivo)}</td>
         <td>${fmtMoeda(produzido)}</td>
         <td>${fmtMoeda(creditos)}</td>
         <td>${fmtMoeda(devolucoes)}</td>
         <td class="${classeInadimplencia(inadimplencia)}">${fmtMoeda(inadimplencia)}</td>
-        <td>${fmtMoeda(falta)}</td>
+        <td>${semMeta ? "—" : fmtMoeda(falta)}</td>
         <td>${fmtMoeda(final)}</td>
-        <td><span class="pct-pill ${classePct(l.pct_atingido)}">${fmtPct(l.pct_atingido)}</span></td>
+        <td>${semMeta ? "—" : `<span class="pct-pill ${classePct(l.pct_atingido)}">${fmtPct(l.pct_atingido)}</span>`}</td>
       </tr>`;
     }).join("");
 
