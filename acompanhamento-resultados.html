@@ -482,6 +482,9 @@
   #view-cobranca tr.cli-clicavel > td:first-child { white-space: normal; min-width: 240px; }
   tr.detalhe-cli > td > .contato-cli, tr.detalhe-cli > td > .tabela-scroll { width: 0; min-width: 100%; box-sizing: border-box; }
   #view-cobranca .subtabela th, #view-cobranca .subtabela td { padding: 7px 10px; }
+  #view-cobranca thead th[data-ord] { cursor: pointer; user-select: none; }
+  #view-cobranca thead th[data-ord]:hover, #view-cobranca thead th.ord-ativa { color: var(--azul); }
+  #view-cobranca thead th .seta-ord { font-size: 0.7rem; margin-left: 3px; color: var(--azul); }
   .pill-bloq { background: #eef1f6; color: var(--texto-suave); }
   /* --- Inadimplência no resultado do vendedor --- */
   .det-vend-titulo { font-size: 0.82rem; font-weight: 700; color: var(--azul-escuro); margin: 14px 0 4px; }
@@ -1153,17 +1156,17 @@
           <div class="card-tabela">
             <div class="tabela-scroll">
               <table>
-                <thead>
+                <thead id="cob-cabecalho">
                   <tr>
-                    <th>Cliente</th>
-                    <th style="text-align:left;">Vendedor</th>
-                    <th>Vencido</th>
-                    <th>Títulos vencidos</th>
-                    <th>Maior atraso</th>
-                    <th>Vence mais antigo</th>
-                    <th>A vencer</th>
-                    <th>Pontualidade histórica</th>
-                    <th title="Última conversa ou ligação registrada na Sonax">Último contato</th>
+                    <th data-ord="cliente">Cliente</th>
+                    <th style="text-align:left;" data-ord="vendedor">Vendedor</th>
+                    <th data-ord="vencido">Vencido</th>
+                    <th data-ord="titulos">Títulos vencidos</th>
+                    <th data-ord="atraso">Maior atraso</th>
+                    <th data-ord="antigo">Vence mais antigo</th>
+                    <th data-ord="avencer">A vencer</th>
+                    <th data-ord="pontualidade">Pontualidade histórica</th>
+                    <th data-ord="contato" title="Última conversa ou ligação registrada na Sonax">Último contato</th>
                   </tr>
                 </thead>
                 <tbody id="corpo-cobranca">
@@ -1174,7 +1177,7 @@
           </div>
 
           <div class="rodape-nota">
-            Clique no cliente para ver os títulos e o contato. Só entram clientes com pelo menos um título <strong>vencido</strong> (filial BLUE);
+            Clique no título de qualquer coluna para ordenar por ela. Clique no cliente para ver os títulos e o contato. Só entram clientes com pelo menos um título <strong>vencido</strong> (filial BLUE);
             os títulos a vencer do mesmo cliente aparecem no detalhe, para a conversa ser completa.
             <strong>Pontualidade</strong> = % dos títulos já pagos que foram quitados até o vencimento.
             Títulos vencidos há <strong>mais de 1 ano</strong> ficam fora da visão padrão: em boa parte são de bons pagadores e
@@ -3824,6 +3827,14 @@
       return '<div class="ult-contato ' + cls + '"><span class="quando">' + textoDias(d) + '</span><div class="quem">' + esc(quem || "") + "</div></div>";
     }
 
+    // timestamp do último contato, para ordenar tabelas; null quando não há registro
+    function ultimoEm(cod) {
+      const r = resumo(cod);
+      if (!r) return null;
+      const quando = r.ultimo_com_atendente_em || r.ultimo_em;
+      return [quando, r.ultima_ligacao_em].filter(Boolean).sort().pop() || null;
+    }
+
     // bloco de resumo para fichas (detalhe do cliente, OS)
     function blocoResumo(cod) {
       const r = resumo(cod);
@@ -4004,7 +4015,7 @@
       abrir(el.dataset.histCod, el.dataset.histNome, el.dataset.histGrupo === "1");
     }, true);
 
-    return { buscarResumos, resumo, celulaUltimo, blocoResumo, linksSonax, marcador, abrir };
+    return { buscarResumos, resumo, celulaUltimo, ultimoEm, blocoResumo, linksSonax, marcador, abrir };
   })();
 
 
@@ -4841,6 +4852,10 @@
   let cobrancaCarregando = false;
   let cobrancaFaixa = "ate365";
   let cobrancaAbertos = new Set();
+  // ordenação da lista de clientes: clique no título da coluna
+  // o primeiro clique usa a ordem mais útil para cobrar (maior dívida, pior pontualidade, contato mais antigo)
+  const COB_ORD_DESC_INICIAL = { cliente: false, vendedor: false, vencido: true, titulos: true, atraso: true, antigo: false, avencer: true, pontualidade: false, contato: false };
+  let cobOrdem = { chave: "vencido", desc: true };
   let voltarParaCobranca = false;
 
   function temPermissaoCobranca() {
@@ -4991,6 +5006,48 @@
     renderCobranca();
   });
 
+  // valor de cada coluna para ordenar; null/undefined sempre vai para o fim da lista
+  function valorOrdemCobranca(x, chave) {
+    switch (chave) {
+      case "cliente": return x.c.nome || "";
+      case "vendedor": return x.c.vendedor || "";
+      case "vencido": return x.vencido;
+      case "titulos": return x.venc.length;
+      case "atraso": return x.maior;
+      case "antigo": return x.maisAntigo || null;
+      case "avencer": return x.aVencer || 0;
+      case "pontualidade": return x.c.pct == null ? null : x.c.pct;
+      case "contato": return HistCliente.ultimoEm(x.c.cod);
+      default: return 0;
+    }
+  }
+  function compararCobranca(a, b) {
+    const chave = cobOrdem.chave, sinal = cobOrdem.desc ? -1 : 1;
+    const va = valorOrdemCobranca(a, chave), vb = valorOrdemCobranca(b, chave);
+    const na = va == null || va === "", nb = vb == null || vb === "";
+    if (na || nb) { if (na && nb) return b.vencido - a.vencido; return na ? 1 : -1; }   // sem informação fica por último
+    let d = typeof va === "string" ? va.localeCompare(vb, "pt-BR") : (va < vb ? -1 : va > vb ? 1 : 0);
+    d *= sinal;
+    return d !== 0 ? d : b.vencido - a.vencido;   // empate: quem deve mais aparece antes
+  }
+  function marcarSetaCobranca() {
+    document.querySelectorAll("#cob-cabecalho th[data-ord]").forEach((th) => {
+      const s = th.querySelector(".seta-ord");
+      if (s) s.remove();
+      const ativa = th.dataset.ord === cobOrdem.chave;
+      th.classList.toggle("ord-ativa", ativa);
+      if (ativa) th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (cobOrdem.desc ? "▼" : "▲") + "</span>");
+    });
+  }
+  document.querySelectorAll("#cob-cabecalho th[data-ord]").forEach((th) => { th.title = (th.title ? th.title + " · " : "") + "clique para ordenar"; });
+  document.getElementById("cob-cabecalho").addEventListener("click", (ev) => {
+    const th = ev.target.closest("th[data-ord]");
+    if (!th || !cobrancaLinhas) return;
+    const k = th.dataset.ord;
+    cobOrdem = cobOrdem.chave === k ? { chave: k, desc: !cobOrdem.desc } : { chave: k, desc: COB_ORD_DESC_INICIAL[k] };
+    renderCobranca();
+  });
+
   function renderCobranca() {
     if (!cobrancaLinhas) return;
     renderResumoVendedor();
@@ -5018,7 +5075,8 @@
         protestado: venc.some((t) => t.protesto === "S")
       });
     }
-    lista.sort((a, b) => b.vencido - a.vencido);
+    lista.sort((a, b) => compararCobranca(a, b));
+    marcarSetaCobranca();
 
     const totVenc = lista.reduce((s, x) => s + x.vencido, 0);
     const totTit = lista.reduce((s, x) => s + x.venc.length, 0);
