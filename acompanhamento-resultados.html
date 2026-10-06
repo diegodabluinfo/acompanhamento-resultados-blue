@@ -422,6 +422,8 @@
   #view-cobranca .subtabela th, #view-cobranca .subtabela td { padding: 7px 10px; }
   .pill-bloq { background: #eef1f6; color: var(--texto-suave); }
   /* --- Inadimplência no resultado do vendedor --- */
+  .det-vend-titulo { font-size: 0.82rem; font-weight: 700; color: var(--azul-escuro); margin: 14px 0 4px; }
+  .det-vend-titulo:first-child { margin-top: 0; }
   .inad-debito { color: var(--vermelho); }
   .inad-credito { color: var(--verde); }
   .pill-sem-meta { background: #eef1f6; color: var(--texto-suave); font-weight: 600; }
@@ -2368,32 +2370,75 @@
       return;
     }
     try {
-      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_inadimplencia_detalhe?select=*&vendedor_id=eq.${encodeURIComponent(vend)}&competencia=eq.${encodeURIComponent(comp)}&order=tipo.desc,vencimento.asc`);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const itens = await res.json();
+      // três blocos: o que o cliente abateu de crédito, o que foi devolvido e a inadimplência
+      const [resInad, resCred, resDed] = await Promise.all([
+        leitura(`${SUPABASE_URL}/rest/v1/v_inadimplencia_detalhe?select=*&vendedor_id=eq.${encodeURIComponent(vend)}&competencia=eq.${encodeURIComponent(comp)}&order=tipo.desc,vencimento.asc`),
+        leitura(`${SUPABASE_URL}/rest/v1/v_creditos_detalhe?select=*&vendedor_id=eq.${encodeURIComponent(vend)}&competencia=eq.${encodeURIComponent(comp)}&order=data.asc`),
+        leitura(`${SUPABASE_URL}/rest/v1/v_deducoes_detalhe?select=*&vendedor_id=eq.${encodeURIComponent(vend)}&competencia=eq.${encodeURIComponent(comp)}&tipo=eq.Devolu%C3%A7%C3%A3o&order=data.asc`)
+      ]);
+      if (!resInad.ok) throw new Error("HTTP " + resInad.status);
+      const itens = await resInad.json();
+      const creditos = resCred.ok ? await resCred.json() : [];
+      const devolucoes = resDed.ok ? await resDed.json() : [];
+
       const mesAtual = hojeISO().slice(0, 7) + "-01";
       const nota = comp === mesAtual
         ? '<p class="det-vend-nota">Prévia: o débito do mês só fecha no último dia. Títulos pagos até lá saem da lista.</p>'
         : "";
-      if (!itens.length) {
-        box.innerHTML = nota + '<p class="det-vend-nota">Sem débitos ou créditos de inadimplência neste mês.</p>';
-        return;
+
+      let html = nota;
+
+      // --- créditos usados: pedido pago com crédito de devolução de outro mês ---
+      if (creditos.length) {
+        const totalCred = creditos.reduce((t, c) => t + Number(c.credito_usado || 0), 0);
+        html += '<div class="det-vend-titulo">Créditos usados <b class="inad-debito">' + fmtMoeda(totalCred) + "</b></div>" +
+          '<p class="det-vend-nota">Pedido pago com crédito de devolução de outro mês. Como a venda já tinha entrado antes, esse valor desconta do resultado.</p>' +
+          '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Data</th><th>Pedido</th><th>NF</th><th>Cliente</th><th>Faturado</th><th>Crédito usado</th></tr></thead><tbody>' +
+          creditos.map(c => `<tr>
+            <td>${fmtData(c.data)}</td>
+            <td>${esc(c.pedido)}</td>
+            <td>${esc(c.nota_fiscal || "—")}</td>
+            <td class="det-cli" title="${esc(c.cliente || "")}">${esc(c.cod_cliente)} ${esc(c.cliente || "")}</td>
+            <td>${fmtMoeda(c.faturado)}</td>
+            <td class="inad-debito">${fmtMoeda(c.credito_usado)}</td>
+          </tr>`).join("") + "</tbody></table></div>";
       }
-      const deb = itens.filter(i => i.tipo === "debito").reduce((s, i) => s + Number(i.valor), 0);
-      const cre = itens.filter(i => i.tipo === "credito").reduce((s, i) => s + Number(i.valor), 0);
-      const linhas = itens.map(i => `<tr>
-          <td><span class="pill-inad ${i.tipo === "debito" ? "pill-inad-deb" : "pill-inad-cre"}">${i.tipo === "debito" ? "débito" : "crédito"}</span></td>
-          <td class="det-cli" title="${esc(i.cliente || "")}">${esc(i.codcliente)} ${esc(i.cliente || "")}</td>
-          <td>${esc(i.titulo)}</td>
-          <td>${esc(i.nfiscal || "—")}</td>
-          <td>${fmtData(i.vencimento)}</td>
-          <td>${i.dataquitacao ? fmtData(i.dataquitacao) : "em aberto"}</td>
-          <td class="${classeInadimplencia(Number(i.valor))}">${fmtMoeda(Number(i.valor))}</td>
-        </tr>`).join("");
-      box.innerHTML = nota +
-        `<div class="det-vend-resumo">Débitos: <b class="inad-debito">${fmtMoeda(deb)}</b> · Créditos: <b class="inad-credito">${fmtMoeda(cre)}</b> · Saldo: <b class="${classeInadimplencia(deb + cre)}">${fmtMoeda(deb + cre)}</b></div>` +
-        '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Tipo</th><th>Cliente</th><th>Título</th><th>NF</th><th>Vencimento</th><th>Pago em</th><th>Valor</th></tr></thead><tbody>' +
-        linhas + "</tbody></table></div>";
+
+      // --- devoluções lançadas à mão ---
+      if (devolucoes.length) {
+        const totalDev = devolucoes.reduce((t, d) => t + Number(d.valor || 0), 0);
+        html += '<div class="det-vend-titulo">Devoluções <b class="inad-debito">' + fmtMoeda(totalDev) + "</b></div>" +
+          '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Data</th><th>Pedido</th><th>Observação</th><th>Valor</th></tr></thead><tbody>' +
+          devolucoes.map(d => `<tr>
+            <td>${fmtData(d.data)}</td>
+            <td>${esc(d.pedido_numero || "—")}</td>
+            <td class="det-cli" title="${esc(d.observacao || "")}">${esc(d.observacao || "—")}</td>
+            <td class="inad-debito">${fmtMoeda(d.valor)}</td>
+          </tr>`).join("") + "</tbody></table></div>";
+      }
+
+      // --- inadimplência ---
+      if (!itens.length) {
+        html += '<div class="det-vend-titulo">Inadimplência</div><p class="det-vend-nota">Sem débitos ou recuperações neste mês.</p>';
+      } else {
+        const deb = itens.filter(i => i.tipo === "debito").reduce((s2, i) => s2 + Number(i.valor), 0);
+        const cre = itens.filter(i => i.tipo === "credito").reduce((s2, i) => s2 + Number(i.valor), 0);
+        const linhas = itens.map(i => `<tr>
+            <td><span class="pill-inad ${i.tipo === "debito" ? "pill-inad-deb" : "pill-inad-cre"}">${i.tipo === "debito" ? "débito" : "recuperado"}</span></td>
+            <td class="det-cli" title="${esc(i.cliente || "")}">${esc(i.codcliente)} ${esc(i.cliente || "")}</td>
+            <td>${esc(i.titulo)}</td>
+            <td>${esc(i.nfiscal || "—")}</td>
+            <td>${fmtData(i.vencimento)}</td>
+            <td>${i.dataquitacao ? fmtData(i.dataquitacao) : "em aberto"}</td>
+            <td class="${classeInadimplencia(Number(i.valor))}">${fmtMoeda(Number(i.valor))}</td>
+          </tr>`).join("");
+        html += '<div class="det-vend-titulo">Inadimplência</div>' +
+          `<div class="det-vend-resumo">Débitos: <b class="inad-debito">${fmtMoeda(deb)}</b> · Recuperados: <b class="inad-credito">${fmtMoeda(cre)}</b> · Saldo: <b class="${classeInadimplencia(deb + cre)}">${fmtMoeda(deb + cre)}</b></div>` +
+          '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Tipo</th><th>Cliente</th><th>Título</th><th>NF</th><th>Vencimento</th><th>Pago em</th><th>Valor</th></tr></thead><tbody>' +
+          linhas + "</tbody></table></div>";
+      }
+
+      box.innerHTML = html;
     } catch (e) {
       console.error("Erro ao buscar inadimplência:", e);
       box.innerHTML = '<p class="det-vend-nota" style="color:var(--erro)">Não foi possível carregar o detalhe.</p>';
