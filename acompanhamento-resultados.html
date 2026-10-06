@@ -277,6 +277,68 @@
   /* --- Histórico do cliente (conversas e ligações da Sonax) --- */
   .link-hist { color: var(--azul); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
   .link-hist:hover { text-decoration-style: solid; }
+  /* aba Pedidos em Reserva: mesmas cores do ERP (11 laranja, 10 roxo) */
+  .tabela-reserva { table-layout: auto; width: 100%; }
+  .tabela-reserva tfoot td { font-weight: 800; font-size: 0.8rem; border-top: 2px solid var(--borda); background: #f7faff; white-space: nowrap; padding: 8px 5px; }
+  .tabela-reserva tr.ordenavel th[data-ord] { cursor: pointer; user-select: none; }
+  .tabela-reserva tr.ordenavel th[data-ord]:hover { color: var(--azul); }
+  .tabela-reserva tr.ordenavel th .seta-ord { font-size: 0.65rem; margin-left: 2px; }
+  .tabela-reserva tr.linha-filtro th { padding: 3px 3px 6px; background: inherit; }
+  .tabela-reserva tr.linha-filtro select, .tabela-reserva tr.linha-filtro input {
+    width: 100%; min-width: 46px; font-size: 0.68rem; padding: 3px 4px; border: 1px solid var(--borda); border-radius: 6px; background: #fff; box-sizing: border-box; font-weight: 500; text-transform: none; }
+  .tabela-reserva tr.linha-filtro .ativo { border-color: var(--azul); background: #eef4fd; }
+  .tabela-reserva th { font-size: 0.68rem; padding: 7px 5px; line-height: 1.15; white-space: normal; }
+  .tabela-reserva td { font-size: 0.76rem; padding: 6px 5px; line-height: 1.25; white-space: normal; vertical-align: middle; }
+  .tabela-reserva td.num { white-space: nowrap; }
+  .tabela-reserva td.quebra { min-width: 130px; max-width: 200px; }
+  .tabela-reserva td.estreita { max-width: 105px; font-size: 0.72rem; }
+  .tabela-reserva .sub { display: block; font-size: 0.68rem; color: var(--texto-suave); font-weight: 600; }
+  .tabela-reserva tr.st-11 .sub, .tabela-reserva tr.st-10 .sub { color: inherit; opacity: 0.8; }
+  .tabela-reserva tr.st-11 td.cor { color: #d46b00; }
+  .tabela-reserva tr.st-10 td.cor { color: #7b1fa2; }
+  .tabela-reserva tr.st-11 .link-hist, .tabela-reserva tr.st-10 .link-hist { color: inherit; }
+  .pill-st { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 20px; font-size: 0.74rem; font-weight: 800; color: #fff; text-align: center; }
+  .pill-st.st11 { background: #e07800; }
+  .pill-st.st10 { background: #8e24aa; }
+  .pill-intocado { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: var(--amarelo-fundo); color: var(--amarelo); }
+  .motivo-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .motivo-cat { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: #e4eefc; color: #1a4f94; margin-right: 4px; }
+  .motivo-cat.sem { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .ped-cab { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 14px; font-size: 0.8rem; margin-bottom: 10px; }
+  .ped-cab i { display: block; font-style: normal; font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--texto-suave); font-weight: 700; }
+  .ped-cab .largo { grid-column: span 2; }
+  .tabela-itens { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-bottom: 14px; }
+  .tabela-itens th { font-size: 0.64rem; text-transform: uppercase; color: var(--texto-suave); text-align: right; padding: 5px 4px; border-bottom: 1px solid var(--borda); }
+  .tabela-itens td { text-align: right; padding: 5px 4px; border-bottom: 1px solid #eef1f6; vertical-align: top; }
+  .tabela-itens th:nth-child(2), .tabela-itens td:nth-child(2) { text-align: left; }
+  .tabela-itens td { white-space: nowrap; }
+  .tabela-itens td:nth-child(2) { white-space: normal; min-width: 200px; }
+  .tabela-itens tr.comp.oculto { display: none; }
+  .abre-kit { display: inline-block; margin-top: 2px; font-size: 0.68rem; color: var(--azul); cursor: pointer; font-weight: 700; user-select: none; }
+  .abre-kit:hover { text-decoration: underline; }
+  .abre-kit .lim { color: #a2461c; font-weight: 600; }
+  .tabela-itens tr.comp td { font-size: 0.7rem; color: var(--texto-suave); padding-top: 2px; padding-bottom: 2px; border-bottom: none; }
+  .tabela-itens tr.comp td:nth-child(2) { padding-left: 18px; }
+  .tabela-itens tr.comp.limita td { color: #a2461c; font-weight: 700; }
+  .tabela-itens tr.kit-fim td { border-bottom: 1px solid #eef1f6; padding: 0; }
+  .selo-kit { display: inline-block; padding: 0 6px; border-radius: 10px; font-size: 0.64rem; font-weight: 800; background: #e4eefc; color: #1a4f94; margin-left: 4px; }
+  .disp-zero { color: #a2461c; font-weight: 800; }
+  .tabela-itens tfoot td { font-weight: 800; border-top: 2px solid var(--borda); border-bottom: none; }
+  .selo-limita { display: inline-block; padding: 0 5px; border-radius: 10px; font-size: 0.6rem; font-weight: 800; background: #fdeadf; color: #a2461c; margin-left: 4px; }
+  @media (max-width: 760px) { .ped-cab { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .modal-reserva { max-width: 980px; width: 96vw; max-height: 92vh; overflow-y: auto; }
+  .form-motivo { border: 1px solid var(--azul); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; background: #eef4fd; }
+  .form-motivo .linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .form-motivo label { font-size: 0.72rem; font-weight: 700; color: var(--texto-suave); display: block; margin-bottom: 3px; }
+  .form-motivo select, .form-motivo textarea { font: inherit; font-size: 0.85rem; padding: 6px 8px; border: 1px solid var(--borda); border-radius: 6px; background: #fff; box-sizing: border-box; }
+  .form-motivo textarea { width: 100%; min-height: 54px; resize: vertical; margin-top: 8px; }
+  .form-motivo .aviso { font-size: 0.78rem; margin-top: 6px; }
+  .ligacao-item.manual { background: #fffaf0; border-color: #f0d9a8; }
+  .motivo-quem { font-size: 0.68rem; color: var(--texto-suave); }
+  .ligacao-item { border: 1px solid var(--borda); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #f7faff; font-size: 0.85rem; }
+  .ligacao-item .cab { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-weight: 700; margin-bottom: 6px; }
+  .ligacao-item .fala { white-space: pre-wrap; font-style: italic; margin: 6px 0; }
+
   .link-sonax { font-weight: 600; color: var(--azul); }
   .ult-contato { font-size: 0.78rem; line-height: 1.3; }
   .ult-contato .quando { font-weight: 700; }
@@ -680,6 +742,7 @@
       <div class="tabs">
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
         <button class="tab-btn" data-tab="vendas" id="tab-btn-vendas">Vendas do Dia</button>
+        <button class="tab-btn" data-tab="reserva" id="tab-btn-reserva">Pedidos em Reserva</button>
         <button class="tab-btn" data-tab="clientes" id="tab-btn-clientes">Clientes</button>
         <button class="tab-btn" data-tab="cobranca" id="tab-btn-cobranca">Em Aberto</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
@@ -957,6 +1020,78 @@
       </div>
 
       <!-- ===== ABA: Em Aberto (cobrança — exige login + claim pode_ver_cobranca) ===== -->
+      <div id="view-reserva" class="oculto">
+        <div class="painel-controles">
+          <div>
+            <label for="res-busca">Buscar</label>
+            <input type="text" id="res-busca" placeholder="Pedido, cliente ou código">
+          </div>
+          <div class="filtro-periodo" id="res-origem" style="align-self:flex-end;">
+            <button data-origem="" class="ativa">Todos os pedidos</button>
+            <button data-origem="site" title="Status 11 com us confirma igual ao código do cliente: veio do site e ninguém da Blue mexeu ainda">Do site · ninguém mexeu</button>
+          </div>
+          <div class="filtro-periodo" id="res-periodo" style="align-self:flex-end;">
+            <button data-dias="30" class="ativa">Últimos 30 dias</button>
+            <button data-dias="">Todos</button>
+          </div>
+          <button class="btn-secundario" id="btn-limpar-reserva" style="align-self:flex-end;">Limpar filtros</button>
+          <button class="btn-secundario" id="btn-atualizar-reserva" style="align-self:flex-end;">Atualizar</button>
+          <div class="filtro-periodo" style="align-self:flex-end;">
+            <button id="res-sem-direto" class="ativa" title="Esconde os pedidos DIRETO da própria Blue (cliente 374): baixas, perdas e acertos manuais. DIRETO de outros clientes continua aparecendo. Clique para mostrar todos.">S/ Direto Blue</button>
+          </div>
+          <span id="freshness-reserva" class="freshness"></span>
+        </div>
+
+        <div class="kpi-grid" id="reserva-kpis"></div>
+
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table class="tabela-reserva">
+              <thead>
+                <tr class="ordenavel">
+                  <th data-ord="status">St.</th>
+                  <th data-ord="pedido">Pedido<br>data</th>
+                  <th data-ord="nome_vend" style="text-align:left;">Vendedor</th>
+                  <th data-ord="cod_cliente">Cód.</th>
+                  <th data-ord="cliente" style="text-align:left;">Cliente</th>
+                  <th data-ord="valor_total">Valor total</th>
+                  <th data-ord="pc_lucrat" title="Lucratividade do pedido no ERP">Lucr.</th>
+                  <th data-ord="nome_transp" style="text-align:left;">Transp.</th>
+                  <th data-ord="forma_pagamento" style="text-align:left;">Pagamento</th>
+                  <th data-ord="us_confirma" title="Quem confirmou o pedido. Código do cliente = ninguém da Blue mexeu ainda">Us<br>conf.</th>
+                  <th data-ord="e_commerce">E-com.</th>
+                  <th data-ord="dias_ultped" title="Dias desde o pedido anterior do cliente">Dias<br>últ.ped.</th>
+                  <th data-ord="representante_nome" style="text-align:left;" title="Representante do pedido: mostra se o cliente faz parte de um grupo">Repres.</th>
+                  <th title="Última conversa ou ligação registrada na Sonax. Clique para abrir o histórico">Último<br>contato</th>
+                  <th data-ord="motivo_categoria" style="text-align:left;" title="Motivo informado no painel ou dito ao coordenador virtual. Clique para ver o histórico ou informar o motivo">Por que está em reserva</th>
+                </tr>
+                <tr class="linha-filtro" id="res-filtros">
+                  <th><select data-f="status"><option value="">Todos</option><option value="11">11</option><option value="10">10</option></select></th>
+                  <th><input data-f="pedido" type="text" placeholder="nº"></th>
+                  <th><select data-f="nome_vend" data-dinamico="1"><option value="">Todos</option></select></th>
+                  <th><input data-f="cod_cliente" type="text" placeholder="cód."></th>
+                  <th><input data-f="cliente" type="text" placeholder="nome"></th>
+                  <th><input data-f="valor_min" type="number" min="0" step="any" placeholder="mín. R$"></th>
+                  <th><input data-f="lucr_max" type="number" step="any" placeholder="até %"></th>
+                  <th><select data-f="nome_transp" data-dinamico="1"><option value="">Todas</option></select></th>
+                  <th><select data-f="forma_pagamento" data-dinamico="1"><option value="">Todos</option></select></th>
+                  <th><select data-f="us_confirma" data-dinamico="1"><option value="">Todos</option></select></th>
+                  <th><select data-f="e_commerce"><option value="">Todos</option><option value="S">Site</option><option value="N">Não</option></select></th>
+                  <th><select data-f="dias"><option value="">Todos</option><option value="primeiro">1º pedido</option><option value="ate30">até 30</option><option value="mais30">mais de 30</option></select></th>
+                  <th><select data-f="repres"><option value="">Todos</option><option value="com">Com grupo</option><option value="sem">Sem</option></select></th>
+                  <th></th>
+                  <th><select data-f="motivo"><option value="">Todos</option><option value="sem_ligacao">Sem motivo nem ligação</option><option value="com_motivo">Com motivo</option><option value="sem_resposta">Ligado, sem motivo</option><option value="manual">Informado no painel</option></select></th>
+                </tr>
+              </thead>
+              <tbody id="corpo-reserva"></tbody>
+              <tfoot id="rodape-reserva"></tfoot>
+            </table>
+          </div>
+        </div>
+        <p class="nota-rodape">Status 11 (laranja) = reserva de peças; status 10 (roxo) = pedido em reserva. <b>Pedido do site parado</b> = status 11 com us confirma igual ao código do cliente (selo "cliente": ninguém da Blue mexeu) — é esse que o coordenador virtual cobra depois de 1 hora útil.
+          Clique no cliente ou no último contato para abrir conversas e ligações; clique no motivo para ver o histórico ou <b>informar o motivo</b> — com motivo informado, o coordenador virtual não liga.</p>
+      </div>
+
       <div id="view-cobranca" class="oculto">
         <div id="cobranca-bloqueada">
           <div class="caixa-login">
@@ -1752,6 +1887,17 @@
     </div>
   </div>
 
+  <!-- ===== Ligações do coordenador virtual sobre um pedido ===== -->
+  <div id="overlay-reserva" class="overlay oculto">
+    <div class="modal-gasto modal-os modal-reserva" role="dialog" aria-modal="true" aria-labelledby="reserva-lig-titulo">
+      <div class="os-cab">
+        <h2 id="reserva-lig-titulo">Pedido</h2>
+        <button type="button" class="btn-secundario" id="btn-fechar-reserva">Fechar</button>
+      </div>
+      <div id="reserva-lig-corpo"></div>
+    </div>
+  </div>
+
   <!-- ===== Janela de editar lançamento de gasto ===== -->
   <div id="overlay-gasto" class="overlay oculto">
     <div class="modal-gasto">
@@ -1836,6 +1982,7 @@
 
   const tabBtnResultados = document.getElementById("tab-btn-resultados");
   const tabBtnVendas = document.getElementById("tab-btn-vendas");
+  const tabBtnReserva = document.getElementById("tab-btn-reserva");
   const tabBtnClientes = document.getElementById("tab-btn-clientes");
   const tabBtnCobranca = document.getElementById("tab-btn-cobranca");
   const tabBtnUsuarios = document.getElementById("tab-btn-usuarios");
@@ -1860,6 +2007,7 @@
   const tabBtnMetas = document.getElementById("tab-btn-metas");
   const viewResultados = document.getElementById("view-resultados");
   const viewVendas = document.getElementById("view-vendas");
+  const viewReserva = document.getElementById("view-reserva");
   const viewClientes = document.getElementById("view-clientes");
   const viewCobranca = document.getElementById("view-cobranca");
   const viewUsuarios = document.getElementById("view-usuarios");
@@ -2766,11 +2914,12 @@
     if (btnMenuCadastros) btnMenuCadastros.classList.toggle("ativa", ABAS_CADASTRO.some(([cod]) => cod === aba));
     viewResultados.classList.toggle("oculto", aba !== "resultados");
     viewVendas.classList.toggle("oculto", aba !== "vendas");
+    viewReserva.classList.toggle("oculto", aba !== "reserva");
     viewClientes.classList.toggle("oculto", aba !== "clientes");
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
     viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
@@ -2779,6 +2928,7 @@
     viewFornecedores.classList.toggle("oculto", aba !== "fornecedores");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
     tabBtnVendas.classList.toggle("ativa", aba === "vendas");
+    tabBtnReserva.classList.toggle("ativa", aba === "reserva");
     tabBtnClientes.classList.toggle("ativa", aba === "clientes");
     tabBtnCobranca.classList.toggle("ativa", aba === "cobranca");
     tabBtnUsuarios.classList.toggle("ativa", aba === "usuarios");
@@ -2790,6 +2940,7 @@
     tabBtnGastos.classList.toggle("ativa", aba === "gastos");
     tabBtnFornecedores.classList.toggle("ativa", aba === "fornecedores");
     if (aba === "vendas") iniciarVendas();
+    if (aba === "reserva") Reserva.iniciar();
     if (aba === "clientes") iniciarClientes();
     if (aba === "cobranca") atualizarTelaCobranca();
     if (aba === "usuarios") atualizarTelaUsuarios();
@@ -2804,6 +2955,7 @@
 
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
   tabBtnVendas.addEventListener("click", () => mostrarAba("vendas"));
+  tabBtnReserva.addEventListener("click", () => mostrarAba("reserva"));
   tabBtnClientes.addEventListener("click", () => mostrarAba("clientes"));
   tabBtnCobranca.addEventListener("click", () => mostrarAba("cobranca"));
   tabBtnUsuarios.addEventListener("click", () => mostrarAba("usuarios"));
@@ -3045,7 +3197,7 @@
   // ordem das abas na tela; o código é o mesmo de painel_abas no banco
   // barra de cima: só consulta e relatório
   const ABAS_VISUALIZACAO = [
-    ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["clientes", () => tabBtnClientes],
+    ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["reserva", () => tabBtnReserva], ["clientes", () => tabBtnClientes],
     ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo],
     ["assistencia", () => tabBtnAssistencia]
   ];
@@ -3853,6 +4005,417 @@
     }, true);
 
     return { buscarResumos, resumo, celulaUltimo, blocoResumo, linksSonax, marcador, abrir };
+  })();
+
+
+  // --- Aba Pedidos em Reserva ---
+  // Fonte: v_pedidos_reserva (status 10 e 11; travada por pode_ver_aba('reserva'); anon não lê).
+  // O motivo vem das ligações do coordenador virtual (agente_ligacoes_voz), já agregadas na view.
+  const Reserva = (() => {
+    const CATS = {
+      aguardando_cliente: "Aguardando cliente", estoque: "Estoque", credito_financeiro: "Crédito / financeiro",
+      preco_condicao: "Preço / condição", sem_tempo_esqueceu: "Sem tempo / esqueceu", ja_aprovado: "Já aprovado",
+      outro: "Outro", nao_informado: "Sem motivo"
+    };
+    let dados = [], carregadoEm = null, carregando = false, erro = null, ligado = false, timer = null;
+    const filtro = { busca: "", dias: "30", origem: "", semDireto: true };
+    let col = {};                                   // filtros da linha embaixo dos títulos
+    let ordem = { campo: "data", desc: true };      // padrão: mais recente primeiro
+    const el = (id) => document.getElementById(id);
+    const n = (v) => Number(v || 0);
+
+    function dataBR(iso) { if (!iso) return "—"; const [a, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m + "/" + a; }
+    function dataHora(iso) {
+      if (!iso) return "—";
+      // horário do ERP vem sem fuso (já é hora de Brasília): formata direto, sem converter
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+      if (m && !/(Z|[+-]\d{2}:?\d{2})$/.test(String(iso))) return m[3] + "/" + m[2] + ", " + m[4] + ":" + m[5];
+      return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+    function diasDesde(iso) { if (!iso) return null; const d = new Date(String(iso).slice(0, 10) + "T12:00:00"); return Math.floor((Date.now() - d.getTime()) / 86400000); }
+    function vendCurto(t) {
+      if (!t) return "—";
+      const p = String(t).trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()).split(/\s+/);
+      return p.length > 1 ? p[0] + " " + p[1][0] + "." : p[0];
+    }
+    function nomeCurto(t) { if (!t) return "—"; const p = String(t).trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[1] : p[0]; }
+
+    async function carregar() {
+      if (carregando) return;
+      carregando = true; erro = null; render();
+      try {
+        const res = await leitura(SUPABASE_URL + "/rest/v1/v_pedidos_reserva?select=*&order=data.desc,pedido.desc");
+        if (!res.ok) throw new Error("HTTP " + res.status + " — " + (await res.text()).slice(0, 160));
+        dados = await res.json();
+        carregadoEm = new Date();
+        if (typeof detalhes !== "undefined") detalhes.clear();
+        preencherVendedores();
+        HistCliente.buscarResumos(dados.map((x) => x.cod_cliente), true).then(render).catch(() => {});
+      } catch (e) { erro = e.message || String(e); }
+      carregando = false; render();
+    }
+
+    function preencherVendedores() {
+      document.querySelectorAll('#res-filtros select[data-dinamico]').forEach((sel) => {
+        const campo = sel.dataset.f, atual = sel.value, primeiro = sel.options[0].outerHTML;
+        let vals = [...new Set(dados.map((x) => x[campo]).filter((v) => v != null && v !== ""))].map(String).sort((a, b) => a.localeCompare(b, "pt-BR"));
+        let extra = "";
+        if (campo === "us_confirma") {
+          vals = [...new Set(dados.filter((x) => !x.intocado).map((x) => x.us_confirma).filter(Boolean))].sort();
+          extra = '<option value="__intocado">cliente (ninguém mexeu)</option>';
+        }
+        sel.innerHTML = primeiro + extra + vals.map((v) => '<option value="' + esc(v) + '">' + esc(campo === "nome_vend" ? vendCurto(v) : v) + "</option>").join("");
+        sel.value = [...sel.options].some((o) => o.value === atual) ? atual : "";
+      });
+    }
+
+    // pedido do site parado: status 11 e us confirma = código do cliente (ninguém da Blue mexeu)
+    function doSite(x) { return x.status === "11" && !!x.intocado; }
+    // DIRETO para a própria Blue (cliente 374) = baixas, perdas e acertos manuais internos.
+    // DIRETO de outro cliente (ex.: empresa sem vendedor) continua aparecendo.
+    const CLIENTE_BLUE = 374;
+    function ehDireto(x) {
+      return (Number(x.vendedor_codigo) === 1 || String(x.nome_vend || "").trim().toUpperCase() === "DIRETO") &&
+        Number(x.cod_cliente) === CLIENTE_BLUE;
+    }
+    function temMotivo(x) { return !!x.manual_qtd || !!(x.ligacoes_qtd && x.motivo_categoria && x.motivo_categoria !== "nao_informado"); }
+    function passaColunas(x) {
+      const c = col, t = (v) => String(v == null ? "" : v).toLowerCase();
+      if (c.status && x.status !== c.status) return false;
+      if (c.pedido && !String(x.pedido).includes(c.pedido.trim())) return false;
+      if (c.nome_vend && x.nome_vend !== c.nome_vend) return false;
+      if (c.cod_cliente && !String(x.cod_cliente).includes(c.cod_cliente.trim())) return false;
+      if (c.cliente && !(t(x.cliente).includes(t(c.cliente).trim()) || t(x.razao_social).includes(t(c.cliente).trim()))) return false;
+      if (c.valor_min !== undefined && c.valor_min !== "" && n(x.valor_total) < Number(c.valor_min)) return false;
+      if (c.lucr_max !== undefined && c.lucr_max !== "" && (x.pc_lucrat == null || n(x.pc_lucrat) > Number(c.lucr_max))) return false;
+      if (c.nome_transp && x.nome_transp !== c.nome_transp) return false;
+      if (c.forma_pagamento && x.forma_pagamento !== c.forma_pagamento) return false;
+      if (c.us_confirma === "__intocado" && !x.intocado) return false;
+      if (c.us_confirma && c.us_confirma !== "__intocado" && (x.intocado || x.us_confirma !== c.us_confirma)) return false;
+      if (c.e_commerce && (x.e_commerce || "N") !== c.e_commerce) return false;
+      if (c.dias === "primeiro" && x.dias_ultped != null) return false;
+      if (c.dias === "ate30" && !(x.dias_ultped != null && n(x.dias_ultped) >= 0 && n(x.dias_ultped) <= 30)) return false;
+      if (c.dias === "mais30" && !(n(x.dias_ultped) > 30)) return false;
+      if (c.repres === "com" && !x.representante) return false;
+      if (c.repres === "sem" && x.representante) return false;
+      if (c.motivo === "sem_ligacao" && (x.ligacoes_qtd || x.manual_qtd)) return false;
+      if (c.motivo === "manual" && !x.manual_qtd) return false;
+      if (c.motivo === "com_motivo" && !temMotivo(x)) return false;
+      if (c.motivo === "sem_resposta" && !(x.ligacoes_qtd && !temMotivo(x))) return false;
+      return true;
+    }
+    function filtrados() {
+      const b = filtro.busca.trim().toLowerCase();
+      const lista = dados.filter((x) =>
+        (!filtro.dias || (diasDesde(x.data) ?? 0) <= Number(filtro.dias)) &&
+        (filtro.origem !== "site" || doSite(x)) &&
+        (!filtro.semDireto || !ehDireto(x)) &&
+        passaColunas(x) &&
+        (!b || String(x.pedido).includes(b) || String(x.cod_cliente).includes(b) ||
+          (x.cliente || "").toLowerCase().includes(b) || (x.razao_social || "").toLowerCase().includes(b)));
+      const k = ordem.campo, sinal = ordem.desc ? -1 : 1;
+      const numerico = ["pedido", "cod_cliente", "valor_total", "pc_lucrat", "dias_ultped"].indexOf(k) >= 0;
+      return lista.sort((a, b2) => {
+        let va = a[k], vb = b2[k];
+        if (k === "data") { va = (a.data || "") + String(a.pedido).padStart(9, "0"); vb = (b2.data || "") + String(b2.pedido).padStart(9, "0"); }
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;            // vazios sempre no fim
+        if (vb == null) return -1;
+        return (numerico ? n(va) - n(vb) : String(va).localeCompare(String(vb), "pt-BR")) * sinal;
+      });
+    }
+    function marcarCabecalho() {
+      document.querySelectorAll(".tabela-reserva tr.ordenavel th[data-ord]").forEach((th) => {
+        const seta = th.querySelector(".seta-ord"); if (seta) seta.remove();
+        if (th.dataset.ord === ordem.campo || (ordem.campo === "data" && th.dataset.ord === "pedido"))
+          th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (ordem.desc ? "▼" : "▲") + "</span>");
+      });
+      document.querySelectorAll("#res-filtros [data-f]").forEach((e) => e.classList.toggle("ativo", !!e.value));
+    }
+
+    // o que está valendo: o mais recente entre o motivo informado no painel e a ligação com motivo
+    function motivoAtual(x) {
+      const lig = x.ligacoes_qtd ? { fonte: "ligacao", cat: x.motivo_categoria || "nao_informado", texto: x.motivo_resumo, em: x.motivo_em } : null;
+      const man = x.manual_qtd ? { fonte: "manual", cat: x.manual_categoria, texto: x.manual_texto, em: x.manual_em, autor: x.manual_autor } : null;
+      if (man && (!lig || lig.cat === "nao_informado" || new Date(man.em) >= new Date(lig.em))) return man;
+      return lig;
+    }
+    function erroLigacao(l) {
+      const e = String((l && l.erro) || "");
+      if (/404|480|486|503|indispon|not found/i.test(e)) return "não completou · ramal indisponível";
+      if (/ninguém atendeu/i.test(e)) return "ninguém atendeu";
+      if (/silêncio/i.test(e)) return "atendeu e não falou";
+      return e ? "não completou" : "";
+    }
+    function celulaMotivo(x) {
+      const m = motivoAtual(x);
+      const abrir = ' data-res-pedido="' + esc(x.pedido) + '" title="Ver histórico e informar o motivo"';
+      if (!m) {
+        const espera = doSite(x) ? '<span class="cod-cliente">aguardando 1 h útil</span><br>' : "";
+        return espera + '<span class="motivo-link"' + abrir + ">+ informar motivo</span>";
+      }
+      const sem = m.cat === "nao_informado";
+      let texto = m.texto || CATS[m.cat] || m.cat;
+      if (sem) {
+        const ult = Array.isArray(x.ligacoes) && x.ligacoes[0];
+        texto = erroLigacao(ult) || "não respondeu";
+      }
+      const quem = m.fonte === "manual"
+        ? "informado por " + esc(nomeCurto(m.autor)) + " · " + dataHora(m.em)
+        : x.ligacoes_qtd + (x.ligacoes_qtd > 1 ? " ligações" : " ligação") + " · " + dataHora(m.em);
+      return '<span class="motivo-link"' + abrir + '><span class="motivo-cat' + (sem ? " sem" : "") + '">' + esc(CATS[m.cat] || m.cat) + "</span>" + esc(texto) + "</span>" +
+        '<div class="motivo-quem">' + quem + (sem ? ' · <span class="motivo-link"' + abrir + ">informar</span>" : "") + "</div>";
+    }
+
+    function render() {
+      if (abaAtual !== "reserva") return;
+      const corpo = el("corpo-reserva");
+      el("freshness-reserva").textContent = carregando ? "carregando…" : carregadoEm ? "atualizado " + carregadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+      if (erro || (carregando && !dados.length)) el("rodape-reserva").innerHTML = "";
+      if (erro) { corpo.innerHTML = '<tr><td colspan="15" class="estado-vazio">Não foi possível carregar: ' + esc(erro) + "</td></tr>"; el("reserva-kpis").innerHTML = ""; return; }
+      if (!dados.length && carregando) { corpo.innerHTML = '<tr><td colspan="15" class="estado-vazio">Carregando pedidos…</td></tr>'; return; }
+      const lista = filtrados();
+      marcarCabecalho();
+      const total = lista.reduce((t, x) => t + n(x.valor_total), 0);
+      // lucratividade média ponderada pelo valor do pedido
+      const baseLucr = lista.filter((x) => x.pc_lucrat != null);
+      const somaVal = baseLucr.reduce((t, x) => t + n(x.valor_total), 0);
+      const lucrMedia = somaVal ? fmtDec(baseLucr.reduce((t, x) => t + n(x.pc_lucrat) * n(x.valor_total), 0) / somaVal, 1) + "%" : "—";
+      el("rodape-reserva").innerHTML = lista.length
+        ? '<tr><td colspan="5" style="text-align:left;">TOTAL · ' + fmtInt(lista.length) + (lista.length === 1 ? " pedido" : " pedidos") + "</td>" +
+          '<td>' + fmtMoeda(total) + "</td><td>" + lucrMedia + '</td><td colspan="8"></td></tr>'
+        : "";
+      const site = lista.filter(doSite);
+      const st10 = lista.filter((x) => x.status === "10");
+      const comMotivo = lista.filter(temMotivo);
+      const semResposta = lista.filter((x) => x.ligacoes_qtd && !temMotivo(x));
+      const maisVelho = lista.reduce((m, x) => Math.max(m, diasDesde(x.data) || 0), 0);
+      el("reserva-kpis").innerHTML = [
+        { rotulo: "Valor em reserva", valor: fmtMoeda(total), nota: fmtInt(lista.length) + (lista.length === 1 ? " pedido" : " pedidos") + " · lucr. média " + lucrMedia },
+        { rotulo: "Do site · ninguém mexeu", valor: fmtInt(site.length), nota: fmtMoeda(site.reduce((t, x) => t + n(x.valor_total), 0)) + " · status 11, us conf. = cliente" },
+        { rotulo: "Status 10", valor: fmtInt(st10.length), nota: fmtMoeda(st10.reduce((t, x) => t + n(x.valor_total), 0)) },
+        { rotulo: "Com motivo", valor: fmtInt(comMotivo.length), nota: (semResposta.length ? semResposta.length + " ligado(s) sem resposta · " : "") + lista.filter((x) => x.manual_qtd).length + " informado(s) no painel" },
+        { rotulo: "Mais antigo", valor: lista.length ? maisVelho + " dias" : "—", nota: "desde a data do pedido" }
+      ].map((k) => '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>").join("");
+      if (!lista.length) { corpo.innerHTML = '<tr><td colspan="15" class="estado-vazio">Nenhum pedido em reserva com esses filtros. <span class="link-hist" data-res-limpar="1">Limpar filtros</span></td></tr>'; return; }
+      corpo.innerHTML = lista.map((x) => {
+        const cor = x.status === "11" ? "st-11" : "st-10";
+        const repres = x.representante
+          ? '<span class="link-hist" title="Ver conversas e ligações do representante" ' + HistCliente.marcador(x.representante, x.representante_nome) + ">" + esc(nomeCurto(x.representante_nome) || x.representante) + '</span> <span class="cod-cliente">' + esc(x.representante) + "</span>"
+          : '<span class="cod-cliente">—</span>';
+        const usConf = x.intocado ? '<span class="pill-intocado" title="Ninguém da Blue mexeu no pedido">cliente</span>' : esc(x.us_confirma || "—");
+        return '<tr class="' + cor + '">' +
+          '<td><span class="pill-st st' + esc(x.status) + '">' + esc(x.status) + "</span></td>" +
+          '<td class="cor num"><b class="motivo-link" data-res-pedido="' + esc(x.pedido) + '" title="Abrir o pedido: itens, estoque e motivo">' + esc(x.pedido) + '</b><span class="sub">' + dataBR(x.data) + "</span></td>" +
+          '<td class="cor num" style="text-align:left;" title="' + esc(x.nome_vend || "") + '">' + esc(vendCurto(x.nome_vend)) + "</td>" +
+          '<td class="cor num">' + esc(x.cod_cliente) + "</td>" +
+          '<td class="cor quebra" style="text-align:left;"><span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" +
+            (x.cidade ? '<div class="atividade-cliente">' + esc([x.cidade, x.uf].filter(Boolean).join(" / ")) + "</div>" : "") + "</td>" +
+          '<td class="cor num">' + fmtMoeda(x.valor_total) + "</td>" +
+          '<td class="num">' + (x.pc_lucrat == null ? "—" : fmtDec(n(x.pc_lucrat), 1) + "%") + "</td>" +
+          '<td class="estreita" style="text-align:left;">' + esc(x.nome_transp || "—") + "</td>" +
+          '<td class="estreita" style="text-align:left;">' + esc(x.forma_pagamento || "—") + "</td>" +
+          "<td>" + usConf + "</td>" +
+          "<td>" + (x.e_commerce === "S" ? '<span class="pill-tipo pill-reativado">site</span>' : x.market_place === "S" ? '<span class="pill-tipo pill-reativado">marketplace</span>' : '<span class="cod-cliente">N</span>') + "</td>" +
+          "<td>" + (x.dias_ultped == null ? '<span class="pill-tipo pill-novo">1º pedido</span>' : n(x.dias_ultped) < 0 ? '<span class="cod-cliente">—</span>' : fmtInt(x.dias_ultped)) + "</td>" +
+          '<td class="estreita" style="text-align:left;">' + repres + "</td>" +
+          '<td><span class="link-hist" style="text-decoration:none;" title="Abrir conversas e ligações" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + HistCliente.celulaUltimo(x.cod_cliente) + "</span></td>" +
+          '<td class="quebra" style="text-align:left;">' + celulaMotivo(x) + "</td>" +
+          "</tr>";
+      }).join("");
+    }
+
+    let pedidoAberto = null;
+    const detalhes = new Map();   // pedido -> detalhe (cabeçalho + itens), buscado sob demanda
+
+    async function buscarDetalhe(pedido) {
+      if (detalhes.has(pedido)) return detalhes.get(pedido);
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/pedido_reserva_detalhe", {
+        method: "POST", headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_pedido: Number(pedido) })
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(m.slice(0, 200)); }
+      const d = await res.json();
+      detalhes.set(pedido, d);
+      return d;
+    }
+
+    function htmlDetalhe(d) {
+      const campo = (rotulo, valor, cls) => '<div class="' + (cls || "") + '"><i>' + rotulo + "</i>" + valor + "</div>";
+      const end = [d.endereco, d.bairro, [d.cidade, d.uf].filter(Boolean).join(" / "), d.cep].filter(Boolean).join(" · ");
+      const itens = Array.isArray(d.itens) ? d.itens : [];
+      const totalItens = itens.reduce((t, i) => t + n(i.total), 0);
+      const disp = (v) => v == null ? "—" : (n(v) <= 0 ? '<span class="disp-zero">' + fmtInt(v) + "</span>" : fmtInt(v));
+      return '<div class="ped-cab">' +
+          campo("Cliente", '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(d.cod_cliente, d.cliente) + ">" + esc(d.cliente || "—") + '</span> <span class="cod-cliente">' + esc(d.cod_cliente) + "</span>", "largo") +
+          campo("CNPJ / CPF", esc(d.cnpj_cpf || "—")) +
+          campo("Status", '<span class="pill-st st' + esc(d.status) + '">' + esc(d.status) + "</span> " + (d.intocado ? '<span class="pill-intocado">ninguém mexeu</span>' : "")) +
+          campo("Endereço", esc(end || "—"), "largo") +
+          campo("Vendedor", esc(d.vendedor || "—")) +
+          campo("Us confirma", esc(d.us_confirma || "—")) +
+          campo("Pagamento", esc(d.forma_pagamento || "—"), "largo") +
+          campo("Transportadora", esc(d.transportadora || "—")) +
+          campo("Entrou em", dataHora(d.entrou_em)) +
+          campo("Valor dos produtos", fmtMoeda(d.valor_total)) +
+          campo("Frete cobrado", d.frete_cobrado ? fmtMoeda(d.frete_cobrado) : "—") +
+          campo("Total com frete", fmtMoeda(d.valor_nf_frt || d.valor_total)) +
+          campo("Lucratividade", d.pc_lucrat == null ? "—" : fmtDec(n(d.pc_lucrat), 1) + "%") +
+        "</div>" +
+        '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr>' +
+          "<th>Cód.</th><th>Produto</th><th>Qtd</th><th>Unit.</th><th>Total</th><th>Margem</th>" +
+          '<th title="Disponível para vender agora: estoque físico menos o que já está reservado em pedidos (este pedido incluído). Kit: quantos kits dá para montar">Disp. p/ venda</th>' +
+          '<th title="Reservado em pedidos (status 11 e 20)">Reserv.</th><th title="Em trânsito / comprado">Trânsito</th>' +
+        "</tr></thead><tbody>" +
+        (itens.length ? itens.map((i) => {
+          const linhaItem = "<tr>" +
+            '<td class="cod-cliente">' + esc(i.codigo) + "</td>" +
+            "<td>" + esc(i.descricao || "—") + (i.marca && !i.kit ? ' <span class="cod-cliente">' + esc(i.marca) + "</span>" : "") +
+              (i.kit ? '<span class="selo-kit" title="Kit: não tem estoque próprio, usa o estoque dos componentes ao finalizar a venda">kit</span>' : "") +
+              (i.kit && Array.isArray(i.componentes) && i.componentes.length
+                ? '<br><span class="abre-kit" data-abre-kit="' + esc(i.codigo) + '"><span class="seta">▸</span> ' + i.componentes.length + " componentes" +
+                  (i.componentes[0] ? ' · <span class="lim">limita: ' + esc(String(i.componentes[0].descricao || "").split(/\s+/).slice(0, 3).join(" ")) + " (" + fmtInt(i.componentes[0].disponivel) + ")</span>" : "") + "</span>"
+                : "") + "</td>" +
+            "<td>" + fmtInt(i.qtd) + "</td>" +
+            "<td>" + fmtMoeda(i.valunit) + "</td>" +
+            "<td>" + fmtMoeda(i.total) + "</td>" +
+            "<td>" + (i.margem_pct == null ? "—" : fmtDec(n(i.margem_pct), 1) + "%") + "</td>" +
+            "<td>" + (i.kit ? disp(i.disponivel) + (i.disponivel == null ? "" : n(i.disponivel) === 1 ? " kit" : " kits") : disp(i.disponivel)) + "</td>" +
+            "<td>" + (i.kit ? "—" : i.reservado == null ? "—" : fmtInt(i.reservado)) + "</td>" +
+            "<td>" + (i.kit ? "—" : i.transito == null ? "—" : fmtInt(i.transito)) + "</td></tr>";
+          if (!i.kit || !Array.isArray(i.componentes)) return linhaItem;
+          const minimo = n(i.disponivel);
+          return linhaItem + i.componentes.map((c) => {
+            const limita = n(c.kits) === minimo;
+            return '<tr class="comp oculto' + (limita ? " limita" : "") + '" data-kit-de="' + esc(i.codigo) + '"><td>' + esc(c.codigo) + "</td>" +
+              "<td>↳ " + esc(c.descricao || "—") + (n(c.por_kit) > 1 ? " (" + fmtInt(c.por_kit) + " por kit)" : "") + (limita ? '<span class="selo-limita">limita</span>' : "") + "</td>" +
+              '<td colspan="4"></td><td>' + disp(c.disponivel) + '</td><td colspan="2"></td></tr>';
+          }).join("");
+        }).join("") : '<tr><td colspan="9" class="estado-vazio">Itens ainda não sincronizados.</td></tr>') +
+        "</tbody>" + (itens.length ? '<tfoot><tr><td></td><td style="text-align:left;">' + itens.length + (itens.length > 1 ? " itens" : " item") + " · " + fmtInt(itens.reduce((t, i) => t + n(i.qtd), 0)) + ' unidades</td><td></td><td></td><td>' + fmtMoeda(totalItens) + '</td><td colspan="4"></td></tr></tfoot>' : "") +
+        "</table></div>";
+    }
+    function abrirLigacoes(pedido, aviso) {
+      const x = dados.find((d) => String(d.pedido) === String(pedido));
+      if (!x) return;
+      pedidoAberto = String(pedido);
+      const ligs = (Array.isArray(x.ligacoes) ? x.ligacoes : []).map((l) => ({ tipo: "ligacao", em: l.criado_em, l }));
+      const mans = (Array.isArray(x.anotacoes) ? x.anotacoes : []).map((a) => ({ tipo: "manual", em: a.criado_em, a }));
+      const hist = ligs.concat(mans).sort((a, b) => new Date(b.em) - new Date(a.em));
+      const opcoes = Object.keys(CATS).filter((k) => k !== "nao_informado")
+        .map((k) => '<option value="' + k + '">' + esc(CATS[k]) + "</option>").join("");
+      el("reserva-lig-titulo").innerHTML = "Pedido " + esc(x.pedido) + ' <span class="cod-cliente">' + esc(x.cliente || "") + " · " + fmtMoeda(x.valor_total) + "</span>";
+      el("reserva-lig-corpo").innerHTML =
+        '<div id="res-detalhe">' + (detalhes.has(String(pedido)) ? htmlDetalhe(detalhes.get(String(pedido))) : '<div class="estado-vazio">Carregando os itens do pedido…</div>') + "</div>" +
+        '<div class="form-motivo"><div class="linha">' +
+          '<div><label for="res-motivo-cat">Por que está em reserva?</label><select id="res-motivo-cat"><option value="">Escolha…</option>' + opcoes + "</select></div>" +
+          '<button type="button" class="btn-full" id="res-motivo-salvar" style="width:auto;padding:7px 16px;">Salvar motivo</button></div>' +
+          '<textarea id="res-motivo-texto" maxlength="500" placeholder="Detalhe (opcional; obrigatório em Outro). Ex.: cliente vai confirmar o frete à tarde"></textarea>' +
+          '<div class="aviso cod-cliente" id="res-motivo-aviso">' + (aviso || (doSite(x) ? "Com o motivo informado aqui, o coordenador virtual não liga mais para este pedido." : "")) + "</div></div>" +
+        '<p class="cod-cliente" style="margin:0 0 8px;">Histórico, do mais recente para o mais antigo.</p>' +
+        (hist.length ? hist.map((h) => {
+          if (h.tipo === "manual") {
+            const a = h.a;
+            return '<div class="ligacao-item manual"><div class="cab"><span>' + dataHora(a.criado_em) + " · informado no painel por " + esc(a.autor_nome || "—") + "</span><span>✍️</span></div>" +
+              '<div><span class="motivo-cat">' + esc(CATS[a.categoria] || a.categoria) + "</span>" + esc(a.texto || "") + "</div></div>";
+          }
+          const l = h.l, cat = l.motivo_categoria || "nao_informado";
+          return '<div class="ligacao-item"><div class="cab"><span>' + dataHora(l.criado_em) + " · ligação para " + esc(l.vendedor || "—") + " (ramal " + esc(l.ramal_destino || "—") + ")</span>" +
+            "<span>" + (l.atendeu ? "atendeu" + (l.duracao_seg ? " · " + fmtDec(n(l.duracao_seg), 0) + " s" : "") : esc(erroLigacao(l) || "não atendeu")) + "</span></div>" +
+            (l.transcricao ? '<div class="fala">“' + esc(l.transcricao) + "”</div>" : '<div class="fala cod-cliente">Sem fala registrada' + (l.erro ? " (" + esc(l.erro) + ")" : "") + ".</div>") +
+            '<div><span class="motivo-cat' + (cat === "nao_informado" ? " sem" : "") + '">' + esc(CATS[cat] || cat) + "</span>" + esc(l.motivo_resumo || "") + "</div></div>";
+        }).join("") : '<div class="estado-vazio">Nenhum motivo nem ligação para este pedido ainda.</div>');
+      el("overlay-reserva").classList.remove("oculto");
+      el("res-motivo-salvar").addEventListener("click", salvarMotivo);
+      if (!detalhes.has(String(pedido))) {
+        buscarDetalhe(String(pedido))
+          .then((d) => { if (pedidoAberto === String(pedido) && el("res-detalhe")) el("res-detalhe").innerHTML = htmlDetalhe(d); })
+          .catch((e) => { if (pedidoAberto === String(pedido) && el("res-detalhe")) el("res-detalhe").innerHTML = '<div class="estado-vazio">Não foi possível carregar o pedido: ' + esc(e.message || e) + "</div>"; });
+      }
+    }
+
+    async function salvarMotivo() {
+      const cat = el("res-motivo-cat").value, texto = el("res-motivo-texto").value.trim(), aviso = el("res-motivo-aviso"), btn = el("res-motivo-salvar");
+      if (!cat) { aviso.textContent = "Escolha o motivo."; aviso.style.color = "var(--vermelho)"; return; }
+      if (cat === "outro" && !texto) { aviso.textContent = "Em \"Outro\", escreva o motivo."; aviso.style.color = "var(--vermelho)"; return; }
+      btn.disabled = true; aviso.style.color = ""; aviso.textContent = "Salvando…";
+      try {
+        sessao = await garantirSessaoValida();
+        if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+        const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/registrar_motivo_reserva", {
+          method: "POST", headers: headersEscrita(),
+          body: JSON.stringify({ p_pedido: Number(pedidoAberto), p_categoria: cat, p_texto: texto || null })
+        });
+        if (!res.ok) {
+          const t = await res.text(); let msg = t;
+          try { msg = JSON.parse(t).message || t; } catch (e) {}
+          throw new Error(msg.slice(0, 200));
+        }
+        const p = pedidoAberto;
+        await carregar();
+        abrirLigacoes(p, "✓ Motivo salvo." + (doSite(dados.find((d) => String(d.pedido) === p) || {}) ? " O coordenador virtual não vai mais ligar para este pedido." : ""));
+      } catch (e) {
+        btn.disabled = false; aviso.style.color = "var(--vermelho)"; aviso.textContent = "Não foi possível salvar: " + (e.message || e);
+      }
+    }
+    function fecharLigacoes() { el("overlay-reserva").classList.add("oculto"); pedidoAberto = null; }
+
+    function ligar() {
+      if (ligado) return;
+      ligado = true;
+      el("res-busca").addEventListener("input", (e) => { filtro.busca = e.target.value; render(); });
+      const aoFiltrar = (e) => { const f = e.target.closest("[data-f]"); if (!f) return; col[f.dataset.f] = f.value; render(); };
+      el("res-filtros").addEventListener("input", aoFiltrar);
+      el("res-filtros").addEventListener("change", aoFiltrar);
+      document.querySelector(".tabela-reserva tr.ordenavel").addEventListener("click", (e) => {
+        const th = e.target.closest("th[data-ord]"); if (!th) return;
+        const campo = th.dataset.ord === "pedido" ? "data" : th.dataset.ord;
+        ordem = ordem.campo === campo ? { campo, desc: !ordem.desc } : { campo, desc: ["valor_total", "pc_lucrat", "dias_ultped", "data"].indexOf(campo) >= 0 };
+        render();
+      });
+      el("res-sem-direto").addEventListener("click", () => {
+        filtro.semDireto = !filtro.semDireto; el("res-sem-direto").classList.toggle("ativa", filtro.semDireto); render();
+      });
+      el("res-origem").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-origem]"); if (!b) return;
+        filtro.origem = b.dataset.origem; el("res-origem").querySelectorAll("button").forEach((x) => x.classList.toggle("ativa", x === b)); render();
+      });
+      el("btn-limpar-reserva").addEventListener("click", () => {
+        col = {}; filtro.busca = ""; el("res-busca").value = "";
+        filtro.origem = ""; el("res-origem").querySelectorAll("button").forEach((x) => x.classList.toggle("ativa", x.dataset.origem === ""));
+        filtro.semDireto = true; el("res-sem-direto").classList.add("ativa");
+        document.querySelectorAll("#res-filtros [data-f]").forEach((e) => { e.value = ""; });
+        render();
+      });
+      el("res-periodo").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-dias]"); if (!b) return;
+        filtro.dias = b.dataset.dias; el("res-periodo").querySelectorAll("button").forEach((x) => x.classList.toggle("ativa", x === b)); render();
+      });
+      el("btn-atualizar-reserva").addEventListener("click", carregar);
+      el("corpo-reserva").addEventListener("click", (e) => {
+        if (e.target.closest("[data-res-limpar]")) { el("btn-limpar-reserva").click(); return; }
+        const m = e.target.closest("[data-res-pedido]"); if (m) abrirLigacoes(m.dataset.resPedido);
+      });
+      el("btn-fechar-reserva").addEventListener("click", fecharLigacoes);
+      el("reserva-lig-corpo").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-abre-kit]"); if (!b) return;
+        const linhas = el("reserva-lig-corpo").querySelectorAll('tr[data-kit-de="' + b.dataset.abreKit + '"]');
+        const abrir = linhas.length && linhas[0].classList.contains("oculto");
+        linhas.forEach((tr) => tr.classList.toggle("oculto", !abrir));
+        b.querySelector(".seta").textContent = abrir ? "▾" : "▸";
+      });
+      el("overlay-reserva").addEventListener("click", (e) => { if (e.target.id === "overlay-reserva") fecharLigacoes(); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el("overlay-reserva").classList.contains("oculto")) fecharLigacoes(); });
+    }
+
+    function iniciar() {
+      ligar();
+      if (!carregadoEm || Date.now() - carregadoEm.getTime() > 60000) carregar(); else render();
+      // recarrega sozinha a cada 5 minutos enquanto a aba estiver aberta (o ERP sincroniza a cada 10)
+      if (!timer) timer = setInterval(() => { if (abaAtual === "reserva" && !document.hidden) carregar(); }, 5 * 60000);
+    }
+    return { iniciar, carregar, render, _dados: () => dados };
   })();
 
   // --- Ordens de serviço (faixa no topo + sub-aba) ---
