@@ -2268,8 +2268,8 @@
         <td title="${l.nome_completo}">${l.nome_curto || l.nome_completo}${semMeta ? ' <span class="pill-tipo pill-sem-meta">sem meta</span>' : ""}</td>
         <td>${semMeta ? "—" : fmtMoeda(objetivo)}</td>
         <td>${fmtMoeda(produzido)}</td>
-        <td>${fmtMoeda(creditos)}</td>
-        <td>${fmtMoeda(devolucoes)}</td>
+        <td class="${classeDesconto(creditos)}">${fmtMoeda(creditos)}</td>
+        <td class="${classeDesconto(devolucoes)}">${fmtMoeda(devolucoes)}</td>
         <td class="${classeInadimplencia(inadimplencia)}">${fmtMoeda(inadimplencia)}</td>
         <td>${semMeta ? "—" : fmtMoeda(falta)}</td>
         <td>${fmtMoeda(final)}</td>
@@ -2283,8 +2283,8 @@
         <td>TOTAL</td>
         <td>${fmtMoeda(somaObjetivo)}</td>
         <td>${fmtMoeda(somaProduzido)}</td>
-        <td>${fmtMoeda(somaCreditos)}</td>
-        <td>${fmtMoeda(somaDevolucoes)}</td>
+        <td class="${classeDesconto(somaCreditos)}">${fmtMoeda(somaCreditos)}</td>
+        <td class="${classeDesconto(somaDevolucoes)}">${fmtMoeda(somaDevolucoes)}</td>
         <td class="${classeInadimplencia(somaInadimplencia)}">${fmtMoeda(somaInadimplencia)}</td>
         <td>${fmtMoeda(faltaTotal)}</td>
         <td>${fmtMoeda(somaFinal)}</td>
@@ -2336,6 +2336,9 @@
   seletorMes.addEventListener("change", () => renderizarTabela(seletorMes.value));
 
   // --- Inadimplência: detalhe por vendedor (clique na linha) ---
+  // crédito e devolução descontam do final — ficam em vermelho quando têm valor
+  function classeDesconto(v) { return Number(v || 0) > 0 ? "inad-debito" : ""; }
+
   function classeInadimplencia(v) {
     if (v < 0) return "inad-debito";
     if (v > 0) return "inad-credito";
