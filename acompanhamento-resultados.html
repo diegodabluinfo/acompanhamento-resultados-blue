@@ -349,6 +349,9 @@
   .btn-hist { font: inherit; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); cursor: pointer; }
   .btn-hist:hover { background: var(--azul); color: #fff; }
   #overlay-hist { z-index: 60; }
+  #overlay-pedido { z-index: 55; }
+  .link-ped { color: var(--azul); font-weight: 700; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .link-ped:hover { text-decoration-style: solid; }
   .modal-hist { max-width: 860px; }
   .modal-hist .os-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
   .modal-hist .os-cab h2 { margin: 0; }
@@ -1939,6 +1942,17 @@
     </div>
   </div>
 
+  <!-- ===== Pedido (abre de qualquer tela pelo número) ===== -->
+  <div id="overlay-pedido" class="overlay oculto">
+    <div class="modal-gasto modal-os modal-reserva" role="dialog" aria-modal="true" aria-labelledby="pedido-titulo">
+      <div class="os-cab">
+        <h2 id="pedido-titulo">Pedido</h2>
+        <button type="button" class="btn-secundario" id="btn-fechar-pedido">Fechar</button>
+      </div>
+      <div id="pedido-corpo"></div>
+    </div>
+  </div>
+
   <!-- ===== Janela de editar lançamento de gasto ===== -->
   <div id="overlay-gasto" class="overlay oculto">
     <div class="modal-gasto">
@@ -2585,7 +2599,7 @@
           '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Data</th><th>Pedido</th><th>NF</th><th>Cliente</th><th>Faturado</th><th>Crédito usado</th></tr></thead><tbody>' +
           creditos.map(c => `<tr>
             <td>${fmtData(c.data)}</td>
-            <td>${esc(c.pedido)}</td>
+            <td>${PedidoDet.link(c.pedido)}</td>
             <td>${esc(c.nota_fiscal || "—")}</td>
             <td class="det-cli" title="${esc(c.cliente || "")}">${esc(c.cod_cliente)} ${esc(c.cliente || "")}</td>
             <td>${fmtMoeda(c.faturado)}</td>
@@ -2600,7 +2614,7 @@
           '<div class="tabela-scroll"><table class="subtabela"><thead><tr><th>Data</th><th>Pedido</th><th>Observação</th><th>Valor</th></tr></thead><tbody>' +
           devolucoes.map(d => `<tr>
             <td>${fmtData(d.data)}</td>
-            <td>${esc(d.pedido_numero || "—")}</td>
+            <td>${PedidoDet.link(d.pedido_numero)}</td>
             <td class="det-cli" title="${esc(d.observacao || "")}">${esc(d.observacao || "—")}</td>
             <td class="inad-debito">${fmtMoeda(d.valor)}</td>
           </tr>`).join("") + "</tbody></table></div>";
@@ -2835,7 +2849,7 @@
       <td>${fmtData(l.data)}</td>
       <td>${l.vendedores ? l.vendedores.nome_completo : ""}</td>
       <td>${fmtMoeda(l.valor)}</td>
-      <td>${l.pedido_numero || ""}</td>
+      <td>${l.pedido_numero ? PedidoDet.link(l.pedido_numero) : ""}</td>
       <td>${l.observacao || ""}</td>
       <td><button type="button" class="btn-excluir" data-id="${l.id}">Excluir</button></td>
     </tr>`).join("");
@@ -3441,7 +3455,7 @@
       try {
         const f = await rpc("coordenador_fila_previa");
         alvo.innerHTML = f.length ? '<table class="coord-tabela"><thead><tr><th>Tipo</th><th>Pedido</th><th>Liga para</th><th>Tentativas</th><th>Situação</th></tr></thead><tbody>' +
-          f.map((x) => "<tr><td>" + esc(TIPOS[x.tipo] || x.tipo) + "</td><td><b>" + esc(x.pedido) + "</b><br><span class=\"cod-cliente\">" + esc(x.cliente || "") + "</span></td>" +
+          f.map((x) => "<tr><td>" + esc(TIPOS[x.tipo] || x.tipo) + "</td><td><b>" + PedidoDet.link(x.pedido) + "</b><br><span class=\"cod-cliente\">" + esc(x.cliente || "") + "</span></td>" +
             "<td>" + esc(x.vendedor || "—") + " (" + esc(x.ramal_vendedor || "sem ramal") + ")" + (x.redirecionado ? '<br><span class="cod-cliente">teste → ' + esc(x.ligar_para) + "</span>" : "") + "</td>" +
             "<td>" + esc(x.tentativas) + "</td><td>" + (x.bloqueio ? '<span class="pill-espera">' + esc(x.bloqueio) + "</span>" : '<span class="pill-liga">liga na próxima rodada</span>') +
             '<div class="fala">“' + esc(x.texto || "") + "”</div></td></tr>").join("") + "</tbody></table>"
@@ -3454,7 +3468,7 @@
       try {
         const u = await rpc("coordenador_ultimas_ligacoes", { p_limite: 15 });
         alvo.innerHTML = u.length ? '<table class="coord-tabela"><thead><tr><th>Quando</th><th>Tipo</th><th>Pedido</th><th>Para</th><th>Resultado</th></tr></thead><tbody>' +
-          u.map((x) => "<tr><td>" + quando(x.criado_em) + "</td><td>" + esc(TIPOS[x.tipo] || x.tipo) + "</td><td>" + esc(x.pedido || "") + "<br><span class=\"cod-cliente\">" + esc(x.cliente || "") + "</span></td>" +
+          u.map((x) => "<tr><td>" + quando(x.criado_em) + "</td><td>" + esc(TIPOS[x.tipo] || x.tipo) + "</td><td>" + (x.pedido ? PedidoDet.link(x.pedido) : "") + "<br><span class=\"cod-cliente\">" + esc(x.cliente || "") + "</span></td>" +
             "<td>" + esc(x.vendedor || "—") + " (" + esc(x.ramal_destino || "") + ")</td>" +
             "<td>" + (x.motivo_resumo ? esc(x.motivo_resumo) : x.atendeu ? '<span class="cod-cliente">atendeu, sem motivo</span>' : '<span class="cod-cliente">' + esc(x.erro || "não atendeu") + "</span>") + "</td></tr>").join("") + "</tbody></table>"
           : '<div class="estado-vazio">Nenhuma ligação ainda.</div>';
@@ -4201,6 +4215,161 @@
   })();
 
 
+  // --- Janela do pedido (qualquer tela) ---
+  // Fonte: rpc pedido_detalhe (security definer; precisa de alguma aba que mostre pedidos; anon não executa).
+  // Qualquer elemento com data-ped="<número>" abre a janela. Os itens ficam em cache por pedido.
+  const PedidoDet = (() => {
+    const cache = new Map();
+    const ABERTOS = ["00", "10", "11", "20", "21"];   // pedido ainda não faturado: estoque faz sentido
+    let aberto = null;
+    const el = (id) => document.getElementById(id);
+    const nn = (v) => Number(v || 0);
+
+    function dataBR(iso) { if (!iso) return "—"; const [a, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m + "/" + a; }
+    function dataHora(iso) {
+      if (!iso) return "—";
+      // horário do ERP vem sem fuso (já é hora de Brasília): formata direto, sem converter
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+      if (m && !/(Z|[+-]\d{2}:?\d{2})$/.test(String(iso))) return m[3] + "/" + m[2] + ", " + m[4] + ":" + m[5];
+      return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+    function valido(p) { return /^\d{1,9}$/.test(String(p == null ? "" : p).trim()) && Number(p) > 0; }
+    // número do pedido clicável; se não for um número de pedido, volta o texto puro
+    function link(pedido, rotulo) {
+      const txt = esc(rotulo == null ? pedido : rotulo);
+      if (!valido(pedido)) return txt || "—";
+      return '<span class="link-ped" data-ped="' + Number(pedido) + '" title="Abrir o pedido: itens e valores">' + txt + "</span>";
+    }
+
+    async function buscar(pedido) {
+      if (cache.has(pedido)) return cache.get(pedido);
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/pedido_detalhe", {
+        method: "POST", headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_pedido: Number(pedido) })
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(m.slice(0, 200)); }
+      const d = await res.json();
+      cache.set(pedido, d);
+      return d;
+    }
+
+    // cabeçalho + itens; usado aqui e no detalhe da aba Pedidos em Reserva
+    function html(d) {
+      const campo = (rotulo, valor, cls) => '<div class="' + (cls || "") + '"><i>' + rotulo + "</i>" + valor + "</div>";
+      const end = [d.endereco, d.bairro, [d.cidade, d.uf].filter(Boolean).join(" / "), d.cep].filter(Boolean).join(" · ");
+      const itens = Array.isArray(d.itens) ? d.itens : [];
+      const totalItens = itens.reduce((t, i) => t + nn(i.total), 0);
+      const comEstoque = ABERTOS.indexOf(String(d.status)) >= 0;
+      const faturado = !!d.data && !comEstoque;
+      const disp = (v) => v == null ? "—" : (nn(v) <= 0 ? '<span class="disp-zero">' + fmtInt(v) + "</span>" : fmtInt(v));
+      const selos = (d.so_servico === "S" ? ' <span class="pill-tipo pill-novo">serviço</span>' : "") +
+        (d.e_commerce === "S" ? ' <span class="pill-tipo pill-reativado">e-commerce</span>' : "") +
+        (d.market_place === "S" ? ' <span class="pill-tipo pill-reativado">marketplace</span>' : "");
+      const nCol = comEstoque ? 9 : 6;
+      return '<div class="ped-cab">' +
+          campo("Cliente", '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(d.cod_cliente, d.cliente) + ">" + esc(d.cliente || "—") + '</span> <span class="cod-cliente">' + esc(d.cod_cliente) + "</span>" + selos, "largo") +
+          campo("CNPJ / CPF", esc(d.cnpj_cpf || "—")) +
+          campo("Status", '<span class="pill-st st' + esc(d.status) + '">' + esc(d.status) + "</span> " + (faturado ? '<span class="cod-cliente">faturado</span> ' : "") + (d.intocado && comEstoque ? '<span class="pill-intocado">ninguém mexeu</span>' : "")) +
+          campo("Endereço", esc(end || "—"), "largo") +
+          campo("Vendedor", esc(d.vendedor || "—")) +
+          campo("Us confirma", esc(d.us_confirma || "—")) +
+          campo("Pagamento", esc(d.forma_pagamento || "—"), "largo") +
+          campo("Transportadora", esc(d.transportadora || "—")) +
+          (faturado
+            ? campo("Faturado em", dataBR(d.data) + (d.hora_fatura ? ", " + String(d.hora_fatura).slice(0, 5) : "")) +
+              campo("Nota fiscal", esc(d.nota_fiscal || "—")) +
+              (d.os ? campo("OS", esc(d.os)) : "")
+            : campo("Entrou em", dataHora(d.entrou_em))) +
+          campo("Valor dos produtos", fmtMoeda(d.valor_total)) +
+          campo("Frete cobrado", d.frete_cobrado ? fmtMoeda(d.frete_cobrado) : "—") +
+          campo("Total com frete", fmtMoeda(d.valor_nf_frt || d.valor_total)) +
+          campo("Lucratividade", d.pc_lucrat == null ? "—" : fmtDec(nn(d.pc_lucrat), 1) + "%") +
+          (nn(d.cr_usado) > 0 ? campo("Pago com crédito", '<span class="inad-debito">' + fmtMoeda(d.cr_usado) + "</span>") : "") +
+        "</div>" +
+        '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr>' +
+          "<th>Cód.</th><th>Produto</th><th>Qtd</th><th>Unit.</th><th>Total</th><th>Margem</th>" +
+          (comEstoque
+            ? '<th title="Disponível para vender agora: estoque físico menos o que já está reservado em pedidos (este pedido incluído). Kit: quantos kits dá para montar">Disp. p/ venda</th>' +
+              '<th title="Reservado em pedidos (status 11 e 20)">Reserv.</th><th title="Em trânsito / comprado">Trânsito</th>'
+            : "") +
+        "</tr></thead><tbody>" +
+        (itens.length ? itens.map((i) => {
+          const temComp = i.kit && Array.isArray(i.componentes) && i.componentes.length;
+          const linhaItem = "<tr>" +
+            '<td class="cod-cliente">' + esc(i.codigo) + "</td>" +
+            "<td>" + esc(i.descricao || "—") + (i.marca && !i.kit ? ' <span class="cod-cliente">' + esc(i.marca) + "</span>" : "") +
+              (i.kit ? '<span class="selo-kit" title="Kit: não tem estoque próprio, usa o estoque dos componentes ao finalizar a venda">kit</span>' : "") +
+              (temComp
+                ? '<br><span class="abre-kit" data-abre-kit="' + esc(i.codigo) + '"><span class="seta">▸</span> ' + i.componentes.length + " componentes" +
+                  (comEstoque && i.componentes[0] ? ' · <span class="lim">limita: ' + esc(String(i.componentes[0].descricao || "").split(/\s+/).slice(0, 3).join(" ")) + " (" + fmtInt(i.componentes[0].disponivel) + ")</span>" : "") + "</span>"
+                : "") + "</td>" +
+            "<td>" + fmtInt(i.qtd) + "</td>" +
+            "<td>" + fmtMoeda(i.valunit) + "</td>" +
+            "<td>" + fmtMoeda(i.total) + "</td>" +
+            "<td>" + (i.margem_pct == null ? "—" : fmtDec(nn(i.margem_pct), 1) + "%") + "</td>" +
+            (comEstoque
+              ? "<td>" + (i.kit ? disp(i.disponivel) + (i.disponivel == null ? "" : nn(i.disponivel) === 1 ? " kit" : " kits") : disp(i.disponivel)) + "</td>" +
+                "<td>" + (i.kit ? "—" : i.reservado == null ? "—" : fmtInt(i.reservado)) + "</td>" +
+                "<td>" + (i.kit ? "—" : i.transito == null ? "—" : fmtInt(i.transito)) + "</td>"
+              : "") + "</tr>";
+          if (!temComp) return linhaItem;
+          const minimo = nn(i.disponivel);
+          return linhaItem + i.componentes.map((c) => {
+            const limita = comEstoque && nn(c.kits) === minimo;
+            return '<tr class="comp oculto' + (limita ? " limita" : "") + '" data-kit-de="' + esc(i.codigo) + '"><td>' + esc(c.codigo) + "</td>" +
+              "<td>↳ " + esc(c.descricao || "—") + (nn(c.por_kit) > 1 ? " (" + fmtInt(c.por_kit) + " por kit)" : "") + (limita ? '<span class="selo-limita">limita</span>' : "") + "</td>" +
+              (comEstoque ? '<td colspan="4"></td><td>' + disp(c.disponivel) + '</td><td colspan="2"></td>' : '<td colspan="4"></td>') + "</tr>";
+          }).join("");
+        }).join("") : '<tr><td colspan="' + nCol + '" class="estado-vazio">Itens ainda não sincronizados.</td></tr>') +
+        "</tbody>" + (itens.length ? '<tfoot><tr><td></td><td style="text-align:left;">' + itens.length + (itens.length > 1 ? " itens" : " item") + " · " + fmtInt(itens.reduce((t, i) => t + nn(i.qtd), 0)) + ' unidades</td><td></td><td></td><td>' + fmtMoeda(totalItens) + '</td><td colspan="' + (nCol - 5) + '"></td></tr></tfoot>' : "") +
+        "</table></div>";
+    }
+
+    // abre/fecha os componentes de um kit dentro de um container
+    function alternarKit(container, b) {
+      const linhas = container.querySelectorAll('tr[data-kit-de="' + b.dataset.abreKit + '"]');
+      const abrir = linhas.length && linhas[0].classList.contains("oculto");
+      linhas.forEach((tr) => tr.classList.toggle("oculto", !abrir));
+      b.querySelector(".seta").textContent = abrir ? "▾" : "▸";
+    }
+
+    function abrir(pedido) {
+      pedido = String(Number(pedido));
+      aberto = pedido;
+      el("pedido-titulo").innerHTML = "Pedido " + esc(pedido);
+      el("pedido-corpo").innerHTML = cache.has(pedido) ? html(cache.get(pedido)) : '<div class="estado-vazio">Carregando o pedido…</div>';
+      if (cache.has(pedido)) titulo(cache.get(pedido));
+      el("overlay-pedido").classList.remove("oculto");
+      if (!cache.has(pedido)) {
+        buscar(pedido)
+          .then((d) => { if (aberto === pedido) { el("pedido-corpo").innerHTML = html(d); titulo(d); } })
+          .catch((e) => { if (aberto === pedido) el("pedido-corpo").innerHTML = '<div class="estado-vazio">Não foi possível abrir o pedido: ' + esc(e.message || e) + "</div>"; });
+      }
+    }
+    function titulo(d) { el("pedido-titulo").innerHTML = "Pedido " + esc(d.pedido) + ' <span class="cod-cliente">' + esc(d.cliente || "") + " · " + fmtMoeda(d.valor_total) + "</span>"; }
+    function fechar() { el("overlay-pedido").classList.add("oculto"); aberto = null; }
+
+    el("btn-fechar-pedido").addEventListener("click", fechar);
+    el("overlay-pedido").addEventListener("click", (ev) => { if (ev.target.id === "overlay-pedido") fechar(); });
+    el("pedido-corpo").addEventListener("click", (ev) => { const b = ev.target.closest("[data-abre-kit]"); if (b) alternarKit(el("pedido-corpo"), b); });
+    // Esc fecha só esta janela (por cima das outras); a do histórico, quando aberta por cima, fecha antes
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape" && !el("overlay-pedido").classList.contains("oculto") && el("overlay-hist").classList.contains("oculto")) { ev.stopImmediatePropagation(); fechar(); }
+    }, true);
+    // qualquer elemento com data-ped abre o pedido (captura: não deixa o clique abrir/fechar a linha da tabela)
+    document.addEventListener("click", (ev) => {
+      const alvo = ev.target.closest("[data-ped]");
+      if (!alvo || ev.target.closest("a")) return;
+      ev.preventDefault(); ev.stopPropagation();
+      abrir(alvo.dataset.ped);
+    }, true);
+
+    return { link, abrir, html, alternarKit, valido };
+  })();
+
+
   // --- Aba Pedidos em Reserva ---
   // Fonte: v_pedidos_reserva (status 10 e 11; travada por pode_ver_aba('reserva'); anon não lê).
   // O motivo vem das ligações do coordenador virtual (agente_ligacoes_voz), já agregadas na view.
@@ -4435,60 +4604,7 @@
       return d;
     }
 
-    function htmlDetalhe(d) {
-      const campo = (rotulo, valor, cls) => '<div class="' + (cls || "") + '"><i>' + rotulo + "</i>" + valor + "</div>";
-      const end = [d.endereco, d.bairro, [d.cidade, d.uf].filter(Boolean).join(" / "), d.cep].filter(Boolean).join(" · ");
-      const itens = Array.isArray(d.itens) ? d.itens : [];
-      const totalItens = itens.reduce((t, i) => t + n(i.total), 0);
-      const disp = (v) => v == null ? "—" : (n(v) <= 0 ? '<span class="disp-zero">' + fmtInt(v) + "</span>" : fmtInt(v));
-      return '<div class="ped-cab">' +
-          campo("Cliente", '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(d.cod_cliente, d.cliente) + ">" + esc(d.cliente || "—") + '</span> <span class="cod-cliente">' + esc(d.cod_cliente) + "</span>", "largo") +
-          campo("CNPJ / CPF", esc(d.cnpj_cpf || "—")) +
-          campo("Status", '<span class="pill-st st' + esc(d.status) + '">' + esc(d.status) + "</span> " + (d.intocado ? '<span class="pill-intocado">ninguém mexeu</span>' : "")) +
-          campo("Endereço", esc(end || "—"), "largo") +
-          campo("Vendedor", esc(d.vendedor || "—")) +
-          campo("Us confirma", esc(d.us_confirma || "—")) +
-          campo("Pagamento", esc(d.forma_pagamento || "—"), "largo") +
-          campo("Transportadora", esc(d.transportadora || "—")) +
-          campo("Entrou em", dataHora(d.entrou_em)) +
-          campo("Valor dos produtos", fmtMoeda(d.valor_total)) +
-          campo("Frete cobrado", d.frete_cobrado ? fmtMoeda(d.frete_cobrado) : "—") +
-          campo("Total com frete", fmtMoeda(d.valor_nf_frt || d.valor_total)) +
-          campo("Lucratividade", d.pc_lucrat == null ? "—" : fmtDec(n(d.pc_lucrat), 1) + "%") +
-        "</div>" +
-        '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr>' +
-          "<th>Cód.</th><th>Produto</th><th>Qtd</th><th>Unit.</th><th>Total</th><th>Margem</th>" +
-          '<th title="Disponível para vender agora: estoque físico menos o que já está reservado em pedidos (este pedido incluído). Kit: quantos kits dá para montar">Disp. p/ venda</th>' +
-          '<th title="Reservado em pedidos (status 11 e 20)">Reserv.</th><th title="Em trânsito / comprado">Trânsito</th>' +
-        "</tr></thead><tbody>" +
-        (itens.length ? itens.map((i) => {
-          const linhaItem = "<tr>" +
-            '<td class="cod-cliente">' + esc(i.codigo) + "</td>" +
-            "<td>" + esc(i.descricao || "—") + (i.marca && !i.kit ? ' <span class="cod-cliente">' + esc(i.marca) + "</span>" : "") +
-              (i.kit ? '<span class="selo-kit" title="Kit: não tem estoque próprio, usa o estoque dos componentes ao finalizar a venda">kit</span>' : "") +
-              (i.kit && Array.isArray(i.componentes) && i.componentes.length
-                ? '<br><span class="abre-kit" data-abre-kit="' + esc(i.codigo) + '"><span class="seta">▸</span> ' + i.componentes.length + " componentes" +
-                  (i.componentes[0] ? ' · <span class="lim">limita: ' + esc(String(i.componentes[0].descricao || "").split(/\s+/).slice(0, 3).join(" ")) + " (" + fmtInt(i.componentes[0].disponivel) + ")</span>" : "") + "</span>"
-                : "") + "</td>" +
-            "<td>" + fmtInt(i.qtd) + "</td>" +
-            "<td>" + fmtMoeda(i.valunit) + "</td>" +
-            "<td>" + fmtMoeda(i.total) + "</td>" +
-            "<td>" + (i.margem_pct == null ? "—" : fmtDec(n(i.margem_pct), 1) + "%") + "</td>" +
-            "<td>" + (i.kit ? disp(i.disponivel) + (i.disponivel == null ? "" : n(i.disponivel) === 1 ? " kit" : " kits") : disp(i.disponivel)) + "</td>" +
-            "<td>" + (i.kit ? "—" : i.reservado == null ? "—" : fmtInt(i.reservado)) + "</td>" +
-            "<td>" + (i.kit ? "—" : i.transito == null ? "—" : fmtInt(i.transito)) + "</td></tr>";
-          if (!i.kit || !Array.isArray(i.componentes)) return linhaItem;
-          const minimo = n(i.disponivel);
-          return linhaItem + i.componentes.map((c) => {
-            const limita = n(c.kits) === minimo;
-            return '<tr class="comp oculto' + (limita ? " limita" : "") + '" data-kit-de="' + esc(i.codigo) + '"><td>' + esc(c.codigo) + "</td>" +
-              "<td>↳ " + esc(c.descricao || "—") + (n(c.por_kit) > 1 ? " (" + fmtInt(c.por_kit) + " por kit)" : "") + (limita ? '<span class="selo-limita">limita</span>' : "") + "</td>" +
-              '<td colspan="4"></td><td>' + disp(c.disponivel) + '</td><td colspan="2"></td></tr>';
-          }).join("");
-        }).join("") : '<tr><td colspan="9" class="estado-vazio">Itens ainda não sincronizados.</td></tr>') +
-        "</tbody>" + (itens.length ? '<tfoot><tr><td></td><td style="text-align:left;">' + itens.length + (itens.length > 1 ? " itens" : " item") + " · " + fmtInt(itens.reduce((t, i) => t + n(i.qtd), 0)) + ' unidades</td><td></td><td></td><td>' + fmtMoeda(totalItens) + '</td><td colspan="4"></td></tr></tfoot>' : "") +
-        "</table></div>";
-    }
+    const htmlDetalhe = (d) => PedidoDet.html(d);
     function abrirLigacoes(pedido, aviso) {
       const x = dados.find((d) => String(d.pedido) === String(pedido));
       if (!x) return;
@@ -4592,11 +4708,7 @@
       });
       el("btn-fechar-reserva").addEventListener("click", fecharLigacoes);
       el("reserva-lig-corpo").addEventListener("click", (e) => {
-        const b = e.target.closest("[data-abre-kit]"); if (!b) return;
-        const linhas = el("reserva-lig-corpo").querySelectorAll('tr[data-kit-de="' + b.dataset.abreKit + '"]');
-        const abrir = linhas.length && linhas[0].classList.contains("oculto");
-        linhas.forEach((tr) => tr.classList.toggle("oculto", !abrir));
-        b.querySelector(".seta").textContent = abrir ? "▾" : "▸";
+        const b = e.target.closest("[data-abre-kit]"); if (b) PedidoDet.alternarKit(el("reserva-lig-corpo"), b);
       });
       el("overlay-reserva").addEventListener("click", (e) => { if (e.target.id === "overlay-reserva") fecharLigacoes(); });
       document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !el("overlay-reserva").classList.contains("oculto")) fecharLigacoes(); });
@@ -4850,7 +4962,7 @@
           campo("Finalizada", o.finalizada_em ? dataHora(o.finalizada_em) : null) +
           campo("Saída", o.saida_em ? dataHora(o.saida_em) : null) +
           campo("Valores", '<div class="os-valores"><span>Peças<br><b>' + fmtMoeda(Number(o.valorpeca || 0)) + "</b></span><span>Serviço<br><b>" + fmtMoeda(Number(o.valorservico || 0)) + "</b></span><span>Total<br><b>" + fmtMoeda(Number(o.total || 0)) + "</b></span></div>", "inteiro") +
-          ((o.pedido_pecas || o.pedido_servico) ? campo("Pedidos gerados", [o.pedido_pecas ? "peças " + esc(o.pedido_pecas) : "", o.pedido_servico ? "serviço " + esc(o.pedido_servico) : ""].filter(Boolean).join(" · ")) : "") +
+          ((o.pedido_pecas || o.pedido_servico) ? campo("Pedidos gerados", [o.pedido_pecas ? "peças " + PedidoDet.link(o.pedido_pecas) : "", o.pedido_servico ? "serviço " + PedidoDet.link(o.pedido_servico) : ""].filter(Boolean).join(" · ")) : "") +
         "</div>";
       document.getElementById("overlay-os").classList.remove("oculto");
       if (o.codcliente && HistCliente.resumo(o.codcliente) === undefined) {
@@ -5323,7 +5435,7 @@
     const linhas = titulos.map((t) =>
       '<tr class="' + [t.dias == null ? "a-vencer" : "", t.protesto === "S" ? "tit-protestado" : ""].join(" ").trim() + '">' +
         "<td>" + esc(t.titulo) + "</td>" +
-        "<td>" + esc(t.nf || "—") + "</td>" +
+        "<td>" + esc(t.nf || "—") + (PedidoDet.valido(t.pedido) ? '<div class="atividade-cliente">ped. ' + PedidoDet.link(t.pedido) + "</div>" : "") + "</td>" +
         "<td>" + fmtData(t.emissao) + "</td>" +
         "<td>" + (t.vencimento ? fmtData(t.vencimento) : "data inválida") + "</td>" +
         "<td>" + pillAtraso(t.dias) + "</td>" +
@@ -5711,7 +5823,7 @@
             (x.market_place === "S" ? ' <span class="pill-tipo pill-reativado">marketplace</span>' : "");
           return "<tr>" +
             "<td>" + hhmm(x.hora_fatura) + "</td>" +
-            "<td>" + esc(x.pedido) + (x.os ? ' <span class="atividade-cliente">OS ' + esc(x.os) + "</span>" : "") + "</td>" +
+            "<td>" + PedidoDet.link(x.pedido) + (x.os ? ' <span class="atividade-cliente">OS ' + esc(x.os) + "</span>" : "") + "</td>" +
             "<td>" + esc(x.nota_fiscal || "—") + "</td>" +
             '<td style="text-align:left;">' + (x.cod_cliente ? '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" : esc(x.cliente || "—")) + selos +
               (x.cidade ? '<div class="atividade-cliente">' + esc([x.cidade, x.uf].filter(Boolean).join(" / ")) + "</div>" : "") + "</td>" +
