@@ -457,6 +457,33 @@
   .check-aba input { width: auto; }
   #view-usuarios table { font-size: 0.82rem; }
   #view-usuarios tbody td { vertical-align: top; }
+  /* --- Coordenador virtual (configuração) --- */
+  #card-coordenador h3 { margin: 18px 0 8px; font-size: 0.95rem; color: var(--azul-escuro, #0f2a52); }
+  .coord-status { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; font-weight: 700; margin: 6px 0 4px; }
+  .coord-status.ligado { background: #e6f6ec; color: #1d7a3e; }
+  .coord-status.desligado { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .coord-status.teste { background: var(--amarelo-fundo); color: var(--amarelo); }
+  .coord-grupo { border: 1px solid var(--borda); border-radius: 10px; margin-top: 10px; }
+  .coord-grupo > summary { cursor: pointer; padding: 9px 12px; font-weight: 800; font-size: 0.86rem; list-style: none; }
+  .coord-grupo > summary::-webkit-details-marker { display: none; }
+  .coord-grupo > summary::before { content: "▸ "; color: var(--azul); }
+  .coord-grupo[open] > summary::before { content: "▾ "; }
+  .coord-campos { padding: 0 12px 10px; display: grid; gap: 10px; }
+  .coord-campo { display: grid; grid-template-columns: minmax(170px, 230px) 1fr auto; gap: 10px; align-items: start; padding-top: 10px; border-top: 1px solid #eef1f6; }
+  .coord-campo .rot { font-size: 0.8rem; font-weight: 700; }
+  .coord-campo .rot small { display: block; font-weight: 500; color: var(--texto-suave); font-size: 0.72rem; margin-top: 2px; }
+  .coord-campo input, .coord-campo select, .coord-campo textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.84rem; padding: 6px 8px; border: 1px solid var(--borda); border-radius: 6px; background: #fff; }
+  .coord-campo textarea { min-height: 54px; resize: vertical; }
+  .coord-campo .quem { font-size: 0.68rem; color: var(--texto-suave); margin-top: 3px; }
+  .coord-campo .msg { font-size: 0.72rem; margin-top: 3px; }
+  .coord-campo button { white-space: nowrap; padding: 6px 12px; }
+  @media (max-width: 760px) { .coord-campo { grid-template-columns: 1fr; } }
+  .coord-tabela { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .coord-tabela th { text-align: left; font-size: 0.66rem; text-transform: uppercase; color: var(--texto-suave); padding: 5px 6px; border-bottom: 1px solid var(--borda); }
+  .coord-tabela td { padding: 6px; border-bottom: 1px solid #eef1f6; vertical-align: top; }
+  .coord-tabela .fala { font-style: italic; color: var(--texto-suave); font-size: 0.72rem; }
+  .pill-espera { display: inline-block; padding: 1px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: #eef1f6; color: var(--texto-suave); }
+  .pill-liga { display: inline-block; padding: 1px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; background: #e6f6ec; color: #1d7a3e; }
   .grupo-abas { margin-bottom: 8px; }
   .grupo-abas:last-child { margin-bottom: 0; }
   .grupo-abas-titulo {
@@ -1861,6 +1888,17 @@
             Marcar ou desmarcar uma aba salva na hora e vale no ato — a pessoa não precisa sair e entrar de novo.
             Desativar tira o acesso sem apagar a conta, e administrador vê todas as telas.
             A permissão vale também no banco: sem a aba liberada, os dados não vêm nem por fora da tela.
+          </div>
+
+          <div class="form-card" id="card-coordenador">
+            <h2>Coordenador virtual</h2>
+            <p class="sub">Regras e frases das ligações aos vendedores. O computador das rotinas lê daqui a cada 5 minutos: salvou, vale na próxima rodada.</p>
+            <div id="coord-status"></div>
+            <div id="coord-grupos"><div class="estado-vazio">Carregando…</div></div>
+            <h3>Fila agora <button type="button" class="btn-secundario" id="btn-coord-atualizar" style="margin-left:8px;padding:3px 10px;font-size:0.75rem;">Atualizar</button></h3>
+            <div class="tabela-scroll" id="coord-fila"></div>
+            <h3>Últimas ligações</h3>
+            <div class="tabela-scroll" id="coord-ultimas"></div>
           </div>
         </div>
       </div>
@@ -3300,11 +3338,155 @@
     if (!meuAcesso.admin) { mostrar("sem"); return; }
     mostrar("liberada");
     carregarUsuarios();
+    Coordenador.carregar();
   }
   document.getElementById("btn-usuarios-ir-login").addEventListener("click", () => {
     voltarParaUsuarios = true;
     mostrarAba("devolucao");
   });
+
+  // --- Coordenador virtual: configuração (tabela coordenador_config, só administrador) ---
+  const Coordenador = (() => {
+    const GRUPOS = { "1 geral": "Geral", "2 site": "Pedido do site parado (1 hora útil)", "3 reserva": "Pedido em reserva parado", "4 frases": "Frases da ligação", "5 voz": "Voz e tempos" };
+    const ROTULOS = {
+      ligacoes_ativas: "Coordenador ligado", redirecionar_para: "Teste: ligar tudo para", vendedores_sem_ligacao: "Vendedores sem ligação (códigos)",
+      max_tentativas: "Máximo de tentativas", religar_minutos: "Religar depois de (min úteis)",
+      site_ativo: "Cobrança do site ativa", site_prazo_minutos: "Prazo até ligar (min úteis)",
+      reserva_ativo: "Cobrança de reserva ativa", reserva_dias_uteis: "Liga depois de (dias úteis)", reserva_limite_dias: "Ignora pedidos com mais de (dias)", reserva_hora_inicio: "Começa a ligar às",
+      apresentacao: "Apresentação", msg_site: "Site — 1ª ligação", msg_site_religacao: "Site — religação", msg_reserva: "Reserva — 1ª ligação",
+      msg_reserva_religacao: "Reserva — religação", msg_fechamento: "Frase final (antes do bipe)",
+      voz: "Voz", tom_grave: "Tom grave", instrucoes_voz: "Jeito de falar", escuta_segundos: "Escuta depois do bipe (s)", tempo_chamando: "Tempo chamando (s)", minimo_fala_seg: "Mínimo de fala (s)"
+    };
+    const SIM_NAO = ["ligacoes_ativas", "site_ativo", "reserva_ativo"];
+    const VOZES = ["onyx", "ash", "echo", "cedar", "ballad", "verse", "sage", "alloy", "coral", "nova", "marin", "shimmer", "fable"];
+    const TIPOS = { pedido_parado: "Site parado", reserva_parada: "Reserva parada" };
+    let cfg = [], carregando = false;
+    const el = (id) => document.getElementById(id);
+    const quando = (iso) => iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST", headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo || {})
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(m.slice(0, 200)); }
+      return res.json();
+    }
+
+    async function carregar() {
+      if (carregando) return;
+      carregando = true;
+      try {
+        cfg = await rpc("coordenador_config_listar");
+        renderStatus(); renderGrupos();
+      } catch (e) {
+        el("coord-grupos").innerHTML = '<div class="estado-vazio">Não foi possível carregar: ' + esc(e.message || e) + "</div>";
+      }
+      carregando = false;
+      carregarFila(); carregarUltimas();
+    }
+    const valor = (k) => (cfg.find((c) => c.chave === k) || {}).valor || "";
+
+    function renderStatus() {
+      const ligado = valor("ligacoes_ativas") === "sim", redir = valor("redirecionar_para");
+      el("coord-status").innerHTML =
+        '<div class="coord-status ' + (ligado ? "ligado" : "desligado") + '">' + (ligado ? "● Ligado: o coordenador está fazendo as ligações" : "■ Desligado: nenhuma ligação será feita") +
+        ' <button type="button" class="btn-secundario" data-coord-alterna="1" style="margin-left:auto;padding:4px 12px;font-size:0.78rem;">' + (ligado ? "Desligar" : "Ligar") + "</button></div>" +
+        (redir ? '<div class="coord-status teste">⚠ Modo teste: todas as ligações vão para ' + esc(redir) + ', não para os vendedores. Para valer, apague o campo "Teste: ligar tudo para".</div>' : "");
+    }
+
+    function campoHtml(c) {
+      const k = c.chave, v = c.valor || "";
+      let input;
+      if (SIM_NAO.indexOf(k) >= 0) input = '<select data-coord="' + k + '"><option value="sim"' + (v === "sim" ? " selected" : "") + '>Sim</option><option value="nao"' + (v === "nao" ? " selected" : "") + ">Não</option></select>";
+      else if (k === "voz") input = '<select data-coord="' + k + '">' + VOZES.map((x) => '<option value="' + x + '"' + (x === v ? " selected" : "") + ">" + x + "</option>").join("") + "</select>";
+      else if (k.indexOf("msg_") === 0 || k === "apresentacao" || k === "instrucoes_voz") input = '<textarea data-coord="' + k + '" maxlength="400">' + esc(v) + "</textarea>";
+      else input = '<input type="text" data-coord="' + k + '" value="' + esc(v) + '">';
+      return '<div class="coord-campo"><div class="rot">' + esc(ROTULOS[k] || k) + "<small>" + esc(c.descricao || "") + "</small></div>" +
+        "<div>" + input + '<div class="quem">' + (c.atualizado_por ? "alterado por " + esc(c.atualizado_por) + " em " + quando(c.atualizado_em) : "") + '</div><div class="msg" data-coord-msg="' + k + '"></div></div>' +
+        '<button type="button" class="btn-secundario" data-coord-salvar="' + k + '" disabled>Salvar</button></div>';
+    }
+
+    function renderGrupos() {
+      const abertos = new Set([...document.querySelectorAll("#coord-grupos details[open]")].map((d) => d.dataset.grupo));
+      const grupos = [...new Set(cfg.map((c) => c.grupo))].sort();
+      el("coord-grupos").innerHTML = grupos.map((g) =>
+        '<details class="coord-grupo" data-grupo="' + esc(g) + '"' + (abertos.has(g) || (!abertos.size && g === "1 geral") ? " open" : "") + "><summary>" + esc(GRUPOS[g] || g) + "</summary>" +
+        '<div class="coord-campos">' + cfg.filter((c) => c.grupo === g).map(campoHtml).join("") +
+        (g === "4 frases" ? '<div class="cod-cliente" style="font-size:0.74rem;">Variáveis: {pedido} (falado dígito a dígito), {cliente}, {dias}. A ligação fica: "Olá, Fulano, [apresentação]. [mensagem]. [frase final]."</div>' : "") +
+        "</div></details>").join("");
+    }
+
+    async function salvar(k, valorNovo) {
+      const msg = document.querySelector('[data-coord-msg="' + k + '"]'), btn = document.querySelector('[data-coord-salvar="' + k + '"]');
+      if (msg) { msg.style.color = ""; msg.textContent = "Salvando…"; }
+      if (btn) btn.disabled = true;
+      try {
+        const r = await rpc("coordenador_config_salvar", { p_chave: k, p_valor: valorNovo });
+        const i = cfg.findIndex((c) => c.chave === k); if (i >= 0) cfg[i] = r;
+        renderStatus(); renderGrupos();
+        const m2 = document.querySelector('[data-coord-msg="' + k + '"]'); if (m2) { m2.style.color = "#1d7a3e"; m2.textContent = "✓ Salvo. Vale na próxima rodada (até 5 min)."; }
+        carregarFila();
+      } catch (e) {
+        if (msg) { msg.style.color = "var(--vermelho)"; msg.textContent = e.message || String(e); }
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function carregarFila() {
+      const alvo = el("coord-fila");
+      alvo.innerHTML = '<div class="estado-vazio">Carregando…</div>';
+      try {
+        const f = await rpc("coordenador_fila_previa");
+        alvo.innerHTML = f.length ? '<table class="coord-tabela"><thead><tr><th>Tipo</th><th>Pedido</th><th>Liga para</th><th>Tentativas</th><th>Situação</th></tr></thead><tbody>' +
+          f.map((x) => "<tr><td>" + esc(TIPOS[x.tipo] || x.tipo) + "</td><td><b>" + esc(x.pedido) + "</b><br><span class=\"cod-cliente\">" + esc(x.cliente || "") + "</span></td>" +
+            "<td>" + esc(x.vendedor || "—") + " (" + esc(x.ramal_vendedor || "sem ramal") + ")" + (x.redirecionado ? '<br><span class="cod-cliente">teste → ' + esc(x.ligar_para) + "</span>" : "") + "</td>" +
+            "<td>" + esc(x.tentativas) + "</td><td>" + (x.bloqueio ? '<span class="pill-espera">' + esc(x.bloqueio) + "</span>" : '<span class="pill-liga">liga na próxima rodada</span>') +
+            '<div class="fala">“' + esc(x.texto || "") + "”</div></td></tr>").join("") + "</tbody></table>"
+          : '<div class="estado-vazio">Nenhum pedido para cobrar agora.</div>';
+      } catch (e) { alvo.innerHTML = '<div class="estado-vazio">Não foi possível carregar a fila: ' + esc(e.message || e) + "</div>"; }
+    }
+
+    async function carregarUltimas() {
+      const alvo = el("coord-ultimas");
+      try {
+        const u = await rpc("coordenador_ultimas_ligacoes", { p_limite: 15 });
+        alvo.innerHTML = u.length ? '<table class="coord-tabela"><thead><tr><th>Quando</th><th>Tipo</th><th>Pedido</th><th>Para</th><th>Resultado</th></tr></thead><tbody>' +
+          u.map((x) => "<tr><td>" + quando(x.criado_em) + "</td><td>" + esc(TIPOS[x.tipo] || x.tipo) + "</td><td>" + esc(x.pedido || "") + "<br><span class=\"cod-cliente\">" + esc(x.cliente || "") + "</span></td>" +
+            "<td>" + esc(x.vendedor || "—") + " (" + esc(x.ramal_destino || "") + ")</td>" +
+            "<td>" + (x.motivo_resumo ? esc(x.motivo_resumo) : x.atendeu ? '<span class="cod-cliente">atendeu, sem motivo</span>' : '<span class="cod-cliente">' + esc(x.erro || "não atendeu") + "</span>") + "</td></tr>").join("") + "</tbody></table>"
+          : '<div class="estado-vazio">Nenhuma ligação ainda.</div>';
+      } catch (e) { alvo.innerHTML = '<div class="estado-vazio">Não foi possível carregar: ' + esc(e.message || e) + "</div>"; }
+    }
+
+    // eventos (delegados; ligados uma vez)
+    document.addEventListener("input", (e) => {
+      const f = e.target.closest && e.target.closest("[data-coord]"); if (!f) return;
+      const b = document.querySelector('[data-coord-salvar="' + f.dataset.coord + '"]');
+      if (b) b.disabled = (f.value === valor(f.dataset.coord));
+    });
+    document.addEventListener("change", (e) => {
+      const f = e.target.closest && e.target.closest("select[data-coord]"); if (!f) return;
+      const b = document.querySelector('[data-coord-salvar="' + f.dataset.coord + '"]');
+      if (b) b.disabled = (f.value === valor(f.dataset.coord));
+    });
+    document.addEventListener("click", (e) => {
+      const s = e.target.closest && e.target.closest("[data-coord-salvar]");
+      if (s) { const f = document.querySelector('[data-coord="' + s.dataset.coordSalvar + '"]'); if (f) salvar(s.dataset.coordSalvar, f.value); return; }
+      const t = e.target.closest && e.target.closest("[data-coord-alterna]");
+      if (t) {
+        const ligado = valor("ligacoes_ativas") === "sim";
+        if (ligado && !confirm("Desligar o coordenador? Nenhuma ligação será feita até ligar de novo.")) return;
+        salvar("ligacoes_ativas", ligado ? "nao" : "sim");
+        return;
+      }
+      if (e.target.id === "btn-coord-atualizar") { carregarFila(); carregarUltimas(); }
+    });
+
+    return { carregar };
+  })();
 
   async function carregarUsuarios() {
     if (usuariosCarregando) return;
