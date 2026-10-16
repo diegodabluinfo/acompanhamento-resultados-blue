@@ -297,7 +297,7 @@
   .tabela-reserva tr.st-11 td.cor { color: #d46b00; }
   .tabela-reserva tr.st-10 td.cor { color: #7b1fa2; }
   .tabela-reserva tr.st-11 .link-hist, .tabela-reserva tr.st-10 .link-hist { color: inherit; }
-  .pill-st { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 20px; font-size: 0.74rem; font-weight: 800; color: #fff; text-align: center; }
+  .pill-st { display: inline-block; min-width: 28px; padding: 2px 8px; border-radius: 20px; font-size: 0.74rem; font-weight: 800; color: #fff; text-align: center; background: #5b6b82; }
   .pill-st.st11 { background: #e07800; }
   .pill-st.st10 { background: #8e24aa; }
   .pill-intocado { display: inline-block; padding: 1px 7px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; background: var(--amarelo-fundo); color: var(--amarelo); }
@@ -615,6 +615,26 @@
   .subtabela tr:last-child td { border-bottom: none; }
   #ritmo-grafico svg { max-height: 260px; }
 
+  /* --- Aba Lista do Dia --- */
+  .ld-chip { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+  .ld-ok { background: var(--verde-fundo); color: var(--verde); }
+  .ld-atencao { background: var(--amarelo-fundo); color: var(--amarelo); }
+  .ld-ruim { background: var(--vermelho-fundo); color: var(--vermelho); }
+  .ld-neutro { background: #eef1f6; color: var(--texto-suave); }
+  tr.ld-vend { cursor: pointer; }
+  tr.ld-vend:hover td { background: #f1f6ff; }
+  tr.ld-vend td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--texto-suave); }
+  tr.ld-vend.aberta td:first-child::before { content: "▾"; color: var(--azul); }
+  tr.ld-det td { background: #f7faff; padding: 0 12px 12px; white-space: normal; }
+  tr.ld-det .subtabela td, tr.ld-det .subtabela th { text-align: right; }
+  .ld-fiz { max-width: 260px; white-space: normal !important; text-align: left !important; font-size: 0.78rem; }
+  .ld-sec { font-size: 0.95rem; color: var(--azul-escuro); margin: 20px 0 4px; }
+  .ld-sub { font-size: 0.78rem; color: var(--texto-suave); margin: 0 0 10px; }
+  #view-lista .pct-pill { min-width: 48px; }
+  #view-lista thead th { white-space: normal; vertical-align: bottom; line-height: 1.25; }
+  .ld-cli { min-width: 230px; max-width: 320px; }
+  .ld-aviso { background: var(--amarelo-fundo); color: var(--amarelo); border-radius: 10px; padding: 9px 12px; font-size: 0.8rem; margin-bottom: 14px; }
+
   /* --- Aba Vendas do Dia --- */
   #view-vendas table { font-size: 0.86rem; }
   .celula-barra { position: relative; }
@@ -780,6 +800,7 @@
         <button class="tab-btn" data-tab="cobranca" id="tab-btn-cobranca">Em Aberto</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
+        <button class="tab-btn" data-tab="lista" id="tab-btn-lista">Lista do Dia</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Gastos e Assistência</button>
         <div class="menu-cadastros" id="menu-cadastros">
           <button class="tab-btn" id="btn-menu-cadastros" type="button" aria-haspopup="true" aria-expanded="false">Cadastros <span class="seta">▾</span></button>
@@ -1282,6 +1303,103 @@
           Contato efetivo = receptivo + ativo com resposta do cliente + ligação acima de 1 minuto. Tentativa é ativo sem resposta e não soma.
           Protocolo fechado com a tag <strong>Cobrança/Inadimplente/Bloqueado</strong> não conta como ativo nem como tentativa — cobrar inadimplente não é prospecção;
           esses aparecem só na coluna Cobranças. A janela termina no último dia com movimento, não em hoje.
+        </div>
+      </div>
+
+      <!-- ===== ABA: Lista do Dia (HOJE e órfãos) ===== -->
+      <div id="view-lista" class="oculto">
+        <div class="painel-controles">
+          <label for="lista-data">Lista de</label>
+          <select id="lista-data"><option value="">Carregando…</option></select>
+          <button type="button" id="lista-atualizar" class="btn-2via">Atualizar</button>
+          <span id="freshness-lista" class="freshness"></span>
+        </div>
+        <div id="lista-aviso-hoje" class="ld-aviso oculto">Lista de hoje: os números vão subindo ao longo do dia, conforme os atendimentos e ligações chegam da Sonax. A tela se atualiza sozinha a cada 5 minutos.</div>
+
+        <div class="kpi-grid" id="lista-kpis"></div>
+
+        <h3 class="ld-sec">Vendedor a vendedor</h3>
+        <p class="ld-sub">Meta: tentar os 10 clientes no dia e ter conversa de verdade com pelo menos 6. Clique no vendedor para ver os clientes.</p>
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Na lista</th>
+                  <th title="Mensagem ativa ou ligação de saída do próprio vendedor no dia da lista">Tentados no dia</th>
+                  <th title="O cliente respondeu no chat ou atendeu a ligação do próprio vendedor, no dia da lista">Conversa no dia</th>
+                  <th title="Só mandou mensagem, o cliente não respondeu e não houve ligação (até 7 dias)">Só msg, sem resposta</th>
+                  <th title="Teve pelo menos uma ligação de saída do vendedor (até 7 dias)">Com ligação</th>
+                  <th title="Ligação do vendedor com 1 minuto ou mais (até 7 dias)">Lig. 1 min+</th>
+                  <th title="Tentados em até 7 dias a partir da lista">Tentados em 7 dias</th>
+                  <th title="Conversa com o próprio vendedor em até 7 dias">Conversa em 7 dias</th>
+                  <th title="Escreveu na coluna O que fiz da planilha">O que fiz</th>
+                  <th>Compraram em 30 dias</th>
+                  <th>Valor 30 dias</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-lista-vend"><tr><td colspan="12" class="estado-vazio">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="ld-sec">Dia a dia</h3>
+        <p class="ld-sub">Conversas no dia sobre o total da lista de cada vendedor. Passe o mouse para ver quantos foram tentados.</p>
+        <div class="card-tabela" id="lista-hist"></div>
+
+        <h3 class="ld-sec">Para onde foi o esforço no dia</h3>
+        <p class="ld-sub">Todas as mensagens ativas e ligações de saída de cada vendedor, separadas pelo destino. Mensagem para órfão parado há mais de 1 ano ou para fora das listas quase não vira venda.</p>
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Mensagens ativas</th>
+                  <th>Respondidas</th>
+                  <th>Para a HOJE</th>
+                  <th>Órfãos até 1 ano</th>
+                  <th>Órfãos +1 ano</th>
+                  <th>Fora das listas</th>
+                  <th>Ligações</th>
+                  <th>1 min+</th>
+                  <th>Lig. para a HOJE</th>
+                  <th>Lig. para órfãos</th>
+                  <th>Lig. fora das listas</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-lista-esforco"><tr><td colspan="12" class="estado-vazio">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3 class="ld-sec">Órfãos (clientes sem dono)</h3>
+        <p class="ld-sub" id="lista-orf-resumo"></p>
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Quem trabalhou</th>
+                  <th>Órfãos</th>
+                  <th>Tentados</th>
+                  <th>Com conversa</th>
+                  <th>Anotou</th>
+                  <th>Compraram 30 dias</th>
+                  <th>Valor 30 dias</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-lista-orf"><tr><td colspan="7" class="estado-vazio">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="rodape-nota">
+          Fonte: a foto diária da planilha "Fila comercial Blue" (abas HOJE e ORFAOS), guardada desde 16/10/2026, cruzada com a Sonax e com os pedidos do ERP.
+          <b>Tentativa</b> = mensagem ativa ou ligação de saída do dono do cliente. <b>Conversa</b> = o cliente chamou, respondeu a mensagem ou atendeu a ligação.
+          Mensagem que ninguém respondeu não conta como conversa. Protocolo com a tag de cobrança fica de fora. Compra = pedido faturado em até 30 dias depois da lista.
+          No órfão, conta para quem marcou "Puxei" ou, se ninguém marcou, para quem fez o primeiro contato.
         </div>
       </div>
 
@@ -2057,6 +2175,7 @@
   const avisoSenha = document.getElementById("aviso-senha");
   const tabBtnPerformance = document.getElementById("tab-btn-performance");
   const tabBtnRitmo = document.getElementById("tab-btn-ritmo");
+  const tabBtnLista = document.getElementById("tab-btn-lista");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
   const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
   const tabBtnMetas = document.getElementById("tab-btn-metas");
@@ -2081,6 +2200,7 @@
   let voltarParaUsuarios = false;
   const viewPerformance = document.getElementById("view-performance");
   const viewRitmo = document.getElementById("view-ritmo");
+  const viewLista = document.getElementById("view-lista");
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
   const viewMetas = document.getElementById("view-metas");
@@ -2974,8 +3094,9 @@
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
     viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "lista" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
+    viewLista.classList.toggle("oculto", aba !== "lista");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
@@ -2989,6 +3110,7 @@
     tabBtnUsuarios.classList.toggle("ativa", aba === "usuarios");
     tabBtnPerformance.classList.toggle("ativa", aba === "performance");
     tabBtnRitmo.classList.toggle("ativa", aba === "ritmo");
+    tabBtnLista.classList.toggle("ativa", aba === "lista");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
@@ -3001,6 +3123,7 @@
     if (aba === "usuarios") atualizarTelaUsuarios();
     if (aba === "performance") iniciarPerformance();
     if (aba === "ritmo") iniciarRitmo();
+    if (aba === "lista") ListaDia.iniciar();
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
     if (aba === "metas") atualizarTelaMetas();
@@ -3034,6 +3157,7 @@
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharMenuCadastros(); });
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
+  tabBtnLista.addEventListener("click", () => mostrarAba("lista"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
   tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
   tabBtnMetas.addEventListener("click", () => mostrarAba("metas"));
@@ -3253,7 +3377,7 @@
   // barra de cima: só consulta e relatório
   const ABAS_VISUALIZACAO = [
     ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["reserva", () => tabBtnReserva], ["clientes", () => tabBtnClientes],
-    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo],
+    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo], ["lista", () => tabBtnLista],
     ["assistencia", () => tabBtnAssistencia]
   ];
   // menu Cadastros: tudo que grava alguma coisa
@@ -6259,6 +6383,281 @@
     renderRisco();
     renderClientes(clientesCompetencia);
   });
+
+  // --- SEÇÃO: Lista do Dia (lista HOJE e órfãos) ---
+  // Fonte: funções painel_lista_datas/_vendedor/_cliente/_esforco (security definer, travadas por
+  // pode_ver_aba('lista')). Elas leem vw_lista_dia_resultado, vw_lista_dia_vendedor e
+  // vw_lista_esforco_dia, que cruzam a foto diária da lista (lista_dia_historico) com a Sonax e o ERP.
+  // A foto existe desde 16/10/2026; antes disso não há lista guardada.
+  const ListaDia = (() => {
+    const el = (id) => document.getElementById(id);
+    const n = (v) => Number(v || 0);
+    let datas = [], dataSel = null, carregando = false, carregadoEm = null, ligado = false, erro = null;
+    let vend = [], orf = [], esforco = [], hist = [], clientes = null, clientesErro = null, aberto = null;
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo || {})
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(String(m).slice(0, 200)); }
+      return res.json();
+    }
+
+    function nomeVend(t) {
+      if (!t) return "—";
+      const p = String(t).trim().toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()).split(/\s+/);
+      return p.length > 1 ? p[0] + " " + p[1][0] + "." : p[0];
+    }
+    function dataBR(iso) { if (!iso) return "—"; const [a, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m + "/" + a; }
+    function dataCurta(iso) { if (!iso) return "—"; const [, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m; }
+    function diaSemana(iso) { return ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][new Date(String(iso).slice(0, 10) + "T12:00:00").getDay()]; }
+    function horaSP(iso) { return iso ? new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : "—"; }
+    function dataHoraSP(iso) { return iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"; }
+    function diaSP(iso) { return iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) : null; }
+    function ehHoje() { return dataSel === hojeSP(); }
+
+    // metas da lista: tentar os 10 no dia; conversa de verdade com pelo menos 6 (60%)
+    function corTentados(t, total) { if (!total) return ""; if (t >= total) return "pct-verde"; if (t >= Math.ceil(total * 0.6)) return "pct-amarelo"; return "pct-vermelho"; }
+    function corConversa(c, total) { if (!total) return ""; if (c >= Math.ceil(total * 0.6)) return "pct-verde"; if (c >= Math.ceil(total * 0.3)) return "pct-amarelo"; return "pct-vermelho"; }
+    function pill(valor, total, cor) { return '<span class="pct-pill ' + cor + '">' + fmtInt(valor) + (total != null ? "/" + fmtInt(total) : "") + "</span>"; }
+
+    async function carregar() {
+      if (carregando) return;
+      carregando = true; erro = null; render();
+      try {
+        datas = (await rpc("painel_lista_datas", {})).map((r) => r.data_lista);
+        if (!dataSel || datas.indexOf(dataSel) < 0) dataSel = datas[0] || null;
+        preencherDatas();
+        if (!dataSel) { vend = []; orf = []; esforco = []; hist = []; }
+        else {
+          const idx = datas.indexOf(dataSel);
+          const janela = datas.slice(idx, idx + 15);           // até 15 listas, terminando na escolhida
+          const histIni = janela[janela.length - 1];
+          [vend, orf, esforco, hist] = await Promise.all([
+            rpc("painel_lista_vendedor", { p_ini: dataSel, p_fim: dataSel, p_lista: "HOJE" }),
+            rpc("painel_lista_vendedor", { p_ini: dataSel, p_fim: dataSel, p_lista: "ORFAOS" }),
+            rpc("painel_lista_esforco", { p_ini: dataSel, p_fim: dataSel }),
+            rpc("painel_lista_vendedor", { p_ini: histIni, p_fim: dataSel, p_lista: "HOJE" })
+          ]);
+        }
+        clientes = null; clientesErro = null;
+        carregadoEm = new Date();
+      } catch (e) { erro = e.message || String(e); }
+      carregando = false; render();
+      if (aberto) abrirVendedor(aberto, true);
+    }
+
+    async function carregarClientes() {
+      if (clientes || !dataSel) return;
+      try { clientes = await rpc("painel_lista_cliente", { p_data: dataSel }); clientesErro = null; }
+      catch (e) { clientesErro = e.message || String(e); }
+    }
+
+    function preencherDatas() {
+      const sel = el("lista-data");
+      sel.innerHTML = datas.length
+        ? datas.map((d) => '<option value="' + esc(d) + '"' + (d === dataSel ? " selected" : "") + ">" + diaSemana(d) + ", " + dataBR(d) + (d === hojeSP() ? " (hoje)" : "") + "</option>").join("")
+        : '<option value="">Sem listas guardadas</option>';
+    }
+
+    function soma(linhas, campo) { return linhas.reduce((s, l) => s + n(l[campo]), 0); }
+
+    function render() {
+      if (!ligado) return;
+      const kpis = el("lista-kpis"), corpo = el("corpo-lista-vend"), info = el("freshness-lista");
+      if (carregando && !carregadoEm) {
+        kpis.innerHTML = ""; corpo.innerHTML = '<tr><td colspan="12" class="estado-vazio">Carregando...</td></tr>';
+        return;
+      }
+      if (erro) {
+        kpis.innerHTML = "";
+        corpo.innerHTML = '<tr><td colspan="12" class="estado-vazio">Não foi possível carregar a lista.<br><small style="color:var(--erro)">' + esc(erro) + "</small></td></tr>";
+        el("lista-hist").innerHTML = ""; el("corpo-lista-esforco").innerHTML = ""; el("corpo-lista-orf").innerHTML = "";
+        return;
+      }
+      info.textContent = carregadoEm ? (carregando ? "Atualizando…" : "Consultado às " + carregadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })) : "";
+      el("lista-aviso-hoje").classList.toggle("oculto", !ehHoje());
+
+      // KPIs da equipe no dia escolhido
+      const tot = soma(vend, "clientes");
+      kpis.innerHTML = [
+        { rotulo: "Clientes na HOJE", valor: fmtInt(tot), nota: vend.length + " vendedores" },
+        { rotulo: "Tentados no dia", valor: fmtInt(soma(vend, "tentados_no_dia")) + "/" + fmtInt(tot), nota: "mensagem ou ligação do próprio vendedor" },
+        { rotulo: "Conversa no dia", valor: fmtInt(soma(vend, "contatados_no_dia")) + "/" + fmtInt(tot), nota: "o cliente respondeu ou atendeu o dono" },
+        { rotulo: "Só mensagem, sem resposta", valor: fmtInt(soma(vend, "so_mensagem_sem_resposta")), nota: "faltou ligar" },
+        { rotulo: "Ligação de 1 min+", valor: fmtInt(soma(vend, "com_ligacao_1min_do_dono")), nota: "do próprio vendedor" },
+        { rotulo: "Compraram em 30 dias", valor: fmtInt(soma(vend, "compraram_30d")), nota: fmtMoeda(soma(vend, "valor_30d")) }
+      ].map((k) => '<div class="kpi"><div class="rotulo">' + k.rotulo + '</div><div class="valor">' + k.valor + '</div><div class="nota">' + k.nota + "</div></div>").join("");
+
+      // tabela por vendedor
+      if (!vend.length) {
+        corpo.innerHTML = '<tr><td colspan="12" class="estado-vazio">' + (dataSel ? "Nenhum cliente na HOJE nesse dia." : "Ainda não há lista guardada. A foto diária começou em 16/10/2026.") + "</td></tr>";
+      } else {
+        const linhas = vend.slice().sort((a, b) => String(a.pessoa).localeCompare(String(b.pessoa)));
+        corpo.innerHTML = linhas.map((v) => {
+          const t = n(v.clientes);
+          return '<tr class="ld-vend' + (aberto === v.pessoa ? " aberta" : "") + '" data-ld-vend="' + esc(v.pessoa) + '">' +
+            "<td>" + esc(nomeVend(v.pessoa)) + "</td>" +
+            "<td>" + fmtInt(t) + "</td>" +
+            "<td>" + pill(n(v.tentados_no_dia), t, corTentados(n(v.tentados_no_dia), t)) + "</td>" +
+            "<td>" + pill(n(v.contatados_no_dia), t, corConversa(n(v.contatados_no_dia), t)) + "</td>" +
+            "<td>" + fmtInt(v.so_mensagem_sem_resposta) + "</td>" +
+            "<td>" + fmtInt(v.com_ligacao) + "</td>" +
+            "<td>" + fmtInt(v.com_ligacao_1min_do_dono) + "</td>" +
+            "<td>" + fmtInt(v.tentados_7d) + "</td>" +
+            "<td>" + fmtInt(v.contatados_pelo_dono) + "</td>" +
+            "<td>" + fmtInt(v.com_anotacao) + "</td>" +
+            "<td>" + fmtInt(v.compraram_30d) + "</td>" +
+            "<td>" + fmtMoeda(v.valor_30d) + "</td></tr>";
+        }).join("") +
+          '<tr class="total"><td>Equipe</td><td>' + fmtInt(tot) + "</td><td>" + fmtInt(soma(vend, "tentados_no_dia")) + "</td><td>" + fmtInt(soma(vend, "contatados_no_dia")) +
+          "</td><td>" + fmtInt(soma(vend, "so_mensagem_sem_resposta")) + "</td><td>" + fmtInt(soma(vend, "com_ligacao")) + "</td><td>" + fmtInt(soma(vend, "com_ligacao_1min_do_dono")) +
+          "</td><td>" + fmtInt(soma(vend, "tentados_7d")) + "</td><td>" + fmtInt(soma(vend, "contatados_pelo_dono")) + "</td><td>" + fmtInt(soma(vend, "com_anotacao")) +
+          "</td><td>" + fmtInt(soma(vend, "compraram_30d")) + "</td><td>" + fmtMoeda(soma(vend, "valor_30d")) + "</td></tr>";
+      }
+
+      renderHistorico();
+      renderEsforco();
+      renderOrfaos();
+    }
+
+    function renderHistorico() {
+      const box = el("lista-hist");
+      if (!hist.length) { box.innerHTML = '<div class="estado-vazio">Sem histórico ainda.</div>'; return; }
+      const dias = [...new Set(hist.map((h) => h.data_lista))].sort();
+      const pessoas = [...new Set(hist.map((h) => h.pessoa))].sort();
+      const mapa = new Map(hist.map((h) => [h.pessoa + "|" + h.data_lista, h]));
+      box.innerHTML = '<div class="tabela-scroll"><table><thead><tr><th>Conversa no dia / clientes</th>' +
+        dias.map((d) => "<th>" + diaSemana(d) + " " + dataCurta(d) + "</th>").join("") + "</tr></thead><tbody>" +
+        pessoas.map((p) => "<tr><td>" + esc(nomeVend(p)) + "</td>" + dias.map((d) => {
+          const h = mapa.get(p + "|" + d);
+          if (!h) return '<td style="color:var(--texto-suave)">—</td>';
+          const t = n(h.clientes), c = n(h.contatados_no_dia);
+          return '<td title="Tentados no dia: ' + fmtInt(h.tentados_no_dia) + "/" + fmtInt(t) + '">' + pill(c, t, corConversa(c, t)) + "</td>";
+        }).join("") + "</tr>").join("") +
+        "</tbody></table></div>";
+    }
+
+    function renderEsforco() {
+      const corpo = el("corpo-lista-esforco");
+      if (!esforco.length) { corpo.innerHTML = '<tr><td colspan="12" class="estado-vazio">Nenhum contato ativo nem ligação de saída nesse dia.</td></tr>'; return; }
+      const linhas = esforco.slice().sort((a, b) => String(a.nome_curto).localeCompare(String(b.nome_curto)));
+      const pctFora = (l) => {
+        const a = n(l.ativos); if (!a) return "";
+        const ruins = n(l.ativos_orfaos_mais_1ano) + n(l.ativos_fora_listas) + n(l.ativos_sem_cliente);
+        const p = ruins / a;
+        return ' <span class="ld-chip ' + (p > 0.6 ? "ld-ruim" : p > 0.3 ? "ld-atencao" : "ld-neutro") + '">' + Math.round(p * 100) + "% fora</span>";
+      };
+      corpo.innerHTML = linhas.map((l) =>
+        "<tr><td>" + esc(l.nome_curto) + "</td>" +
+        "<td>" + fmtInt(l.ativos) + pctFora(l) + "</td>" +
+        "<td>" + fmtInt(l.ativos_com_resposta) + "</td>" +
+        "<td>" + fmtInt(l.ativos_hoje) + "</td>" +
+        "<td>" + fmtInt(l.ativos_orfaos_ate_1ano) + "</td>" +
+        "<td>" + fmtInt(l.ativos_orfaos_mais_1ano) + "</td>" +
+        '<td title="' + fmtInt(l.ativos_sem_cliente) + ' sem cliente identificado">' + fmtInt(n(l.ativos_fora_listas) + n(l.ativos_sem_cliente)) + "</td>" +
+        "<td>" + fmtInt(l.ligacoes) + "</td>" +
+        "<td>" + fmtInt(l.ligacoes_1min) + "</td>" +
+        "<td>" + fmtInt(l.ligacoes_hoje) + "</td>" +
+        "<td>" + fmtInt(l.ligacoes_orfaos) + "</td>" +
+        '<td title="' + fmtInt(l.ligacoes_sem_cliente) + ' sem cliente identificado">' + fmtInt(n(l.ligacoes_fora_listas) + n(l.ligacoes_sem_cliente)) + "</td></tr>"
+      ).join("");
+    }
+
+    function renderOrfaos() {
+      const corpo = el("corpo-lista-orf"), resumo = el("lista-orf-resumo");
+      const total = soma(orf, "clientes");
+      const ninguem = orf.find((o) => o.pessoa === "(ninguem puxou)");
+      const trabalhados = orf.filter((o) => o.pessoa !== "(ninguem puxou)").sort((a, b) => n(b.clientes) - n(a.clientes));
+      resumo.textContent = total
+        ? fmtInt(total) + " órfãos disponíveis na fila desse dia; " + fmtInt(total - n(ninguem && ninguem.clientes)) + " tiveram alguém da equipe atrás deles (até 7 dias depois)."
+        : "Sem órfãos nesse dia.";
+      corpo.innerHTML = trabalhados.length
+        ? trabalhados.map((o) => "<tr><td>" + esc(nomeVend(o.pessoa)) + "</td><td>" + fmtInt(o.clientes) + "</td><td>" + fmtInt(o.tentados_7d) + "</td><td>" + fmtInt(o.contatados_7d) +
+            "</td><td>" + fmtInt(o.com_anotacao) + "</td><td>" + fmtInt(o.compraram_30d) + "</td><td>" + fmtMoeda(o.valor_30d) + "</td></tr>").join("")
+        : '<tr><td colspan="7" class="estado-vazio">Ninguém trabalhou órfão nesse dia.</td></tr>';
+    }
+
+    function situacao(c) {
+      if (c.comprou_30d) return '<span class="ld-chip ld-ok">Comprou</span>';
+      if (c.contato_do_dono) return '<span class="ld-chip ld-ok">Conversou</span>';
+      if (n(c.ligacoes) > 0) return '<span class="ld-chip ld-atencao">Ligou, sem conversa</span>';
+      if (c.so_mensagem_sem_resposta) return '<span class="ld-chip ld-atencao">Só mensagem, sem resposta</span>';
+      if (c.contatado_7d) return '<span class="ld-chip ld-neutro">Falou com outra pessoa</span>';
+      return '<span class="ld-chip ld-ruim">Sem tentativa</span>';
+    }
+
+    function htmlDetalhe(pessoa) {
+      if (clientesErro) return '<div class="estado-vazio">Não foi possível carregar os clientes: ' + esc(clientesErro) + "</div>";
+      if (!clientes) return '<div class="estado-vazio">Carregando clientes…</div>';
+      const lista = clientes.filter((c) => c.vendedor === pessoa).sort((a, b) => n(a.posicao) - n(b.posicao));
+      if (!lista.length) return '<div class="estado-vazio">Sem clientes.</div>';
+      return '<table class="subtabela"><thead><tr><th>#</th><th style="text-align:left">Cliente</th><th>Situação</th><th>Dias sem comprar</th><th>Lucro 12m</th>' +
+        '<th>Vezes na lista (30 dias)</th><th>1ª tentativa</th><th>Mensagens (respondidas)</th><th>Ligações (1 min+)</th><th>Última resposta do cliente</th><th style="text-align:left">O que fiz</th><th>Comprou em 30 dias</th></tr></thead><tbody>' +
+        lista.map((c) => {
+          const tent = c.primeira_tentativa ? (diaSP(c.primeira_tentativa) === c.data_lista ? horaSP(c.primeira_tentativa) : dataHoraSP(c.primeira_tentativa)) : "—";
+          const vezes = n(c.vezes_na_lista_30d);
+          return "<tr><td>" + fmtInt(c.posicao) + "</td>" +
+            '<td class="ld-cli" style="text-align:left;white-space:normal"><span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(c.codcliente, c.cliente, true) + ">" + esc(c.cliente || "—") + '</span> <span class="cod-cliente">' + esc(c.codcliente) + "</span>" +
+              ((c.acao || c.motivo) ? '<div class="cod-cliente" style="font-weight:400">' + esc([c.acao, c.motivo].filter(Boolean).join(" · ")) + "</div>" : "") + "</td>" +
+            "<td>" + situacao(c) + "</td>" +
+            "<td>" + fmtInt(c.dias_sem_comprar) + "</td>" +
+            "<td>" + (c.lucro_12m == null ? "—" : fmtMoeda(c.lucro_12m)) + "</td>" +
+            "<td>" + (vezes >= 5 ? '<span class="ld-chip ld-ruim">' + vezes + "</span>" : fmtInt(vezes)) + "</td>" +
+            "<td>" + esc(tent) + "</td>" +
+            "<td>" + fmtInt(c.ativos) + " (" + fmtInt(c.ativos_com_resposta) + ")</td>" +
+            "<td>" + fmtInt(c.ligacoes) + " (" + fmtInt(c.ligacoes_1min) + ")</td>" +
+            "<td>" + esc(dataHoraSP(c.ultima_resposta_cliente)) + "</td>" +
+            '<td class="ld-fiz">' + (c.o_que_fiz ? esc(c.o_que_fiz) : '<span style="color:var(--texto-suave)">—</span>') + "</td>" +
+            "<td>" + (c.comprou_30d ? fmtMoeda(c.valor_30d) : "—") + "</td></tr>";
+        }).join("") + "</tbody></table>";
+    }
+
+    async function abrirVendedor(pessoa, manter) {
+      const corpo = el("corpo-lista-vend");
+      corpo.querySelectorAll("tr.ld-det").forEach((t) => t.remove());
+      corpo.querySelectorAll("tr.ld-vend").forEach((t) => t.classList.remove("aberta"));
+      if (!manter && aberto === pessoa) { aberto = null; return; }
+      aberto = pessoa;
+      const linha = [...corpo.querySelectorAll("tr.ld-vend")].find((t) => t.dataset.ldVend === pessoa);
+      if (!linha) { aberto = null; return; }
+      linha.classList.add("aberta");
+      const det = document.createElement("tr");
+      det.className = "ld-det";
+      det.innerHTML = '<td colspan="12">' + htmlDetalhe(pessoa) + "</td>";
+      linha.after(det);
+      if (!clientes && !clientesErro) {
+        await carregarClientes();
+        if (aberto === pessoa && det.isConnected) det.innerHTML = '<td colspan="12">' + htmlDetalhe(pessoa) + "</td>";
+      }
+    }
+
+    function ligar() {
+      if (ligado) return;
+      ligado = true;
+      el("lista-data").addEventListener("change", (ev) => { dataSel = ev.target.value || null; aberto = null; carregar(); });
+      el("lista-atualizar").addEventListener("click", () => carregar());
+      el("corpo-lista-vend").addEventListener("click", (ev) => {
+        if (ev.target.closest("[data-hist-cod]")) return;
+        const tr = ev.target.closest("tr.ld-vend");
+        if (tr) abrirVendedor(tr.dataset.ldVend);
+      });
+      // com a lista de hoje aberta, atualiza sozinho a cada 5 minutos
+      setInterval(() => { if (abaAtual === "lista" && ehHoje() && !document.hidden) carregar(); }, 5 * 60 * 1000);
+    }
+
+    function iniciar() {
+      ligar();
+      if (!carregadoEm || (Date.now() - carregadoEm.getTime()) > 5 * 60 * 1000) carregar();
+      else render();
+    }
+
+    return { iniciar };
+  })();
 
   // --- SEÇÃO: Ritmo Comercial (pública, só leitura) ---
   const filtroPeriodo = document.getElementById("filtro-periodo");
