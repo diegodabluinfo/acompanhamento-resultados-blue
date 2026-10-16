@@ -635,6 +635,41 @@
   .ld-cli { min-width: 230px; max-width: 320px; }
   .ld-aviso { background: var(--amarelo-fundo); color: var(--amarelo); border-radius: 10px; padding: 9px 12px; font-size: 0.8rem; margin-bottom: 14px; }
 
+  /* --- Aba Ranking --- */
+  #view-ranking { --rk-exec: #2a78d6; --rk-res: #1baf7a; }
+  .rk-barra { display: flex; height: 12px; background: #eef1f6; border-radius: 6px; overflow: hidden; }
+  .rk-barra span { display: block; height: 100%; }
+  .rk-exec { background: var(--rk-exec); }
+  .rk-res { background: var(--rk-res); }
+  .rk-pos { font-size: 1.05rem; width: 54px; }
+  .rk-nota { font-size: 0.95rem; min-width: 60px; }
+  .rk-ant { font-size: 0.7rem; color: var(--texto-suave); font-weight: 400; }
+  tr.rk-linha { cursor: pointer; }
+  tr.rk-linha:hover td { background: #f1f6ff; }
+  .rk-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; }
+  .rk-card { transition: box-shadow .3s; }
+  .rk-card.rk-destaque { box-shadow: 0 0 0 3px var(--azul); }
+  .rk-card-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .rk-card-topo h4 { margin: 0; }
+  .rk-comp { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .rk-comp-linha { display: grid; grid-template-columns: 1fr 70px 50px; gap: 8px; align-items: center; font-size: 0.76rem; }
+  .rk-comp-linha.rk-sem { opacity: 0.45; }
+  .rk-comp-nome { color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rk-comp-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--texto-suave); }
+  .rk-mini { display: block; height: 7px; background: #eef1f6; border-radius: 4px; overflow: hidden; }
+  .rk-mini i { display: block; height: 100%; }
+  .rk-bloco { border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 0.78rem; }
+  .rk-bloco ul { margin: 4px 0 0; padding-left: 16px; }
+  .rk-bloco li { margin: 2px 0; }
+  .rk-bom { background: var(--verde-fundo); }
+  .rk-bom .rk-tit { color: var(--verde); font-weight: 700; }
+  .rk-ruim { background: var(--vermelho-fundo); }
+  .rk-ruim .rk-tit { color: var(--vermelho); font-weight: 700; }
+  .rk-vazio { color: var(--texto-suave); margin-top: 3px; }
+  .rk-regras { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .rk-regras td { padding: 5px 10px; border-bottom: 1px solid #eef1f6; text-align: left; white-space: normal; font-weight: 400; }
+  .rk-regras td.pts { text-align: right; font-weight: 700; width: 60px; }
+
   /* --- Aba Vendas do Dia --- */
   #view-vendas table { font-size: 0.86rem; }
   .celula-barra { position: relative; }
@@ -801,6 +836,7 @@
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
         <button class="tab-btn" data-tab="lista" id="tab-btn-lista">Lista do Dia</button>
+        <button class="tab-btn" data-tab="ranking" id="tab-btn-ranking">Ranking</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Gastos e Assistência</button>
         <div class="menu-cadastros" id="menu-cadastros">
           <button class="tab-btn" id="btn-menu-cadastros" type="button" aria-haspopup="true" aria-expanded="false">Cadastros <span class="seta">▾</span></button>
@@ -1400,6 +1436,68 @@
           <b>Tentativa</b> = mensagem ativa ou ligação de saída do dono do cliente. <b>Conversa</b> = o cliente chamou, respondeu a mensagem ou atendeu a ligação.
           Mensagem que ninguém respondeu não conta como conversa. Protocolo com a tag de cobrança fica de fora. Compra = pedido faturado em até 30 dias depois da lista.
           No órfão, conta para quem marcou "Puxei" ou, se ninguém marcou, para quem fez o primeiro contato.
+        </div>
+      </div>
+
+      <!-- ===== ABA: Ranking dos vendedores ===== -->
+      <div id="view-ranking" class="oculto">
+        <div class="painel-controles">
+          <div class="filtro-periodo" id="rk-periodo">
+            <button data-p="semana" class="ativa">Esta semana</button>
+            <button data-p="semana_ant">Semana passada</button>
+            <button data-p="mes">Este mês</button>
+            <button data-p="mes_ant">Mês passado</button>
+          </div>
+          <span id="rk-intervalo" class="cod-cliente"></span>
+          <button type="button" id="rk-atualizar" class="btn-2via">Atualizar</button>
+          <span id="freshness-ranking" class="freshness"></span>
+        </div>
+
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Posição</th>
+                  <th style="text-align:left">Vendedor</th>
+                  <th>Nota</th>
+                  <th style="text-align:left">Execução <span style="color:#2a78d6">■</span> · Resultado <span style="color:#1baf7a">■</span></th>
+                  <th>Execução</th>
+                  <th>Resultado</th>
+                  <th>Penalidades</th>
+                  <th>Contra o período anterior</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-ranking"><tr><td colspan="8" class="estado-vazio">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="rk-cards" id="rk-cards"></div>
+
+        <h3 class="ld-sec">Como a nota é calculada</h3>
+        <div class="card-tabela">
+          <table class="rk-regras">
+            <tr><td colspan="2"><b>Execução (60 pontos)</b>: o que depende do vendedor</td></tr>
+            <tr><td>Lista HOJE: clientes com tentativa no dia (mensagem ou ligação do próprio vendedor), sobre o total da lista</td><td class="pts">15</td></tr>
+            <tr><td>Lista HOJE: conversa de verdade com pelo menos 6 dos 10 no dia (média dos dias)</td><td class="pts">15</td></tr>
+            <tr><td>Contatos efetivos por dia útil (cliente chamou, respondeu a mensagem ou ligação de 1 min+), meta 30</td><td class="pts">10</td></tr>
+            <tr><td>Ligações de saída de 1 minuto ou mais por dia útil, meta 5</td><td class="pts">10</td></tr>
+            <tr><td>Tempo de resposta: % dos clientes que esperaram 1 hora útil ou mais (até 2% = nota cheia; 12% ou mais = zero)</td><td class="pts">10</td></tr>
+            <tr><td colspan="2"><b>Resultado (40 pontos)</b></td></tr>
+            <tr><td>Vendas do período sobre a meta proporcional aos dias úteis (já descontados créditos e devoluções)</td><td class="pts">25</td></tr>
+            <tr><td>Clientes de distribuição recuperados (61+ dias sem comprar) ou novos, meta de 1,2 por dia útil</td><td class="pts">10</td></tr>
+            <tr><td>Clientes de distribuição que compraram, comparado com a média do próprio vendedor nos 3 meses anteriores</td><td class="pts">5</td></tr>
+            <tr><td colspan="2"><b>Penalidades</b>: tiram pontos</td></tr>
+            <tr><td>Perguntas de cliente sem resposta: 1 ponto por ponto percentual acima de 1%</td><td class="pts">até −3</td></tr>
+            <tr><td>Mensagens ativas para cadastro parado há mais de 1 ano (30% não tira; 70% ou mais tira tudo)</td><td class="pts">até −4</td></tr>
+            <tr><td>Cliente da HOJE que só recebeu mensagem, sem resposta e sem ligação: −0,5 cada</td><td class="pts">até −3</td></tr>
+          </table>
+        </div>
+        <div class="rodape-nota">
+          Nota = pontos ÷ máximo possível × 100. Item sem dado no período (por exemplo, a lista HOJE antes de 16/10) fica de fora e não conta contra ninguém.
+          Hoje entra como a fração do dia útil que já passou; a lista de hoje conta na tentativa a partir das 11h e na conversa a partir das 17h.
+          O cálculo é refeito a cada 15 minutos. Equipe comercial: Lucas, Luciana, Luiz, Maurino e Rafael.
         </div>
       </div>
 
@@ -2176,6 +2274,7 @@
   const tabBtnPerformance = document.getElementById("tab-btn-performance");
   const tabBtnRitmo = document.getElementById("tab-btn-ritmo");
   const tabBtnLista = document.getElementById("tab-btn-lista");
+  const tabBtnRanking = document.getElementById("tab-btn-ranking");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
   const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
   const tabBtnMetas = document.getElementById("tab-btn-metas");
@@ -2201,6 +2300,7 @@
   const viewPerformance = document.getElementById("view-performance");
   const viewRitmo = document.getElementById("view-ritmo");
   const viewLista = document.getElementById("view-lista");
+  const viewRanking = document.getElementById("view-ranking");
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
   const viewMetas = document.getElementById("view-metas");
@@ -3094,9 +3194,10 @@
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
     viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "lista" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "lista" || aba === "ranking" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewLista.classList.toggle("oculto", aba !== "lista");
+    viewRanking.classList.toggle("oculto", aba !== "ranking");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
     viewMetas.classList.toggle("oculto", aba !== "metas");
@@ -3111,6 +3212,7 @@
     tabBtnPerformance.classList.toggle("ativa", aba === "performance");
     tabBtnRitmo.classList.toggle("ativa", aba === "ritmo");
     tabBtnLista.classList.toggle("ativa", aba === "lista");
+    tabBtnRanking.classList.toggle("ativa", aba === "ranking");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
@@ -3124,6 +3226,7 @@
     if (aba === "performance") iniciarPerformance();
     if (aba === "ritmo") iniciarRitmo();
     if (aba === "lista") ListaDia.iniciar();
+    if (aba === "ranking") Ranking.iniciar();
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
     if (aba === "metas") atualizarTelaMetas();
@@ -3158,6 +3261,7 @@
   tabBtnPerformance.addEventListener("click", () => mostrarAba("performance"));
   tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
   tabBtnLista.addEventListener("click", () => mostrarAba("lista"));
+  tabBtnRanking.addEventListener("click", () => mostrarAba("ranking"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
   tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
   tabBtnMetas.addEventListener("click", () => mostrarAba("metas"));
@@ -3377,7 +3481,7 @@
   // barra de cima: só consulta e relatório
   const ABAS_VISUALIZACAO = [
     ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["reserva", () => tabBtnReserva], ["clientes", () => tabBtnClientes],
-    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo], ["lista", () => tabBtnLista],
+    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo], ["lista", () => tabBtnLista], ["ranking", () => tabBtnRanking],
     ["assistencia", () => tabBtnAssistencia]
   ];
   // menu Cadastros: tudo que grava alguma coisa
@@ -6383,6 +6487,212 @@
     renderRisco();
     renderClientes(clientesCompetencia);
   });
+
+  // --- SEÇÃO: Ranking dos vendedores (nota de 0 a 100) ---
+  // Fonte: ranking_painel(p_ini, p_fim) (security definer, travada por pode_ver_aba('ranking')),
+  // que guarda o cálculo de ranking_vendedores() por 15 min (período aberto) ou 6 h (fechado).
+  // Execução 60 (lista HOJE, contatos, ligações, tempo de resposta) + Resultado 40 (meta, recuperados,
+  // positivação), menos penalidades. Sem lucro/margem: só vendas e % da meta.
+  const Ranking = (() => {
+    const el = (id) => document.getElementById(id);
+    const n = (v) => Number(v || 0);
+    const COMP = [
+      { k: "pts_tentou", max: 15, grupo: "exec", nome: "Lista HOJE: tentativa" },
+      { k: "pts_conversa", max: 15, grupo: "exec", nome: "Lista HOJE: conversa" },
+      { k: "pts_contatos", max: 10, grupo: "exec", nome: "Contatos efetivos" },
+      { k: "pts_ligacoes", max: 10, grupo: "exec", nome: "Ligações de 1 min+" },
+      { k: "pts_resposta", max: 10, grupo: "exec", nome: "Tempo de resposta" },
+      { k: "pts_meta", max: 25, grupo: "res", nome: "Meta de vendas" },
+      { k: "pts_recuperados", max: 10, grupo: "res", nome: "Clientes recuperados ou novos" },
+      { k: "pts_positivacao", max: 5, grupo: "res", nome: "Clientes que compraram" }
+    ];
+    let periodo = "semana", carregando = false, ligado = false, erro = null;
+    const dados = {};          // chave "ini|fim" -> { calculado_em, linhas }
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo || {})
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(String(m).slice(0, 200)); }
+      return res.json();
+    }
+
+    // datas em São Paulo, no formato AAAA-MM-DD
+    function iso(d) { return d.toLocaleDateString("en-CA"); }
+    function base() { return new Date(hojeSP() + "T12:00:00"); }
+    function addDias(d, k) { const x = new Date(d); x.setDate(x.getDate() + k); return x; }
+    function segunda(d) { const dow = (d.getDay() + 6) % 7; return addDias(d, -dow); }
+    function periodos() {
+      const hoje = base(), seg = segunda(hoje);
+      const mesIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1, 12);
+      const mesAntIni = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1, 12);
+      const mesAntFim = new Date(hoje.getFullYear(), hoje.getMonth(), 0, 12);
+      return {
+        semana: { ini: iso(seg), fim: iso(hoje), rotulo: "Esta semana", comp: "semana_ant" },
+        semana_ant: { ini: iso(addDias(seg, -7)), fim: iso(addDias(seg, -3)), rotulo: "Semana passada", comp: "semana_ant2" },
+        semana_ant2: { ini: iso(addDias(seg, -14)), fim: iso(addDias(seg, -10)), rotulo: "Semana retrasada" },
+        mes: { ini: iso(mesIni), fim: iso(hoje), rotulo: "Este mês" },
+        mes_ant: { ini: iso(mesAntIni), fim: iso(mesAntFim), rotulo: "Mês passado" }
+      };
+    }
+    function chave(p) { return p.ini + "|" + p.fim; }
+    function dataBR(s) { const [a, m, d] = String(s).slice(0, 10).split("-"); return d + "/" + m; }
+
+    async function buscar(p) {
+      const k = chave(p);
+      const r = await rpc("ranking_painel", { p_ini: p.ini, p_fim: p.fim });
+      dados[k] = r;
+      return r;
+    }
+
+    async function carregar() {
+      if (carregando) return;
+      carregando = true; erro = null; render();
+      const ps = periodos(), atual = ps[periodo];
+      try {
+        const pedidos = [buscar(atual)];
+        if (atual.comp) pedidos.push(buscar(ps[atual.comp]));
+        await Promise.all(pedidos);
+      } catch (e) { erro = e.message || String(e); }
+      carregando = false; render();
+    }
+
+    function corNota(v) { if (v == null) return ""; if (v >= 70) return "pct-verde"; if (v >= 50) return "pct-amarelo"; return "pct-vermelho"; }
+    function f1(v) { return fmtDec(n(v), 1); }
+    function pct(v) { return Math.round(n(v) * 100) + "%"; }
+    function nomeV(r) { return r.nome_curto || "—"; }
+    function qtd(v, um, varios) { return fmtInt(v) + " " + (n(v) === 1 ? um : varios); }
+
+    function somaGrupo(r, g) { return COMP.filter((c) => c.grupo === g && r[c.k] != null).reduce((s, c) => s + n(r[c.k]), 0); }
+    function maxGrupo(r, g) { return COMP.filter((c) => c.grupo === g && r[c.k] != null).reduce((s, c) => s + c.max, 0); }
+    function penal(r) { return n(r.pen_sem_resposta) + n(r.pen_mortos) + n(r.pen_so_msg); }
+
+    // texto de cada componente com o número que explica a nota
+    function texto(c, r) {
+      const dias = n(r.dias_uteis) || 1;
+      switch (c.k) {
+        case "pts_tentou": return fmtInt(r.lista_tentados) + " de " + fmtInt(r.lista_clientes) + " clientes da HOJE tentados no dia";
+        case "pts_conversa": return pct(r.lista_conv_media) + " da meta de conversas (6 de 10 por dia)";
+        case "pts_contatos": return f1(n(r.contatos_efetivos) / dias) + " contatos efetivos por dia (meta 30)";
+        case "pts_ligacoes": return f1(n(r.ligacoes_1min) / dias) + " ligações de 1 min ou mais por dia (meta 5)";
+        case "pts_resposta": return (n(r.esperas) ? Math.round(100 * n(r.esperas_1h) / n(r.esperas)) : 0) + "% dos clientes esperaram 1 h ou mais pela resposta";
+        case "pts_meta": return (n(r.meta_periodo) ? Math.round(100 * n(r.vendas) / n(r.meta_periodo)) : 0) + "% da meta do período (" + fmtMoeda(r.vendas) + " de " + fmtMoeda(r.meta_periodo) + ")";
+        case "pts_recuperados": return fmtInt(n(r.recuperados) + n(r.novos)) + " clientes de distribuição recuperados ou novos (meta " + f1(1.2 * dias) + ")";
+        case "pts_positivacao": return fmtInt(r.positivados) + " clientes de distribuição compraram (a média dele seria " + f1(r.positivados_esperado) + ")";
+      }
+      return "";
+    }
+
+    function itensBons(r) {
+      return COMP.filter((c) => r[c.k] != null && n(r[c.k]) >= 0.8 * c.max)
+        .map((c) => "<b>" + c.nome + ":</b> " + esc(texto(c, r)));
+    }
+    function itensRuins(r) {
+      const out = [];
+      if (n(r.lista_clientes) > 0 && n(r.lista_tentados) < n(r.lista_clientes))
+        out.push("<b>Lista HOJE:</b> " + qtd(n(r.lista_clientes) - n(r.lista_tentados), "cliente", "clientes") + " sem nenhuma tentativa no dia");
+      if (n(r.pen_so_msg) < 0) out.push("<b>Só mensagem:</b> " + qtd(r.lista_so_msg, "cliente", "clientes") + " da HOJE " + (n(r.lista_so_msg) === 1 ? "recebeu" : "receberam") + " mensagem sem resposta e ninguém ligou (" + f1(r.pen_so_msg) + ")");
+      if (n(r.pen_sem_resposta) < 0) out.push("<b>Sem resposta:</b> " + qtd(r.sem_resposta, "pergunta", "perguntas") + " de cliente " + (n(r.sem_resposta) === 1 ? "ficou" : "ficaram") + " sem resposta (" + f1(r.pen_sem_resposta) + ")");
+      if (n(r.pen_mortos) < 0) out.push("<b>Disparo frio:</b> " + fmtInt(r.ativos_mortos) + " de " + fmtInt(r.ativos) + " mensagens ativas foram para cadastro parado há mais de 1 ano (" + f1(r.pen_mortos) + ")");
+      COMP.filter((c) => c.k !== "pts_tentou" && r[c.k] != null && n(r[c.k]) < 0.5 * c.max)
+        .forEach((c) => out.push("<b>" + c.nome + ":</b> " + esc(texto(c, r))));
+      return out;
+    }
+
+    function barra(r) {
+      const max = n(r.max_pontos) || 1;
+      const e = somaGrupo(r, "exec"), s = somaGrupo(r, "res");
+      return '<div class="rk-barra" title="Execução ' + f1(e) + "/" + maxGrupo(r, "exec") + " · Resultado " + f1(s) + "/" + maxGrupo(r, "res") + '">' +
+        '<span class="rk-exec" style="width:' + (100 * e / max).toFixed(1) + '%"></span>' +
+        '<span class="rk-res" style="width:' + (100 * s / max).toFixed(1) + '%"></span></div>';
+    }
+
+    function variacao(r, comp) {
+      if (!comp) return "";
+      const a = comp.find((x) => x.vendedor_id === r.vendedor_id);
+      if (!a || a.nota == null || r.nota == null) return "";
+      const d = n(r.nota) - n(a.nota);
+      const cls = d > 0.5 ? "variacao-alta" : d < -0.5 ? "variacao-baixa" : "";
+      return '<span class="' + cls + '">' + (d > 0 ? "▲ " : d < 0 ? "▼ " : "") + f1(Math.abs(d)) + "</span>" +
+        '<div class="rk-ant">antes ' + f1(a.nota) + " (" + fmtInt(a.posicao) + "º)</div>";
+    }
+
+    function render() {
+      if (!ligado) return;
+      const ps = periodos(), atual = ps[periodo];
+      el("rk-periodo").querySelectorAll("button").forEach((b) => b.classList.toggle("ativa", b.dataset.p === periodo));
+      el("rk-intervalo").textContent = atual.rotulo + ": " + dataBR(atual.ini) + " a " + dataBR(atual.fim);
+      const corpo = el("corpo-ranking"), cards = el("rk-cards");
+      const d = dados[chave(atual)];
+      if (carregando && !d) {
+        corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Calculando as notas… (o primeiro cálculo do período leva alguns segundos)</td></tr>';
+        cards.innerHTML = ""; return;
+      }
+      if (erro) {
+        corpo.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível calcular o ranking.<br><small style="color:var(--erro)">' + esc(erro) + "</small></td></tr>";
+        cards.innerHTML = ""; return;
+      }
+      if (!d) return;
+      const linhas = (d.linhas || []).slice().sort((a, b) => n(a.posicao) - n(b.posicao));
+      const comp = atual.comp && dados[chave(ps[atual.comp])] ? dados[chave(ps[atual.comp])].linhas : null;
+      el("freshness-ranking").textContent = "Calculado às " + new Date(d.calculado_em).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) +
+        (carregando ? " · atualizando…" : "");
+      const medalha = ["🥇", "🥈", "🥉"];
+      corpo.innerHTML = linhas.length ? linhas.map((r) =>
+        '<tr class="rk-linha" data-rk="' + esc(r.vendedor_id) + '">' +
+        '<td class="rk-pos">' + (medalha[n(r.posicao) - 1] || fmtInt(r.posicao) + "º") + "</td>" +
+        '<td style="text-align:left;font-weight:600">' + esc(nomeV(r)) + "</td>" +
+        '<td><span class="pct-pill rk-nota ' + corNota(r.nota) + '">' + (r.nota == null ? "—" : f1(r.nota)) + "</span></td>" +
+        '<td style="min-width:180px">' + barra(r) + "</td>" +
+        "<td>" + f1(somaGrupo(r, "exec")) + " / " + maxGrupo(r, "exec") + "</td>" +
+        "<td>" + f1(somaGrupo(r, "res")) + " / " + maxGrupo(r, "res") + "</td>" +
+        "<td>" + (penal(r) < 0 ? '<span class="variacao-baixa">' + f1(penal(r)) + "</span>" : "0") + "</td>" +
+        "<td>" + variacao(r, comp) + "</td></tr>"
+      ).join("") : '<tr><td colspan="8" class="estado-vazio">Sem dados no período.</td></tr>';
+
+      cards.innerHTML = linhas.map((r) => {
+        const bons = itensBons(r), ruins = itensRuins(r);
+        return '<div class="card-vendedor rk-card" id="rk-card-' + esc(r.vendedor_id) + '">' +
+          '<div class="rk-card-topo"><h4>' + (medalha[n(r.posicao) - 1] || fmtInt(r.posicao) + "º") + " " + esc(nomeV(r)) + "</h4>" +
+          '<span class="pct-pill ' + corNota(r.nota) + '">' + (r.nota == null ? "—" : f1(r.nota)) + "</span></div>" +
+          '<div class="rk-comp">' + COMP.map((c) => {
+            const v = r[c.k];
+            const w = v == null ? 0 : 100 * n(v) / c.max;
+            return '<div class="rk-comp-linha' + (v == null ? " rk-sem" : "") + '" title="' + esc(v == null ? "Sem dado no período" : texto(c, r)) + '">' +
+              '<span class="rk-comp-nome">' + c.nome + '</span>' +
+              '<span class="rk-mini"><i class="' + (c.grupo === "exec" ? "rk-exec" : "rk-res") + '" style="width:' + w.toFixed(0) + '%"></i></span>' +
+              '<span class="rk-comp-val">' + (v == null ? "—" : f1(v) + "/" + c.max) + "</span></div>";
+          }).join("") + "</div>" +
+          '<div class="rk-bloco rk-bom"><div class="rk-tit">✓ Fez bem</div>' + (bons.length ? "<ul>" + bons.map((t) => "<li>" + t + "</li>").join("") + "</ul>" : '<div class="rk-vazio">Nenhum item com 80% ou mais dos pontos.</div>') + "</div>" +
+          '<div class="rk-bloco rk-ruim"><div class="rk-tit">✗ Deixou de fazer</div>' + (ruins.length ? "<ul>" + ruins.map((t) => "<li>" + t + "</li>").join("") + "</ul>" : '<div class="rk-vazio">Nada abaixo de 50% dos pontos.</div>') + "</div>" +
+          "</div>";
+      }).join("");
+    }
+
+    function ligar() {
+      if (ligado) return;
+      ligado = true;
+      el("rk-periodo").addEventListener("click", (ev) => {
+        const b = ev.target.closest("button[data-p]");
+        if (!b) return;
+        periodo = b.dataset.p; render(); carregar();
+      });
+      el("rk-atualizar").addEventListener("click", () => carregar());
+      el("corpo-ranking").addEventListener("click", (ev) => {
+        const tr = ev.target.closest("tr.rk-linha");
+        if (!tr) return;
+        const card = el("rk-card-" + tr.dataset.rk);
+        if (card) { card.scrollIntoView({ behavior: "smooth", block: "center" }); card.classList.add("rk-destaque"); setTimeout(() => card.classList.remove("rk-destaque"), 1600); }
+      });
+    }
+
+    function iniciar() { ligar(); render(); carregar(); }
+    return { iniciar };
+  })();
 
   // --- SEÇÃO: Lista do Dia (lista HOJE e órfãos) ---
   // Fonte: funções painel_lista_datas/_vendedor/_cliente/_esforco (security definer, travadas por
