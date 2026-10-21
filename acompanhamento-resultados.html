@@ -634,6 +634,20 @@
   #view-lista thead th { white-space: normal; vertical-align: bottom; line-height: 1.25; }
   .ld-cli { min-width: 230px; max-width: 320px; }
   .ld-aviso { background: var(--amarelo-fundo); color: var(--amarelo); border-radius: 10px; padding: 9px 12px; font-size: 0.8rem; margin-bottom: 14px; }
+  /* Clientes: positivados e recuperados por vendedor */
+  .cm-explica { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .cm-explica > div { background: #fff; border-radius: 12px; padding: 12px 14px; font-size: 0.82rem; line-height: 1.45;
+    box-shadow: 0 1px 3px rgba(20,40,70,0.08); border-left: 4px solid var(--azul); }
+  .cm-explica > div.cm-rec { border-left-color: var(--serie-reativado); }
+  .cm-explica h4 { margin: 0 0 4px; font-size: 0.9rem; color: var(--azul-escuro); }
+  .cm-explica p { margin: 4px 0 0; }
+  @media (max-width: 760px) { .cm-explica { grid-template-columns: 1fr; } }
+  #tabela-cm td.cm-num { font-size: 1.05rem; font-weight: 700; color: var(--texto); }
+  #tabela-cm .cm-det { display: block; font-size: 0.72rem; color: var(--texto-suave); font-weight: 400; margin-top: 2px; }
+  #tabela-cm .cm-sep { border-left: 2px solid #e3e9f2; }
+  .cm-barra { display: block; height: 8px; background: #eef1f6; border-radius: 4px; overflow: hidden; min-width: 90px; margin-bottom: 3px; }
+  .cm-barra i { display: block; height: 100%; border-radius: 4px; }
+  .cm-analise { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; background: #eef1f6; color: var(--texto-suave); white-space: nowrap; }
 
   /* --- Aba Ranking --- */
   #view-ranking { --rk-exec: #2a78d6; --rk-res: #1baf7a; }
@@ -1013,6 +1027,45 @@
         </div>
 
         <div class="kpi-grid" id="clientes-kpis"></div>
+
+        <h3 class="grupo-titulo">Positivados e recuperados de cada vendedor</h3>
+        <div class="cm-explica">
+          <div>
+            <h4>Positivado</h4>
+            Cliente de distribuição que <b>comprou com você no mês</b>. Vale pedido com CNPJ, acima de R$ 250 e sem ordem de serviço.
+            Cada cliente conta uma vez no mês, não importa quantos pedidos fez, e empresas do mesmo grupo contam como um cliente só.
+          </div>
+          <div class="cm-rec">
+            <h4>Recuperado</h4>
+            Cliente de distribuição que estava <b>há 61 dias ou mais sem comprar</b> e voltou a comprar com você no mês. Junta dois casos:
+            <b>salvo</b> (61 a 90 dias parado, antes de perder o vínculo com o vendedor) e <b>reativado</b> (mais de 90 dias).
+            <p>Por que importa: o cliente salvo antes dos 90 dias compra em média R$ 4.939 nos 4 meses seguintes e 70% continuam comprando;
+            depois dos 90 dias, R$ 3.342 e só 48% continuam. Onde achar esses clientes: <b>Carteira em risco</b>, aqui embaixo, e a <b>Lista do Dia</b>.</p>
+          </div>
+        </div>
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table id="tabela-cm">
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Positivados</th>
+                  <th>Meta</th>
+                  <th>Atingido</th>
+                  <th id="cm-th-media-pos">Média 3 meses</th>
+                  <th class="cm-sep">Recuperados</th>
+                  <th>Meta</th>
+                  <th>Atingido</th>
+                  <th id="cm-th-media-rec">Média 3 meses</th>
+                </tr>
+              </thead>
+              <tbody id="corpo-clientes-metas">
+                <tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="ld-sub" id="cm-nota" style="margin-top:6px;"></p>
 
         <div class="grafico-card">
           <h3>Positivados por mês</h3>
@@ -1975,6 +2028,17 @@
                 </div>
               </div>
               <p class="sub" id="metas-nota-automatico" style="margin-top:-10px;"></p>
+              <div class="linha-dupla">
+                <div class="campo">
+                  <label for="metas-positivados">Meta de positivados (clientes)</label>
+                  <input type="number" id="metas-positivados" inputmode="numeric" step="1" min="0" placeholder="em análise">
+                </div>
+                <div class="campo">
+                  <label for="metas-recuperados">Meta de recuperados (clientes)</label>
+                  <input type="number" id="metas-recuperados" inputmode="numeric" step="1" min="0" placeholder="em análise">
+                </div>
+              </div>
+              <p class="sub" style="margin-top:-10px;">Pode deixar em branco e preencher depois: enquanto estiver vazio, a aba Clientes mostra "em análise".</p>
               <button type="submit" id="btn-salvar-meta" class="btn-full">Salvar meta</button>
             </form>
             <button type="button" id="btn-remover-meta" class="btn-excluir oculto" style="margin-top:10px; width:100%;">Remover meta deste vendedor neste mês</button>
@@ -1988,11 +2052,13 @@
                     <th style="text-align:left;">Vendedor</th>
                     <th>Objetivo</th>
                     <th>Produzido manual</th>
+                    <th>Positivados</th>
+                    <th>Recuperados</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody id="corpo-metas">
-                  <tr><td colspan="4" class="estado-vazio">Selecione um mês.</td></tr>
+                  <tr><td colspan="6" class="estado-vazio">Selecione um mês.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2315,6 +2381,8 @@
   const metasVendedorSelect = document.getElementById("metas-vendedor");
   const metasObjetivoInput = document.getElementById("metas-objetivo");
   const metasProduzidoInput = document.getElementById("metas-produzido");
+  const metasPositivadosInput = document.getElementById("metas-positivados");
+  const metasRecuperadosInput = document.getElementById("metas-recuperados");
   const metasNotaAutomatico = document.getElementById("metas-nota-automatico");
   const metasFormSub = document.getElementById("metas-form-sub");
   const avisoMetas = document.getElementById("aviso-metas");
@@ -3292,6 +3360,8 @@
     metasVendedorSelect.value = "";
     metasObjetivoInput.value = "";
     metasProduzidoInput.value = "0";
+    metasPositivadosInput.value = "";
+    metasRecuperadosInput.value = "";
     btnRemoverMeta.classList.add("oculto");
     metasFormSub.textContent = "Selecione o vendedor pra carregar (ou criar) a meta deste mês.";
   }
@@ -3304,11 +3374,15 @@
     if (existente) {
       metasObjetivoInput.value = existente.objetivo;
       metasProduzidoInput.value = existente.produzido;
+      metasPositivadosInput.value = existente.meta_positivados == null ? "" : existente.meta_positivados;
+      metasRecuperadosInput.value = existente.meta_recuperados == null ? "" : existente.meta_recuperados;
       metasFormSub.textContent = "Editando meta já cadastrada pra este vendedor neste mês.";
       btnRemoverMeta.classList.remove("oculto");
     } else {
       metasObjetivoInput.value = "";
       metasProduzidoInput.value = "0";
+      metasPositivadosInput.value = "";
+      metasRecuperadosInput.value = "";
       metasFormSub.textContent = "Nova meta — ainda não existe cadastro pra este vendedor neste mês.";
       btnRemoverMeta.classList.add("oculto");
     }
@@ -3318,7 +3392,7 @@
 
   function renderizarTabelaMetas() {
     if (!metasLinhasDoMes.length) {
-      corpoMetas.innerHTML = '<tr><td colspan="4" class="estado-vazio">Nenhuma meta cadastrada pra este mês ainda.</td></tr>';
+      corpoMetas.innerHTML = '<tr><td colspan="6" class="estado-vazio">Nenhuma meta cadastrada pra este mês ainda.</td></tr>';
       return;
     }
     const ordenadas = metasLinhasDoMes.slice().sort((a, b) => {
@@ -3333,6 +3407,8 @@
         <td style="text-align:left;" title="${nomeCompleto}">${nomeExibido}</td>
         <td>${fmtMoeda(l.objetivo)}</td>
         <td>${fmtMoeda(l.produzido)}</td>
+        <td>${l.meta_positivados == null ? '<span class="cm-analise">em análise</span>' : fmtInt(l.meta_positivados)}</td>
+        <td>${l.meta_recuperados == null ? '<span class="cm-analise">em análise</span>' : fmtInt(l.meta_recuperados)}</td>
         <td><button type="button" class="btn-secundario btn-editar-meta" data-vendedor="${l.vendedor_id}">Editar</button></td>
       </tr>`;
     }).join("");
@@ -3345,16 +3421,16 @@
   }
 
   async function carregarMetasDoMes(competencia) {
-    corpoMetas.innerHTML = '<tr><td colspan="4" class="estado-vazio">Carregando...</td></tr>';
+    corpoMetas.innerHTML = '<tr><td colspan="6" class="estado-vazio">Carregando...</td></tr>';
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/metas_mensais?competencia=eq.${competencia}&select=id,vendedor_id,objetivo,produzido,vendedores(nome_completo,nome_curto)`,
+        `${SUPABASE_URL}/rest/v1/metas_mensais?competencia=eq.${competencia}&select=id,vendedor_id,objetivo,produzido,meta_positivados,meta_recuperados,vendedores(nome_completo,nome_curto)`,
         { headers: headersEscrita() }
       );
       metasLinhasDoMes = res.ok ? await res.json() : [];
       renderizarTabelaMetas();
     } catch (err) {
-      corpoMetas.innerHTML = '<tr><td colspan="4" class="estado-vazio">Não foi possível carregar as metas deste mês.</td></tr>';
+      corpoMetas.innerHTML = '<tr><td colspan="6" class="estado-vazio">Não foi possível carregar as metas deste mês.</td></tr>';
     }
   }
 
@@ -3377,7 +3453,9 @@
       vendedor_id: Number(vendedorId),
       competencia: metasMesAtual,
       objetivo: numOrNull(metasObjetivoInput.value) || 0,
-      produzido: numOrNull(metasProduzidoInput.value) || 0
+      produzido: numOrNull(metasProduzidoInput.value) || 0,
+      meta_positivados: metasPositivadosInput.value === "" ? null : Math.max(0, Math.round(Number(metasPositivadosInput.value))),
+      meta_recuperados: metasRecuperadosInput.value === "" ? null : Math.max(0, Math.round(Number(metasRecuperadosInput.value)))
     };
     btnSalvarMeta.disabled = true;
     btnSalvarMeta.textContent = "Salvando...";
@@ -3396,6 +3474,7 @@
         throw new Error(detalhe || ("HTTP " + res.status));
       }
       mostrarAvisoMetas("sucesso", "Meta salva com sucesso!");
+      if (typeof cmCache !== "undefined") delete cmCache[metasMesAtual];
       btnRemoverMeta.classList.remove("oculto");
       await carregarMetasDoMes(metasMesAtual);
       iniciarApp(); // a aba Resultados também deve refletir a meta nova/editada
@@ -3422,8 +3501,11 @@
       mostrarAvisoMetas("sucesso", "Meta removida.");
       metasObjetivoInput.value = "";
       metasProduzidoInput.value = "0";
+      metasPositivadosInput.value = "";
+      metasRecuperadosInput.value = "";
       btnRemoverMeta.classList.add("oculto");
       metasFormSub.textContent = "Nova meta — ainda não existe cadastro pra este vendedor neste mês.";
+      if (typeof cmCache !== "undefined") delete cmCache[metasMesAtual];
       await carregarMetasDoMes(metasMesAtual);
       iniciarApp();
     } catch (err) {
@@ -6321,6 +6403,78 @@
     renderGraficoClientes();
     renderFaturamentoTipos(linha, parcial);
     carregarClientesDoMes(competencia);
+    carregarClientesMetas(competencia);
+  }
+
+  // Positivados e recuperados de cada vendedor (sempre distribuição), com meta e média própria dos 3 meses.
+  // Fonte: painel_clientes_metas(p_competencia) — security definer, trava pode_ver_aba('clientes').
+  const corpoClientesMetas = document.getElementById("corpo-clientes-metas");
+  const cmNota = document.getElementById("cm-nota");
+  const cmCache = {};
+  async function carregarClientesMetas(competencia) {
+    if (!cmCache[competencia]) corpoClientesMetas.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>';
+    try {
+      if (!cmCache[competencia]) cmCache[competencia] = await lerRest("rpc/painel_clientes_metas?p_competencia=" + competencia);
+      if (competencia !== clientesCompetencia) return;
+      renderClientesMetas(cmCache[competencia]);
+    } catch (err) {
+      console.error("Erro ao carregar positivados e recuperados:", err);
+      const mensagem = (err && err.message) ? err.message : String(err);
+      corpoClientesMetas.innerHTML = '<tr><td colspan="9" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(mensagem) + "</small></td></tr>";
+    }
+  }
+
+  function renderClientesMetas(linhas) {
+    if (!linhas.length) {
+      corpoClientesMetas.innerHTML = '<tr><td colspan="9" class="estado-vazio">Sem dados neste mês.</td></tr>';
+      cmNota.textContent = "";
+      return;
+    }
+    const parcial = !!linhas[0].parcial;
+    const dia = n(linhas[0].dia_corte);
+    const f1 = (v) => fmtDec(n(v), 1);
+    document.getElementById("cm-th-media-pos").textContent = parcial ? "Média 3 meses até o dia " + dia : "Média 3 meses";
+    document.getElementById("cm-th-media-rec").textContent = parcial ? "Média 3 meses até o dia " + dia : "Média 3 meses";
+
+    // meta: número cadastrado ou "em análise"; atingido: barra + % e, no mês em andamento, onde fecha no ritmo atual
+    const celMeta = (meta) => meta == null ? '<td><span class="cm-analise">em análise</span></td>' : "<td>" + fmtInt(meta) + "</td>";
+    const celAtingido = (real, meta, medCorte, medMes) => {
+      let proj = "";
+      if (parcial && n(medCorte) > 0 && n(medMes) > 0) proj = "no ritmo, fecha com ~" + fmtInt(Math.round(n(real) * n(medMes) / n(medCorte)));
+      if (meta == null || !n(meta)) return "<td>" + (proj ? '<span class="cm-det">' + proj + "</span>" : "—") + "</td>";
+      const p = n(real) / n(meta);
+      const cor = p >= 1 ? "var(--verde)" : (parcial ? "var(--azul)" : (p >= 0.8 ? "var(--amarelo)" : "var(--vermelho)"));
+      return '<td><span class="cm-barra"><i style="width:' + Math.min(100, 100 * p).toFixed(0) + "%;background:" + cor + '"></i></span>' +
+        "<b>" + fmtDec(100 * p, 0) + "%</b>" + (proj ? '<span class="cm-det">' + proj + "</span>" : "") + "</td>";
+    };
+    const celMedia = (medCorte, medMes, real, meses) => {
+      if (!n(meses)) return '<td><span class="cm-det">sem histórico</span></td>';
+      const var_ = n(medCorte) ? (n(real) / n(medCorte) - 1) : null;
+      const seta = var_ == null ? "" : (var_ >= 0 ? '<span style="color:var(--verde)">▲ ' : '<span style="color:var(--vermelho)">▼ ') + fmtDec(Math.abs(var_) * 100, 0) + "%</span>";
+      return "<td>" + f1(medCorte) + (seta ? " " + seta : "") +
+        (parcial ? '<span class="cm-det">' + f1(medMes) + " no mês inteiro</span>" : "") +
+        (n(meses) < 3 ? '<span class="cm-det">base de ' + fmtInt(meses) + (n(meses) === 1 ? " mês" : " meses") + "</span>" : "") + "</td>";
+    };
+
+    corpoClientesMetas.innerHTML = linhas.map((l) =>
+      "<tr>" +
+      "<td><b>" + esc(l.nome_curto) + "</b></td>" +
+      '<td class="cm-num">' + fmtInt(l.positivados) + (n(l.novos) ? '<span class="cm-det">' + fmtInt(l.novos) + (n(l.novos) === 1 ? " novo" : " novos") + "</span>" : "") + "</td>" +
+      celMeta(l.meta_positivados) +
+      celAtingido(l.positivados, l.meta_positivados, l.med3_positivados, l.med3_positivados_mes) +
+      celMedia(l.med3_positivados, l.med3_positivados_mes, l.positivados, l.meses_base) +
+      '<td class="cm-num cm-sep">' + fmtInt(l.recuperados) +
+        '<span class="cm-det">' + fmtInt(l.salvos) + (n(l.salvos) === 1 ? " salvo" : " salvos") + " · " + fmtInt(l.reativados) + (n(l.reativados) === 1 ? " reativado" : " reativados") + "</span></td>" +
+      celMeta(l.meta_recuperados) +
+      celAtingido(l.recuperados, l.meta_recuperados, l.med3_recuperados, l.med3_recuperados_mes) +
+      celMedia(l.med3_recuperados, l.med3_recuperados_mes, l.recuperados, l.meses_base) +
+      "</tr>"
+    ).join("");
+
+    const semMeta = linhas.some((l) => l.meta_positivados == null || l.meta_recuperados == null);
+    cmNota.innerHTML = "Sempre distribuição, pelo vendedor que fez a venda. " +
+      (parcial ? "Mês em andamento: a média e a seta comparam com os 3 meses anteriores até o dia " + dia + "; \"no ritmo\" projeta o fim do mês pela curva do próprio vendedor nesses meses. " : "") +
+      (semMeta ? "<b>Em análise</b> = meta do mês ainda não cadastrada." : "");
   }
 
   function renderGraficoClientes() {
