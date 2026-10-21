@@ -1485,7 +1485,7 @@
             <tr><td>Ligações de saída de 1 minuto ou mais por dia útil, meta 5</td><td class="pts">10</td></tr>
             <tr><td>Tempo de resposta: % dos clientes que esperaram 1 hora útil ou mais (até 2% = nota cheia; 12% ou mais = zero)</td><td class="pts">10</td></tr>
             <tr><td colspan="2"><b>Resultado (40 pontos)</b></td></tr>
-            <tr><td>Vendas do período sobre a meta proporcional aos dias úteis (já descontados créditos e devoluções)</td><td class="pts">25</td></tr>
+            <tr><td>Vendas do período sobre o esperado até hoje: a meta do mês dividida pelos dias úteis (já descontados créditos e devoluções). Por isso o % aqui é maior que o % da meta do mês em Resultados por Vendedor no meio do mês.</td><td class="pts">25</td></tr>
             <tr><td>Clientes de distribuição recuperados (61+ dias sem comprar) ou novos, meta de 1,2 por dia útil</td><td class="pts">10</td></tr>
             <tr><td>Clientes de distribuição que compraram, comparado com a média do próprio vendedor nos 3 meses anteriores</td><td class="pts">5</td></tr>
             <tr><td colspan="2"><b>Penalidades</b>: tiram pontos</td></tr>
@@ -6580,7 +6580,17 @@
         case "pts_contatos": return f1(n(r.contatos_efetivos) / dias) + " contatos efetivos por dia (meta 30)";
         case "pts_ligacoes": return f1(n(r.ligacoes_1min) / dias) + " ligações de 1 min ou mais por dia (meta 5)";
         case "pts_resposta": return (n(r.esperas) ? Math.round(100 * n(r.esperas_1h) / n(r.esperas)) : 0) + "% dos clientes esperaram 1 h ou mais pela resposta";
-        case "pts_meta": return (n(r.meta_periodo) ? Math.round(100 * n(r.vendas) / n(r.meta_periodo)) : 0) + "% da meta do período (" + fmtMoeda(r.vendas) + " de " + fmtMoeda(r.meta_periodo) + ")";
+        case "pts_meta": {
+          // meta_periodo = meta do mês proporcional aos dias úteis do período (no período aberto, até hoje)
+          const pp = n(r.meta_periodo) ? Math.round(100 * n(r.vendas) / n(r.meta_periodo)) : 0;
+          const base = periodo === "mes" ? "do esperado até hoje"
+            : periodo === "semana" ? "do esperado na semana até hoje"
+            : periodo === "mes_ant" ? "da meta do mês" : "da meta da semana";
+          let t = pp + "% " + base + " (" + fmtMoeda(r.vendas) + " de " + fmtMoeda(r.meta_periodo) + ")";
+          if (periodo === "mes" && n(r.meta_mes))
+            t += " · " + fmtDec(100 * n(r.vendas) / n(r.meta_mes), 1) + "% da meta do mês (" + fmtMoeda(r.meta_mes) + ")";
+          return t;
+        }
         case "pts_recuperados": return fmtInt(n(r.recuperados) + n(r.novos)) + " clientes de distribuição recuperados ou novos (meta " + f1(1.2 * dias) + ")";
         case "pts_positivacao": return fmtInt(r.positivados) + " clientes de distribuição compraram (a média dele seria " + f1(r.positivados_esperado) + ")";
       }
