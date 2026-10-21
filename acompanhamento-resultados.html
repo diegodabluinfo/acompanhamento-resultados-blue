@@ -1433,7 +1433,7 @@
 
         <div class="rodape-nota">
           Fonte: a foto diária da planilha "Fila comercial Blue" (abas HOJE e ORFAOS), guardada desde 16/10/2026, cruzada com a Sonax e com os pedidos do ERP.
-          <b>Tentativa</b> = mensagem ativa ou ligação de saída do dono do cliente. <b>Conversa</b> = o cliente chamou, respondeu a mensagem ou atendeu a ligação.
+          <b>Tentativa</b> = mensagem ativa ou ligação de saída do dono do cliente; no cliente de <b>reconquista</b> (parado há muito tempo, sem vendedor) só a ligação conta, porque o contato pode ter mudado. <b>Conversa</b> = o cliente chamou, respondeu a mensagem ou atendeu a ligação.
           Mensagem que ninguém respondeu não conta como conversa. Protocolo com a tag de cobrança fica de fora. Compra = pedido faturado em até 30 dias depois da lista.
           No órfão, conta para quem marcou "Puxei" ou, se ninguém marcou, para quem fez o primeiro contato.
         </div>
@@ -1479,10 +1479,10 @@
         <div class="card-tabela">
           <table class="rk-regras">
             <tr><td colspan="2"><b>Execução (60 pontos)</b>: o que depende do vendedor</td></tr>
-            <tr><td>Lista HOJE: clientes com tentativa no dia (mensagem ou ligação do próprio vendedor), sobre o total da lista</td><td class="pts">15</td></tr>
+            <tr><td>Lista HOJE: clientes com tentativa no dia (mensagem ou ligação do próprio vendedor), sobre o total da lista. Cliente de reconquista só conta com ligação.</td><td class="pts">15</td></tr>
             <tr><td>Lista HOJE: conversa de verdade com pelo menos 6 dos 10 no dia (média dos dias)</td><td class="pts">15</td></tr>
             <tr><td>Contatos efetivos por dia útil (cliente chamou, respondeu a mensagem ou ligação de 1 min+), meta 30</td><td class="pts">10</td></tr>
-            <tr><td>Ligações de saída de 1 minuto ou mais por dia útil, meta 5</td><td class="pts">10</td></tr>
+            <tr><td>Ligações de saída de 1 minuto ou mais por dia útil, meta 5. Ligação de 1 min+ para cliente parado há mais de 1 ano vale em dobro.</td><td class="pts">10</td></tr>
             <tr><td>Tempo de resposta: % dos clientes que esperaram 1 hora útil ou mais (até 2% = nota cheia; 12% ou mais = zero)</td><td class="pts">10</td></tr>
             <tr><td colspan="2"><b>Resultado (40 pontos)</b></td></tr>
             <tr><td>Vendas do período sobre o esperado até hoje: a meta do mês dividida pelos dias úteis (já descontados créditos e devoluções). Por isso o % aqui é maior que o % da meta do mês em Resultados por Vendedor no meio do mês.</td><td class="pts">25</td></tr>
@@ -1490,14 +1490,14 @@
             <tr><td>Clientes de distribuição que compraram, comparado com a média do próprio vendedor nos 3 meses anteriores</td><td class="pts">5</td></tr>
             <tr><td colspan="2"><b>Penalidades</b>: tiram pontos</td></tr>
             <tr><td>Perguntas de cliente sem resposta: 1 ponto por ponto percentual acima de 1%</td><td class="pts">até −3</td></tr>
-            <tr><td>Mensagens ativas para cadastro parado há mais de 1 ano (30% não tira; 70% ou mais tira tudo)</td><td class="pts">até −4</td></tr>
+            <tr><td>Disparo frio: mensagem ativa para cliente parado há mais de 1 ano sem ligação para ele 7 dias antes ou depois (30% das mensagens ativas não tira; 70% ou mais tira tudo)</td><td class="pts">até −4</td></tr>
             <tr><td>Cliente da HOJE que só recebeu mensagem, sem resposta e sem ligação: −0,5 cada</td><td class="pts">até −3</td></tr>
           </table>
         </div>
         <div class="rodape-nota">
           Nota = pontos ÷ máximo possível × 100. Item sem dado no período (por exemplo, a lista HOJE antes de 16/10) fica de fora e não conta contra ninguém.
           Hoje entra como a fração do dia útil que já passou; a lista de hoje conta na tentativa a partir das 11h e na conversa a partir das 17h.
-          O cálculo é refeito a cada 15 minutos. Equipe comercial: Lucas, Luciana, Luiz, Maurino e Rafael.
+          O cálculo é refeito a cada 10 minutos nos dias úteis, das 7h às 20h. Equipe comercial: Lucas, Luciana, Luiz, Maurino e Rafael.
         </div>
       </div>
 
@@ -6578,7 +6578,12 @@
         case "pts_tentou": return fmtInt(r.lista_tentados) + " de " + fmtInt(r.lista_clientes) + " clientes da HOJE tentados no dia";
         case "pts_conversa": return pct(r.lista_conv_media) + " da meta de conversas (6 de 10 por dia)";
         case "pts_contatos": return f1(n(r.contatos_efetivos) / dias) + " contatos efetivos por dia (meta 30)";
-        case "pts_ligacoes": return f1(n(r.ligacoes_1min) / dias) + " ligações de 1 min ou mais por dia (meta 5)";
+        case "pts_ligacoes": {
+          let t = f1(n(r.ligacoes_1min) / dias) + " ligações de 1 min ou mais por dia (meta 5)";
+          if (n(r.ligacoes_1min_reconquista) > 0)
+            t += " · " + qtd(r.ligacoes_1min_reconquista, "foi", "foram") + " para cliente parado há mais de 1 ano e " + (n(r.ligacoes_1min_reconquista) === 1 ? "valeu" : "valeram") + " em dobro";
+          return t;
+        }
         case "pts_resposta": return (n(r.esperas) ? Math.round(100 * n(r.esperas_1h) / n(r.esperas)) : 0) + "% dos clientes esperaram 1 h ou mais pela resposta";
         case "pts_meta": {
           // meta_periodo = meta do mês proporcional aos dias úteis do período (no período aberto, até hoje)
@@ -6598,8 +6603,11 @@
     }
 
     function itensBons(r) {
-      return COMP.filter((c) => r[c.k] != null && n(r[c.k]) >= 0.8 * c.max)
+      const out = COMP.filter((c) => r[c.k] != null && n(r[c.k]) >= 0.8 * c.max)
         .map((c) => "<b>" + c.nome + ":</b> " + esc(texto(c, r)));
+      if (n(r.ligacoes_1min_reconquista) > 0 && !(n(r.pts_ligacoes) >= 8))
+        out.push("<b>Reconquista por ligação:</b> " + qtd(r.ligacoes_1min_reconquista, "ligação", "ligações") + " de 1 min ou mais para cliente parado há mais de 1 ano");
+      return out;
     }
     function itensRuins(r) {
       const out = [];
@@ -6607,7 +6615,7 @@
         out.push("<b>Lista HOJE:</b> " + qtd(n(r.lista_clientes) - n(r.lista_tentados), "cliente", "clientes") + " sem nenhuma tentativa no dia");
       if (n(r.pen_so_msg) < 0) out.push("<b>Só mensagem:</b> " + qtd(r.lista_so_msg, "cliente", "clientes") + " da HOJE " + (n(r.lista_so_msg) === 1 ? "recebeu" : "receberam") + " mensagem sem resposta e ninguém ligou (" + f1(r.pen_so_msg) + ")");
       if (n(r.pen_sem_resposta) < 0) out.push("<b>Sem resposta:</b> " + qtd(r.sem_resposta, "pergunta", "perguntas") + " de cliente " + (n(r.sem_resposta) === 1 ? "ficou" : "ficaram") + " sem resposta (" + f1(r.pen_sem_resposta) + ")");
-      if (n(r.pen_mortos) < 0) out.push("<b>Disparo frio:</b> " + fmtInt(r.ativos_mortos) + " de " + fmtInt(r.ativos) + " mensagens ativas foram para cadastro parado há mais de 1 ano (" + f1(r.pen_mortos) + ")");
+      if (n(r.pen_mortos) < 0) out.push("<b>Disparo frio:</b> " + fmtInt(r.ativos_mortos) + " de " + fmtInt(r.ativos) + " mensagens ativas foram para cliente parado há mais de 1 ano sem ligar para ele; ligue primeiro, o contato pode ter mudado (" + f1(r.pen_mortos) + ")");
       COMP.filter((c) => c.k !== "pts_tentou" && r[c.k] != null && n(r[c.k]) < 0.5 * c.max)
         .forEach((c) => out.push("<b>" + c.nome + ":</b> " + esc(texto(c, r))));
       return out;
