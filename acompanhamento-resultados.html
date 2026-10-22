@@ -628,6 +628,13 @@
   tr.ld-det td { background: #f7faff; padding: 0 12px 12px; white-space: normal; }
   tr.ld-det .subtabela td, tr.ld-det .subtabela th { text-align: right; }
   .ld-fiz { max-width: 260px; white-space: normal !important; text-align: left !important; font-size: 0.78rem; }
+  td.ld-fiz { min-width: 230px; max-width: 300px; vertical-align: top; }
+  textarea.ld-nota { width: 100%; min-height: 44px; resize: vertical; font: inherit; font-size: 0.8rem; padding: 5px 7px; border: 1px solid var(--borda); border-radius: 7px; background: #fff; }
+  textarea.ld-nota:focus { outline: 2px solid #b9d0f5; border-color: var(--azul); }
+  .ld-nota-st { font-size: 0.7rem; color: var(--texto-suave); margin-top: 2px; }
+  .ld-nota-hist { font-size: 0.7rem; }
+  .ld-nota-ant { font-size: 0.72rem; color: #8a96a3; margin-top: 3px; font-style: italic; }
+  .hist-tag.nota { background: #fff4d6; color: #8a5a00; }
   .ld-sec { font-size: 0.95rem; color: var(--azul-escuro); margin: 20px 0 4px; }
   .ld-sub { font-size: 0.78rem; color: var(--texto-suave); margin: 0 0 10px; }
   #view-lista .pct-pill { min-width: 48px; }
@@ -1423,7 +1430,7 @@
                   <th title="Ligação do vendedor com 1 minuto ou mais (até 7 dias)">Lig. 1 min+</th>
                   <th title="Tentados em até 7 dias a partir da lista">Tentados em 7 dias</th>
                   <th title="Conversa com o próprio vendedor em até 7 dias">Conversa em 7 dias</th>
-                  <th title="Escreveu na coluna O que fiz da planilha">O que fiz</th>
+                  <th title="Clientes com anotação no O que fiz (no painel desde 22/10; antes, a coluna da planilha)">O que fiz</th>
                   <th>Compraram em 30 dias</th>
                   <th>Valor 30 dias</th>
                 </tr>
@@ -1489,6 +1496,7 @@
           <b>Tentativa</b> = mensagem ativa ou ligação de saída do dono do cliente; no cliente de <b>reconquista</b> (parado há muito tempo, sem vendedor) só a ligação conta, porque o contato pode ter mudado. <b>Conversa</b> = o cliente chamou, respondeu a mensagem ou atendeu a ligação.
           Mensagem que ninguém respondeu não conta como conversa. Protocolo com a tag de cobrança fica de fora. Compra = pedido faturado em até 30 dias depois da lista.
           No órfão, conta para quem marcou "Puxei" ou, se ninguém marcou, para quem fez o primeiro contato.
+          <b>O que fiz</b>: clique no vendedor e anote, cliente por cliente, o que foi feito no dia. O campo começa em branco a cada lista nova e salva sozinho ao sair dele. A anotação anterior aparece embaixo, em cinza, e todas ficam no <b>histórico</b> do cliente, junto com as conversas e ligações. Dá para anotar nas listas dos últimos 3 dias.
         </div>
       </div>
 
@@ -4369,9 +4377,13 @@
     async function carregar() {
       const alvo = atual;
       try {
-        const d = await rpc("historico_cliente", { p_codcliente: alvo.cod, p_limite: alvo.limite, p_grupo: alvo.grupo });
+        const [d, ns] = await Promise.all([
+          rpc("historico_cliente", { p_codcliente: alvo.cod, p_limite: alvo.limite, p_grupo: alvo.grupo }),
+          rpc("painel_lista_notas_cliente", { p_codcliente: alvo.cod }).catch(() => [])   // "O que fiz" da Lista do Dia
+        ]);
         if (atual !== alvo) return;
         alvo.dados = d;
+        alvo.notas = ns || [];
         if (alvo.abertos.size === 0 && d.atendimentos && d.atendimentos[0]) alvo.abertos.add(d.atendimentos[0].protocolo_numero);
         render();
       } catch (e) {
@@ -4454,9 +4466,19 @@
       const noFiltro = (cod) => atual.filtro == null || Number(cod) === atual.filtro;
       const itens = at.filter((a) => noFiltro(a.codcliente)).map((a) => ({ tipo: "at", em: a.aberto_em, a }))
         .concat(lg.filter((l) => noFiltro(l.codcliente)).map((l) => ({ tipo: "lig", em: l.iniciada_em, l })))
-        .sort((x, y) => String(y.em).localeCompare(String(x.em)));
+        .concat((atual.notas || []).map((nt) => ({ tipo: "nota", em: nt.atualizado_em || new Date(nt.data_lista + "T20:00:00-03:00").toISOString(), nt })))
+        .sort((x, y) => new Date(y.em) - new Date(x.em));
 
       const linhas = itens.map((it) => {
+        if (it.tipo === "nota") {
+          const nt = it.nt;
+          return '<div class="hist-linha"><div class="hist-cab" style="cursor:default;flex-wrap:wrap">' +
+            '<span class="data">' + (nt.atualizado_em ? dataHoraBR(nt.atualizado_em) : esc(String(nt.data_lista).split("-").reverse().join("/"))) + "</span>" +
+            '<span class="hist-tag nota">O que fiz' + (nt.origem === "planilha" ? " (planilha)" : "") + "</span>" +
+            '<span class="quem">' + esc(primeiroNome(nt.vendedor) || "—") + (nt.email ? ' <small class="cod-cliente">' + esc(String(nt.email).split("@")[0]) + "</small>" : "") + "</span>" +
+            '<span class="extra" style="white-space:normal;flex-basis:100%;color:var(--texto)">' + esc(nt.texto || "") + "</span>" +
+          "</div></div>";
+        }
         if (it.tipo === "lig") {
           const l = it.l;
           const dur = Number(l.duracao_seg || 0);
@@ -6876,6 +6898,20 @@
     const n = (v) => Number(v || 0);
     let datas = [], dataSel = null, carregando = false, carregadoEm = null, ligado = false, erro = null;
     let vend = [], orf = [], esforco = [], hist = [], clientes = null, clientesErro = null, aberto = null;
+    // "O que fiz" no painel (desde 22/10/2026): anotação do dia por cliente, começa em branco
+    let notas = new Map();          // "codvend|codcliente" -> linha de painel_lista_anotacoes
+    const rascunhos = new Map();    // texto digitado e ainda não salvo
+    const INICIO_NOTAS = "2026-10-22";
+    const chaveNota = (codvend, cod) => Number(codvend) + "|" + Number(cod);
+    function podeAnotar() {
+      if (!dataSel) return false;
+      const lim = new Date(hojeSP() + "T12:00:00"); lim.setDate(lim.getDate() - 3);
+      return dataSel <= hojeSP() && dataSel >= lim.toISOString().slice(0, 10);
+    }
+    function editando() {
+      const a = document.activeElement;
+      return (a && a.classList && a.classList.contains("ld-nota")) || rascunhos.size > 0;
+    }
 
     async function rpc(nome, corpo) {
       sessao = await garantirSessaoValida();
@@ -6919,12 +6955,15 @@
           const idx = datas.indexOf(dataSel);
           const janela = datas.slice(idx, idx + 15);           // até 15 listas, terminando na escolhida
           const histIni = janela[janela.length - 1];
-          [vend, orf, esforco, hist] = await Promise.all([
+          let ns;
+          [vend, orf, esforco, hist, ns] = await Promise.all([
             rpc("painel_lista_vendedor", { p_ini: dataSel, p_fim: dataSel, p_lista: "HOJE" }),
             rpc("painel_lista_vendedor", { p_ini: dataSel, p_fim: dataSel, p_lista: "ORFAOS" }),
             rpc("painel_lista_esforco", { p_ini: dataSel, p_fim: dataSel }),
-            rpc("painel_lista_vendedor", { p_ini: histIni, p_fim: dataSel, p_lista: "HOJE" })
+            rpc("painel_lista_vendedor", { p_ini: histIni, p_fim: dataSel, p_lista: "HOJE" }),
+            dataSel >= INICIO_NOTAS ? rpc("painel_lista_anotacoes", { p_data: dataSel }).catch(() => []) : Promise.resolve([])
           ]);
+          notas = new Map((ns || []).map((x) => [chaveNota(x.codvend, x.codcliente), x]));
         }
         clientes = null; clientesErro = null;
         carregadoEm = new Date();
@@ -6947,6 +6986,13 @@
     }
 
     function soma(linhas, campo) { return linhas.reduce((s, l) => s + n(l[campo]), 0); }
+    // a partir de 22/10 conta as anotações feitas no painel; antes, a coluna "O que fiz" da planilha
+    function anotacoesDo(v) {
+      if (dataSel < INICIO_NOTAS) return n(v.com_anotacao);
+      let q = 0;
+      notas.forEach((x) => { if (Number(x.codvend) === Number(v.codvend) && x.texto) q++; });
+      return q;
+    }
 
     function render() {
       if (!ligado) return;
@@ -6992,13 +7038,13 @@
             "<td>" + fmtInt(v.com_ligacao_1min_do_dono) + "</td>" +
             "<td>" + fmtInt(v.tentados_7d) + "</td>" +
             "<td>" + fmtInt(v.contatados_pelo_dono) + "</td>" +
-            "<td>" + fmtInt(v.com_anotacao) + "</td>" +
+            "<td>" + fmtInt(anotacoesDo(v)) + "</td>" +
             "<td>" + fmtInt(v.compraram_30d) + "</td>" +
             "<td>" + fmtMoeda(v.valor_30d) + "</td></tr>";
         }).join("") +
           '<tr class="total"><td>Equipe</td><td>' + fmtInt(tot) + "</td><td>" + fmtInt(soma(vend, "tentados_no_dia")) + "</td><td>" + fmtInt(soma(vend, "contatados_no_dia")) +
           "</td><td>" + fmtInt(soma(vend, "so_mensagem_sem_resposta")) + "</td><td>" + fmtInt(soma(vend, "com_ligacao")) + "</td><td>" + fmtInt(soma(vend, "com_ligacao_1min_do_dono")) +
-          "</td><td>" + fmtInt(soma(vend, "tentados_7d")) + "</td><td>" + fmtInt(soma(vend, "contatados_pelo_dono")) + "</td><td>" + fmtInt(soma(vend, "com_anotacao")) +
+          "</td><td>" + fmtInt(soma(vend, "tentados_7d")) + "</td><td>" + fmtInt(soma(vend, "contatados_pelo_dono")) + "</td><td>" + fmtInt(vend.reduce((s, v) => s + anotacoesDo(v), 0)) +
           "</td><td>" + fmtInt(soma(vend, "compraram_30d")) + "</td><td>" + fmtMoeda(soma(vend, "valor_30d")) + "</td></tr>";
       }
 
@@ -7078,7 +7124,9 @@
       if (!clientes) return '<div class="estado-vazio">Carregando clientes…</div>';
       const lista = clientes.filter((c) => c.vendedor === pessoa).sort((a, b) => n(a.posicao) - n(b.posicao));
       if (!lista.length) return '<div class="estado-vazio">Sem clientes.</div>';
-      return '<table class="subtabela"><thead><tr><th>#</th><th style="text-align:left">Cliente</th><th>Situação</th><th>Dias sem comprar</th><th>Lucro 12m</th>' +
+      const verLucro = !!(meuAcesso && meuAcesso.admin);
+      const editavel = podeAnotar();
+      return '<table class="subtabela"><thead><tr><th>#</th><th style="text-align:left">Cliente</th><th>Situação</th><th>Dias sem comprar</th>' + (verLucro ? "<th>Lucro 12m</th>" : "") +
         '<th>Vezes na lista (30 dias)</th><th>1ª tentativa</th><th>Mensagens (respondidas)</th><th>Ligações (1 min+)</th><th>Última resposta do cliente</th><th style="text-align:left">O que fiz</th><th>Comprou em 30 dias</th></tr></thead><tbody>' +
         lista.map((c) => {
           const tent = c.primeira_tentativa ? (diaSP(c.primeira_tentativa) === c.data_lista ? horaSP(c.primeira_tentativa) : dataHoraSP(c.primeira_tentativa)) : "—";
@@ -7088,15 +7136,64 @@
               ((c.acao || c.motivo) ? '<div class="cod-cliente" style="font-weight:400">' + esc([c.acao, c.motivo].filter(Boolean).join(" · ")) + "</div>" : "") + "</td>" +
             "<td>" + situacao(c) + "</td>" +
             "<td>" + fmtInt(c.dias_sem_comprar) + "</td>" +
-            "<td>" + (c.lucro_12m == null ? "—" : fmtMoeda(c.lucro_12m)) + "</td>" +
+            (verLucro ? "<td>" + (c.lucro_12m == null ? "—" : fmtMoeda(c.lucro_12m)) + "</td>" : "") +
             "<td>" + (vezes >= 5 ? '<span class="ld-chip ld-ruim">' + vezes + "</span>" : fmtInt(vezes)) + "</td>" +
             "<td>" + esc(tent) + "</td>" +
             "<td>" + fmtInt(c.ativos) + " (" + fmtInt(c.ativos_com_resposta) + ")</td>" +
             "<td>" + fmtInt(c.ligacoes) + " (" + fmtInt(c.ligacoes_1min) + ")</td>" +
             "<td>" + esc(dataHoraSP(c.ultima_resposta_cliente)) + "</td>" +
-            '<td class="ld-fiz">' + (c.o_que_fiz ? esc(c.o_que_fiz) : '<span style="color:var(--texto-suave)">—</span>') + "</td>" +
+            celulaNota(c, editavel) +
             "<td>" + (c.comprou_30d ? fmtMoeda(c.valor_30d) : "—") + "</td></tr>";
         }).join("") + "</tbody></table>";
+    }
+
+    function resumoNota(t, max) { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > max ? t.slice(0, max - 1) + "…" : t; }
+    function quemNota(x) { return x && x.email ? String(x.email).split("@")[0] : ""; }
+
+    // "O que fiz": campo do dia (em branco a cada lista nova) + a anotação anterior, em cinza
+    function celulaNota(c, editavel) {
+      const k = chaveNota(c.codvend, c.codcliente);
+      const x = notas.get(k);
+      const usaPainel = dataSel >= INICIO_NOTAS;
+      const anterior = x && x.anterior_texto
+        ? '<div class="ld-nota-ant" title="' + esc(x.anterior_texto) + '">Anterior (' + esc(dataCurta(x.anterior_data)) + "): " + esc(resumoNota(x.anterior_texto, 110)) + "</div>" : "";
+      const hist = '<span class="link-hist ld-nota-hist" ' + HistCliente.marcador(c.codcliente, c.cliente, true) + ">histórico</span>";
+      if (editavel && usaPainel) {
+        const valor = rascunhos.has(k) ? rascunhos.get(k) : (x && x.texto) || "";
+        const st = x && x.texto ? "salvo " + dataHoraSP(x.atualizado_em) + (quemNota(x) ? " · " + esc(quemNota(x)) : "") : "";
+        return '<td class="ld-fiz"><textarea class="ld-nota" rows="2" maxlength="2000" data-cod="' + Number(c.codcliente) + '" data-vend="' + Number(c.codvend) +
+          '" placeholder="O que você fez hoje com este cliente?">' + esc(valor) + '</textarea><div class="ld-nota-st">' + st + " " + hist + "</div>" + anterior + "</td>";
+      }
+      const texto = usaPainel ? (x && x.texto) : c.o_que_fiz;
+      return '<td class="ld-fiz">' + (texto ? esc(texto) : '<span style="color:var(--texto-suave)">—</span>') +
+        (usaPainel && x && x.texto ? '<div class="ld-nota-st">' + esc(dataHoraSP(x.atualizado_em)) + (quemNota(x) ? " · " + esc(quemNota(x)) : "") + "</div>" : "") +
+        (usaPainel ? anterior : "") + "</td>";
+    }
+
+    async function salvarNota(ta) {
+      const cod = Number(ta.dataset.cod), cv = Number(ta.dataset.vend), k = chaveNota(cv, cod);
+      const texto = ta.value;
+      const atual = (notas.get(k) && notas.get(k).texto) || "";
+      if (texto.trim() === atual.trim()) { rascunhos.delete(k); return; }
+      const st = ta.parentElement.querySelector(".ld-nota-st");
+      if (st) st.firstChild ? (st.firstChild.textContent = "salvando… ") : (st.textContent = "salvando…");
+      try {
+        const r = await rpc("painel_lista_anotar", { p_data: dataSel, p_codcliente: cod, p_codvend: cv, p_texto: texto });
+        const x = notas.get(k) || { codcliente: cod, codvend: cv };
+        if (r && r.apagada) { x.texto = null; x.atualizado_em = null; x.email = null; }
+        else { x.texto = r.texto; x.atualizado_em = r.atualizado_em; x.email = r.email; }
+        notas.set(k, x);
+        rascunhos.delete(k);
+        if (st) st.innerHTML = (x.texto ? "salvo " + esc(dataHoraSP(x.atualizado_em)) + (quemNota(x) ? " · " + esc(quemNota(x)) : "") : "apagado") +
+          ' <span class="link-hist ld-nota-hist" ' + HistCliente.marcador(cod, "", true) + ">histórico</span>";
+        const linhaVend = [...el("corpo-lista-vend").querySelectorAll("tr.ld-vend")].find((t) => t.dataset.ldVend === aberto);
+        const v = vend.find((z) => z.pessoa === aberto);
+        if (linhaVend && v) linhaVend.children[9].textContent = fmtInt(anotacoesDo(v));
+        const linhaTotal = el("corpo-lista-vend").querySelector("tr.total");
+        if (linhaTotal) linhaTotal.children[9].textContent = fmtInt(vend.reduce((s2, z) => s2 + anotacoesDo(z), 0));
+      } catch (e) {
+        if (st) st.innerHTML = '<span style="color:var(--erro)">não salvou: ' + esc(e.message || String(e)) + "</span>";
+      }
     }
 
     async function abrirVendedor(pessoa, manter) {
@@ -7121,15 +7218,28 @@
     function ligar() {
       if (ligado) return;
       ligado = true;
-      el("lista-data").addEventListener("change", (ev) => { dataSel = ev.target.value || null; aberto = null; carregar(); });
+      el("lista-data").addEventListener("change", (ev) => { dataSel = ev.target.value || null; aberto = null; rascunhos.clear(); carregar(); });
       el("lista-atualizar").addEventListener("click", () => carregar());
+      const corpoVend = el("corpo-lista-vend");
+      corpoVend.addEventListener("input", (ev) => {
+        const ta = ev.target.closest("textarea.ld-nota");
+        if (ta) rascunhos.set(chaveNota(ta.dataset.vend, ta.dataset.cod), ta.value);
+      });
+      corpoVend.addEventListener("focusout", (ev) => {
+        const ta = ev.target.closest("textarea.ld-nota");
+        if (ta) salvarNota(ta);
+      });
+      corpoVend.addEventListener("keydown", (ev) => {
+        const ta = ev.target.closest("textarea.ld-nota");
+        if (ta && ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); ta.blur(); }
+      });
       el("corpo-lista-vend").addEventListener("click", (ev) => {
-        if (ev.target.closest("[data-hist-cod]")) return;
+        if (ev.target.closest("[data-hist-cod]") || ev.target.closest("textarea.ld-nota") || ev.target.closest(".ld-det")) return;
         const tr = ev.target.closest("tr.ld-vend");
         if (tr) abrirVendedor(tr.dataset.ldVend);
       });
       // com a lista de hoje aberta, atualiza sozinho a cada 5 minutos
-      setInterval(() => { if (abaAtual === "lista" && ehHoje() && !document.hidden) carregar(); }, 5 * 60 * 1000);
+      setInterval(() => { if (abaAtual === "lista" && ehHoje() && !document.hidden && !editando()) carregar(); }, 5 * 60 * 1000);
     }
 
     function iniciar() {
