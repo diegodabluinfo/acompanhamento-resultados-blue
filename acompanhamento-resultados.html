@@ -838,6 +838,8 @@
   #view-orcamento .orc-meta { font-size: 0.76rem; color: var(--texto-suave); }
   #view-orcamento .orc-tag-promo { display: inline-block; font-size: 0.7rem; font-weight: 700; background: var(--amarelo-fundo); color: var(--amarelo); padding: 2px 8px; border-radius: 12px; margin-left: 6px; }
   #view-orcamento .orc-tag-foto { display: inline-block; font-size: 0.7rem; background: #e8f5ed; color: #126440; padding: 2px 8px; border-radius: 12px; margin-left: 6px; }
+  #view-orcamento .orc-tag-fonte { display: inline-block; font-size: 0.7rem; font-weight: 700; background: #dbeaf9; color: #06478a; padding: 2px 8px; border-radius: 12px; margin-left: 6px; }
+  #view-orcamento #orc-produtos > .orc-alerta { margin: 4px 0 10px; }
   #view-orcamento .orc-pick { text-align: right; }
   #view-orcamento .orc-pick .orc-btn { margin-top: 6px; }
   #view-orcamento .orc-preco { font-weight: 800; color: #114e80; font-size: 1.02rem; white-space: nowrap; }
@@ -7103,7 +7105,8 @@
   // Fotos: window.FOTOS_PRODUTOS (bloco separado no topo do script), ligadas pelo código do produto.
   const Orcamento = (() => {
     const el = (id) => document.getElementById(id);
-    const CATS = ["Processador", "Placa-mãe", "Memória", "HD / SSD", "Placa de vídeo", "Cooler CPU / Water Cooler", "Cooler FAN", "Fonte", "Gabinete"];
+    // gabinete vem antes da fonte: gabinete com fonte dispensa a fonte avulsa
+    const CATS = ["Processador", "Placa-mãe", "Memória", "HD / SSD", "Placa de vídeo", "Cooler CPU / Water Cooler", "Cooler FAN", "Gabinete", "Fonte"];
     const MULTI = new Set(["Memória", "HD / SSD", "Cooler FAN"]);
     const NEXT_CATS = new Set(["Memória", "HD / SSD", "Placa de vídeo", "Cooler FAN"]);
     const CAT_COM_FOTO = "Gabinete";
@@ -7134,6 +7137,13 @@
     function sock(d) { const m = d.match(/\b(1150|1151|1155|1156|1200|1700|1851|AM4|AM5)\b/i); return m ? m[1].toUpperCase() : null; }
     function ram(d) { const m = d.match(/\bDDR[345]\b/i); return m ? m[0].toUpperCase() : null; }
     function doCarrinho(cat) { const i = carrinho.find((x) => byId(x.id).c === cat); return i ? byId(i.id) : null; }
+    // "C/FONTE", "C/ FONTE", "COM FONTE" ou a potência na descrição (ex.: 650W); "S/ FONTE" e o resto vêm sem fonte
+    function gabineteComFonte(d) {
+      d = String(d || "").toUpperCase();
+      if (/\bS\/ ?FONTE\b|\bSEM FONTE\b/.test(d)) return false;
+      return /\bC\/ ?FONTE\b|\bCOM FONTE\b|\b\d{3,4}W\b/.test(d);
+    }
+    function gabineteComFonteNoCarrinho() { const g = doCarrinho("Gabinete"); return g && gabineteComFonte(g.d) ? g : null; }
     function compativel(p) {
       const cpu = doCarrinho("Processador"), mb = doCarrinho("Placa-mãe");
       if (p.c === "Placa-mãe" && cpu) { const a = sock(cpu.d), b = sock(p.d); if (a && b && a !== b) return false; }
@@ -7274,7 +7284,11 @@
       }
       invalidarRateio();
       const pos = CATS.indexOf(ativa);
-      if (pos < CATS.length - 1 && !MULTI.has(p.c)) mudarCategoria(CATS[pos + 1]);
+      if (p.c === "Gabinete" && gabineteComFonte(p.d)) {
+        // o gabinete já traz fonte: não avança para Fonte e oferece tirar a fonte avulsa que já estiver no orçamento
+        const fonte = doCarrinho("Fonte");
+        if (fonte && confirm("Este gabinete já vem com fonte. Retirar do orçamento a fonte " + fonte.d + "?")) carrinho = carrinho.filter((i) => i.id !== fonte.id);
+      } else if (pos < CATS.length - 1 && !MULTI.has(p.c)) mudarCategoria(CATS[pos + 1]);
       render();
     }
     function mudarQtd(id, q) {
@@ -7330,16 +7344,19 @@
       el("orc-contagem").textContent = subset.length + " produtos disponíveis · descrição integral";
       el("orc-proximo").hidden = !NEXT_CATS.has(ativa) || CATS.indexOf(ativa) >= CATS.length - 1;
       const comFoto = ativa === CAT_COM_FOTO;
-      el("orc-produtos").innerHTML = subset.length ? subset.map((p) =>
+      const gabFonte = ativa === "Fonte" ? gabineteComFonteNoCarrinho() : null;
+      el("orc-produtos").innerHTML = (gabFonte ? '<div class="orc-alerta">O gabinete escolhido (' + esc(gabFonte.d) + ") já vem com fonte. Só adicione outra fonte se o cliente pedir.</div>" : "") +
+        (subset.length ? subset.map((p) =>
         '<div class="orc-item' + (comFoto ? " clicavel" : "") + (p.id === previewId ? " selecionado" : "") + '" data-item="' + esc(p.id) + '">' +
           "<div><h3>" + esc(p.d) + "</h3>" +
           '<div class="orc-meta">CÓD. ' + esc(p.cod) + " · Estoque: <strong>" + p.s + "</strong>" +
             (p.promo && tabela !== 2 ? '<span class="orc-tag-promo">Promoção até ' + dataCurta(p.promo) + "</span>" : "") +
             (comFoto && fotoDe(p) ? '<span class="orc-tag-foto">foto</span>' : "") +
+            (p.c === "Gabinete" && gabineteComFonte(p.d) ? '<span class="orc-tag-fonte">com fonte</span>' : "") +
           "</div></div>" +
           '<div class="orc-pick"><div class="orc-preco">' + money(price(p)) + '</div><button type="button" class="orc-btn" data-add="' + esc(p.id) + '">Adicionar</button></div>' +
         "</div>").join("")
-        : '<div class="orc-vazio">' + (carregando ? "Carregando…" : erro ? "Estoque não carregado. Use o botão Atualizar estoque." : "Nenhum item disponível para este filtro.") + "</div>";
+        : '<div class="orc-vazio">' + (carregando ? "Carregando…" : erro ? "Estoque não carregado. Use o botão Atualizar estoque." : "Nenhum item disponível para este filtro.") + "</div>");
     }
 
     function renderCarrinho() {
@@ -7372,6 +7389,7 @@
       const avisos = [];
       const cpu = doCarrinho("Processador"), mb = doCarrinho("Placa-mãe");
       if (cpu && mb && sock(cpu.d) !== sock(mb.d)) avisos.push("Processador e placa-mãe podem ter sockets incompatíveis.");
+      if (gabineteComFonteNoCarrinho() && doCarrinho("Fonte")) avisos.push("O orçamento tem uma fonte avulsa e um gabinete que já vem com fonte.");
       if (mb) {
         const board = ram(mb.d);
         for (const x of carrinho.filter((i) => byId(i.id).c === "Memória")) if (board && ram(byId(x.id).d) !== board) avisos.push("Memória incompatível com padrão DDR da placa-mãe.");
