@@ -820,7 +820,13 @@
 
   #view-orcamento #orc-categorias button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; background: transparent; color: #1c364c; border-radius: 8px; font-size: 0.82rem; font-weight: 600; margin: 2px 0; }
   #view-orcamento #orc-categorias button.ativa { background: #dbeaf9; color: #06478a; }
-  #view-orcamento #orc-categorias button span { float: right; color: var(--texto-suave); }
+  #view-orcamento #orc-categorias .orc-cat-qtd { float: right; color: var(--texto-suave); }
+  #view-orcamento #orc-categorias .orc-cat-check { display: inline-block; width: 1.1em; color: var(--verde); font-weight: 800; }
+  /* categoria que já tem peça no orçamento: riscada e apagada, mas continua clicável para trocar */
+  #view-orcamento #orc-categorias button.feita { color: #8a98a8; }
+  #view-orcamento #orc-categorias button.feita .orc-cat-nome { text-decoration: line-through; }
+  #view-orcamento #orc-categorias button.feita.ativa { background: #eef3f8; }
+  #view-orcamento #orc-categorias .orc-cat-obs { display: block; margin-left: 1.1em; font-size: 0.7rem; font-weight: 600; color: var(--verde); text-decoration: none; }
 
   #view-orcamento .orc-preview { margin-top: 14px; border-top: 1px solid var(--borda); padding-top: 14px; font-size: 0.8rem; }
   #view-orcamento .orc-preview-foto { display: flex; align-items: center; justify-content: center; background: #f6f8fb; border-radius: 10px; aspect-ratio: 1 / 1; overflow: hidden; margin-bottom: 10px; }
@@ -887,7 +893,7 @@
     #view-orcamento .orc-grid { grid-template-columns: 1fr; }
     #view-orcamento #orc-categorias { display: flex; overflow-x: auto; gap: 5px; }
     #view-orcamento #orc-categorias button { white-space: nowrap; width: auto; flex-shrink: 0; }
-    #view-orcamento #orc-categorias button span { display: none; }
+    #view-orcamento #orc-categorias .orc-cat-qtd, #view-orcamento #orc-categorias .orc-cat-obs { display: none; }
     #view-orcamento .orc-preview-foto { max-width: 260px; margin: 0 auto 10px; }
     #view-orcamento .orc-item { grid-template-columns: 1fr; }
     #view-orcamento .orc-item.com-mini { grid-template-columns: 56px minmax(0, 1fr); }
@@ -1686,6 +1692,7 @@
         <div class="painel-controles orc-noprint">
           <span id="orc-status" class="cod-cliente">Estoque e preços direto do ERP</span>
           <button type="button" id="orc-atualizar" class="btn-2via">Atualizar estoque</button>
+          <button type="button" id="orc-novo" class="btn-2via">Começar do zero</button>
           <span id="freshness-orcamento" class="freshness"></span>
         </div>
 
@@ -1763,7 +1770,7 @@
               <button type="button" class="orc-btn" id="orc-imprimir">Imprimir orçamento</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-copiar">Copiar orçamento em texto</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-csv">Exportar CSV</button>
-              <button type="button" class="orc-btn orc-btn-claro" id="orc-limpar">Limpar</button>
+              <button type="button" class="orc-btn orc-btn-claro" id="orc-limpar">Começar do zero</button>
             </div>
             <div class="orc-alerta orc-noprint" id="orc-alertas">Compatibilidade: verificações preliminares de socket e DDR. Confirmar BIOS, TDP, cabos, dimensões e especificações antes de fechar a venda.</div>
           </aside>
@@ -7373,10 +7380,18 @@
       el("freshness-orcamento").textContent = "Carregado às " + carregadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + " · o ERP é copiado a cada 15 min";
     }
 
+    // categoria com peça no orçamento sai riscada com ✓; a Fonte também, quando o gabinete já traz fonte
     function renderCategorias() {
-      el("orc-categorias").innerHTML = CATS.map((c) =>
-        '<button type="button" class="' + (c === ativa ? "ativa" : "") + '" data-cat="' + esc(c) + '">' + esc(c) +
-        "<span>" + dados.filter((p) => p.c === c).length + "</span></button>").join("");
+      const fonteNoGabinete = !doCarrinho("Fonte") && gabineteComFonteNoCarrinho();
+      el("orc-categorias").innerHTML = CATS.map((c) => {
+        const feita = !!doCarrinho(c) || (c === "Fonte" && fonteNoGabinete);
+        return '<button type="button" class="' + (c === ativa ? "ativa" : "") + (feita ? " feita" : "") + '" data-cat="' + esc(c) + '"' +
+          (feita ? ' title="Já escolhido. Clique para trocar."' : "") + ">" +
+          '<span class="orc-cat-qtd">' + dados.filter((p) => p.c === c).length + "</span>" +
+          '<span class="orc-cat-check">' + (feita ? "✓" : "") + "</span>" +
+          '<span class="orc-cat-nome">' + esc(c) + "</span>" +
+          (c === "Fonte" && fonteNoGabinete ? '<span class="orc-cat-obs">no gabinete</span>' : "") + "</button>";
+      }).join("");
     }
 
     function renderPreview() {
@@ -7603,12 +7618,19 @@
       el("orc-copiar").addEventListener("click", copiar);
       el("orc-csv").addEventListener("click", exportarCsv);
       el("orc-imprimir").addEventListener("click", () => window.print());
-      el("orc-limpar").addEventListener("click", () => {
-        if (!confirm("Limpar toda a configuração?")) return;
+      // orçamento novo: tira peças, dados do cliente e ajuste de total; a tabela de preços escolhida fica
+      const comecarDoZero = () => {
+        if (!confirm("Começar um orçamento novo? O atual será apagado.")) return;
         carrinho = [];
+        ["orc-cnpj", "orc-razao", "orc-codcli"].forEach((id) => { el(id).value = ""; });
         mudarCategoria("Processador");
         invalidarRateio();
         render();
+        el("view-orcamento").scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      el("orc-novo").addEventListener("click", comecarDoZero);
+      el("orc-limpar").addEventListener("click", () => {
+        comecarDoZero();
       });
       // Ctrl+P na aba também sai como orçamento, não como o painel inteiro
       window.addEventListener("beforeprint", () => { if (abaAtual === "orcamento") document.body.classList.add("imprimindo-orcamento"); });
