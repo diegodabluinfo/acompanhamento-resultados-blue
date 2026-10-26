@@ -1738,7 +1738,7 @@
                 <div><small>Margem bruta</small><b id="orc-margem">0,00%</b></div>
                 <div><small>Markup sobre custo</small><b id="orc-markup">0,00%</b></div>
               </div>
-              <div class="orc-muted">Indicadores brutos: não descontam tributos, frete ou despesas operacionais. Só o administrador vê este quadro.</div>
+              <div class="orc-muted">Indicadores brutos: não descontam tributos, frete ou despesas operacionais. Uso interno: não sai na impressão nem no texto do orçamento.</div>
             </div>
 
             <div class="orc-controles orc-noprint">
@@ -7101,7 +7101,7 @@
   // ===== Aba Montar Orçamento (Montador de PC Blue) =====
   // Estoque e preços vêm do ERP pela função orcamento_produtos (cópia a cada 15 min).
   // As peças são classificadas pela descrição, com a mesma regra do Montador de PC Blue.
-  // Custo e lucratividade só aparecem para administrador: a função não manda custo para os demais.
+  // Custo e lucratividade aparecem para todos com acesso à aba, mas nunca na impressão, no texto ou no CSV.
   // Fotos: window.FOTOS_PRODUTOS (bloco separado no topo do script), ligadas pelo código do produto.
   const Orcamento = (() => {
     const el = (id) => document.getElementById(id);
@@ -7372,8 +7372,8 @@
       el("orc-total").textContent = money(totalCents / 100);
       el("orc-total-manual").value = ajustado ? (totalCents / 100).toFixed(2).replace(".", ",") : "";
 
-      // lucratividade: só para administrador (para os demais a função não manda custo)
-      const mostraLucro = meuAcesso.admin && dados.some((p) => p.cost != null);
+      // lucratividade: aparece quando a função manda o custo
+      const mostraLucro = dados.some((p) => p.cost != null);
       el("orc-lucro").classList.toggle("oculto", !mostraLucro);
       if (mostraLucro) {
         const cost = carrinho.reduce((s, i) => s + Number(byId(i.id).cost || 0) * i.qty, 0);
