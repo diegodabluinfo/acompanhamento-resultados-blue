@@ -1780,7 +1780,7 @@
 
         <div class="rodape-nota orc-noprint">
           Estoque e preços vêm do ERP, copiados para o painel a cada 15 minutos (das 05:10 às 22:00). Preços de revenda já com a promoção vigente.
-          Fotos dos gabinetes: site da Blue Distribuidora, ligadas pelo código do produto.
+          Fotos: site da Blue Distribuidora, copiadas para o Supabase pelo sincronizador de fotos e ligadas pelo código do produto.
         </div>
       </div>
 
@@ -7129,14 +7129,17 @@
   // Estoque e preços vêm do ERP pela função orcamento_produtos (cópia a cada 15 min).
   // As peças são classificadas pela descrição, com a mesma regra do Montador de PC Blue.
   // Custo e lucratividade aparecem para todos com acesso à aba, mas nunca na impressão, no texto ou no CSV.
-  // Fotos: window.FOTOS_PRODUTOS (bloco separado no topo do script), ligadas pelo código do produto.
+  // Fotos: bucket produtos-fotos do Supabase (sincronizar_fotos.py, no PC dos sincronizadores), pelo código do
+  // produto; window.FOTOS_PRODUTOS (bloco no topo do script) só fica de reserva para os gabinetes.
   const Orcamento = (() => {
     const el = (id) => document.getElementById(id);
     // gabinete vem antes da fonte: gabinete com fonte dispensa a fonte avulsa
     const CATS = ["Processador", "Placa-mãe", "Memória", "HD / SSD", "Placa de vídeo", "Cooler CPU / Water Cooler", "Cooler FAN", "Gabinete", "Fonte"];
     const MULTI = new Set(["Memória", "HD / SSD", "Cooler FAN"]);
     const NEXT_CATS = new Set(["Memória", "HD / SSD", "Placa de vídeo", "Cooler FAN"]);
-    const CAT_COM_FOTO = "Gabinete";
+    // fotos no bucket produtos-fotos (sincronizador sincronizar_fotos.py): fotos/<cod>.jpg, mini/<cod>.jpg e indice.json
+    const FOTOS_BASE = SUPABASE_URL + "/storage/v1/object/public/produtos-fotos/";
+    let indiceFotos = null;    // codigo -> versão; null enquanto o índice não carregou
     let dados = [], carregando = false, ligado = false, carregadoEm = null, erro = null;
     let ativa = "Processador", carrinho = [], tabela = 0, termo = "", ordem = "asc", ajustado = null, previewId = null;
 
@@ -7180,12 +7183,24 @@
     }
 
     // --- fotos (catálogo separado do estoque) ---
+    // {f: [fotos grandes], mini: miniatura, u: página no site (só no catálogo embutido)} ou null.
+    // Primeiro o bucket; o catálogo embutido dos gabinetes fica de reserva até a 1ª carga do sincronizador.
     function fotoDe(p) {
-      const cat = window.FOTOS_PRODUTOS || {};
-      return p.grupo === "001" ? cat[p.cod] || null : null;
+      if (p.grupo !== "001") return null;
+      const v = indiceFotos && indiceFotos[p.cod];
+      if (v) return { f: [FOTOS_BASE + "fotos/" + p.cod + ".jpg?v=" + v], mini: FOTOS_BASE + "mini/" + p.cod + ".jpg?v=" + v, u: null };
+      const e = (window.FOTOS_PRODUTOS || {})[p.cod];
+      return e ? { f: e.f, mini: miniatura(e.f[0]), u: e.u } : null;
     }
     // o site guarda uma versão pequena de cada foto com "m" no fim (…-1.jpg -> …-1m.jpg)
     function miniatura(url) { return url.replace(/-(\d+)\.(\w+)$/, "-$1m.$2"); }
+    // índice das fotos; se falhar, o orçamento segue sem foto (ou com o catálogo embutido)
+    async function carregarIndiceFotos() {
+      try {
+        const res = await fetch(FOTOS_BASE + "indice.json", { cache: "no-cache" });
+        if (res.ok) indiceFotos = (await res.json()).fotos || {};
+      } catch (e) {}
+    }
 
     // janela com a foto grande (e as outras fotos do produto, quando houver)
     function abrirZoom(id, indice) {
@@ -7247,7 +7262,7 @@
       carregando = true;
       el("orc-status").textContent = "Carregando estoque do ERP…";
       try {
-        const linhas = await buscarProdutos();
+        const [linhas] = await Promise.all([buscarProdutos(), carregarIndiceFotos()]);
         const novos = linhas.map(montarItem).filter((p) => p.c && p.s > 0 && p.p.every((v) => v > 0));
         // o orçamento em andamento continua; o que saiu do estoque é retirado e a quantidade respeita o saldo novo
         const removidos = [];
@@ -7366,10 +7381,11 @@
 
     function renderPreview() {
       const box = el("orc-preview");
-      box.classList.toggle("oculto", ativa !== CAT_COM_FOTO);
-      if (ativa !== CAT_COM_FOTO) return;
+      const temFoto = dados.some((x) => x.c === ativa && fotoDe(x));
+      box.classList.toggle("oculto", !temFoto);
+      if (!temFoto) return;
       const p = previewId ? byId(previewId) : null;
-      if (!p) { box.innerHTML = '<div class="orc-muted">Clique em um gabinete da lista para ver a foto.</div>'; return; }
+      if (!p) { box.innerHTML = '<div class="orc-muted">Clique em um produto da lista para ver a foto.</div>'; return; }
       const foto = fotoDe(p);
       box.innerHTML =
         '<div class="orc-preview-foto">' + (foto ? '<img src="' + esc(foto.f[0]) + '" alt="' + esc(p.d) + '" data-zoom-id="' + esc(p.id) + '" title="Ver foto grande">' : '<div class="orc-sem-foto">Imagem não disponível</div>') + "</div>" +
@@ -7388,14 +7404,13 @@
         : ((price(a) - price(b)) * (ordem === "asc" ? 1 : -1) || a.d.localeCompare(b.d, "pt-BR")));
       el("orc-contagem").textContent = subset.length + " produtos disponíveis · descrição integral";
       el("orc-proximo").hidden = !NEXT_CATS.has(ativa) || CATS.indexOf(ativa) >= CATS.length - 1;
-      const comFoto = ativa === CAT_COM_FOTO;
       const gabFonte = ativa === "Fonte" ? gabineteComFonteNoCarrinho() : null;
       el("orc-produtos").innerHTML = (gabFonte ? '<div class="orc-alerta">O gabinete escolhido (' + esc(gabFonte.d) + ") já vem com fonte. Só adicione outra fonte se o cliente pedir.</div>" : "") +
         (subset.length ? subset.map((p) => {
           const foto = fotoDe(p);
-          return '<div class="orc-item' + (comFoto ? " clicavel" : "") + (foto ? " com-mini" : "") + (p.id === previewId ? " selecionado" : "") + '" data-item="' + esc(p.id) + '">' +
+          return '<div class="orc-item' + (foto ? " clicavel com-mini" : "") + (p.id === previewId ? " selecionado" : "") + '" data-item="' + esc(p.id) + '">' +
           (foto ? '<button type="button" class="orc-mini" data-zoom-id="' + esc(p.id) + '" title="Ver foto grande">' +
-            '<img src="' + esc(miniatura(foto.f[0])) + '" data-grande="' + esc(foto.f[0]) + '" loading="lazy" alt=""></button>' : "") +
+            '<img src="' + esc(foto.mini) + '" data-grande="' + esc(foto.f[0]) + '" loading="lazy" alt=""></button>' : "") +
           "<div><h3>" + esc(p.d) + "</h3>" +
           '<div class="orc-meta">CÓD. ' + esc(p.cod) + " · Estoque: <strong>" + p.s + "</strong>" +
             (p.promo && tabela !== 2 ? '<span class="orc-tag-promo">Promoção até ' + dataCurta(p.promo) + "</span>" : "") +
@@ -7533,14 +7548,14 @@
         mudarCategoria(b.dataset.cat);
         render();
       });
-      // clique na miniatura abre a foto grande; no botão, adiciona; no resto do card (gabinete), só mostra a foto ao lado
+      // clique na miniatura abre a foto grande; no botão, adiciona; no resto do card (com foto), só mostra a foto ao lado
       el("orc-produtos").addEventListener("click", (ev) => {
         const zoom = ev.target.closest("[data-zoom-id]");
         if (zoom) { abrirZoom(zoom.dataset.zoomId); return; }
         const add = ev.target.closest("[data-add]");
         if (add) { adicionar(add.dataset.add); return; }
         const item = ev.target.closest("[data-item]");
-        if (!item || ativa !== CAT_COM_FOTO) return;
+        if (!item || !fotoDe(byId(item.dataset.item))) return;
         previewId = item.dataset.item;
         renderPreview();
         el("orc-produtos").querySelectorAll(".orc-item").forEach((x) => x.classList.toggle("selecionado", x === item));
