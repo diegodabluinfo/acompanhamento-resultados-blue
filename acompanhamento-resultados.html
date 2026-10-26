@@ -831,13 +831,28 @@
   #view-orcamento .orc-preview-cod a { color: var(--azul); }
 
   #view-orcamento .orc-item { border: 1px solid #e4eaf0; border-radius: 10px; padding: 12px 14px; margin: 10px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+  #view-orcamento .orc-item.com-mini { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  #view-orcamento .orc-mini { width: 64px; height: 64px; padding: 0; border: 1px solid #e4eaf0; border-radius: 8px; background: #fff; overflow: hidden; cursor: zoom-in; display: flex; align-items: center; justify-content: center; }
+  #view-orcamento .orc-mini:hover { border-color: var(--azul); }
+  #view-orcamento .orc-mini img { width: 100%; height: 100%; object-fit: contain; }
+  #view-orcamento .orc-preview-foto img { cursor: zoom-in; }
+  #view-orcamento .orc-zoom { position: fixed; inset: 0; z-index: 1000; background: rgba(12,24,40,0.72); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #view-orcamento .orc-zoom-caixa { position: relative; background: #fff; border-radius: 14px; padding: 18px; width: min(720px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
+  #view-orcamento .orc-zoom-foto { display: flex; align-items: center; justify-content: center; height: min(60vh, 520px); }
+  #view-orcamento .orc-zoom-foto img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  #view-orcamento .orc-zoom-fechar { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; padding: 0; border-radius: 50%; background: #eef1f6; color: var(--texto); font-size: 1.4rem; line-height: 1; }
+  #view-orcamento .orc-zoom-fotos { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0 8px; }
+  #view-orcamento .orc-zoom-fotos button { width: 56px; height: 56px; padding: 0; border: 2px solid #e4eaf0; border-radius: 8px; background: #fff; overflow: hidden; }
+  #view-orcamento .orc-zoom-fotos button.ativa { border-color: var(--azul); }
+  #view-orcamento .orc-zoom-fotos img { width: 100%; height: 100%; object-fit: contain; }
+  #view-orcamento .orc-zoom-legenda { text-align: center; font-size: 0.85rem; line-height: 1.4; }
+  #view-orcamento .orc-zoom-legenda .orc-preview-cod a { color: var(--azul); }
   #view-orcamento .orc-item.clicavel { cursor: pointer; }
   #view-orcamento .orc-item.clicavel:hover { border-color: #b9cde3; }
   #view-orcamento .orc-item.selecionado { border-color: var(--azul); box-shadow: 0 0 0 2px rgba(30,95,191,0.15); }
   #view-orcamento .orc-item h3 { font-size: 0.82rem; line-height: 1.4; margin: 0 0 6px; overflow-wrap: anywhere; }
   #view-orcamento .orc-meta { font-size: 0.76rem; color: var(--texto-suave); }
   #view-orcamento .orc-tag-promo { display: inline-block; font-size: 0.7rem; font-weight: 700; background: var(--amarelo-fundo); color: var(--amarelo); padding: 2px 8px; border-radius: 12px; margin-left: 6px; }
-  #view-orcamento .orc-tag-foto { display: inline-block; font-size: 0.7rem; background: #e8f5ed; color: #126440; padding: 2px 8px; border-radius: 12px; margin-left: 6px; }
   #view-orcamento .orc-tag-fonte { display: inline-block; font-size: 0.7rem; font-weight: 700; background: #dbeaf9; color: #06478a; padding: 2px 8px; border-radius: 12px; margin-left: 6px; }
   #view-orcamento #orc-produtos > .orc-alerta { margin: 4px 0 10px; }
   #view-orcamento .orc-pick { text-align: right; }
@@ -875,6 +890,9 @@
     #view-orcamento #orc-categorias button span { display: none; }
     #view-orcamento .orc-preview-foto { max-width: 260px; margin: 0 auto 10px; }
     #view-orcamento .orc-item { grid-template-columns: 1fr; }
+    #view-orcamento .orc-item.com-mini { grid-template-columns: 56px minmax(0, 1fr); }
+    #view-orcamento .orc-item.com-mini .orc-pick { grid-column: 1 / -1; }
+    #view-orcamento .orc-mini { width: 56px; height: 56px; }
     #view-orcamento .orc-pick { display: flex; justify-content: space-between; align-items: center; }
   }
 
@@ -1749,6 +1767,15 @@
             </div>
             <div class="orc-alerta orc-noprint" id="orc-alertas">Compatibilidade: verificações preliminares de socket e DDR. Confirmar BIOS, TDP, cabos, dimensões e especificações antes de fechar a venda.</div>
           </aside>
+        </div>
+
+        <div id="orc-zoom" class="orc-zoom oculto orc-noprint" role="dialog" aria-modal="true" aria-label="Foto do produto">
+          <div class="orc-zoom-caixa">
+            <button type="button" class="orc-zoom-fechar" id="orc-zoom-fechar" aria-label="Fechar">×</button>
+            <div class="orc-zoom-foto"><img id="orc-zoom-img" alt=""></div>
+            <div id="orc-zoom-fotos" class="orc-zoom-fotos"></div>
+            <div id="orc-zoom-legenda" class="orc-zoom-legenda"></div>
+          </div>
         </div>
 
         <div class="rodape-nota orc-noprint">
@@ -7157,6 +7184,24 @@
       const cat = window.FOTOS_PRODUTOS || {};
       return p.grupo === "001" ? cat[p.cod] || null : null;
     }
+    // o site guarda uma versão pequena de cada foto com "m" no fim (…-1.jpg -> …-1m.jpg)
+    function miniatura(url) { return url.replace(/-(\d+)\.(\w+)$/, "-$1m.$2"); }
+
+    // janela com a foto grande (e as outras fotos do produto, quando houver)
+    function abrirZoom(id, indice) {
+      const p = byId(id), foto = p ? fotoDe(p) : null;
+      if (!foto) return;
+      const i = Math.min(indice || 0, foto.f.length - 1);
+      el("orc-zoom-img").src = foto.f[i];
+      el("orc-zoom-img").alt = p.d;
+      el("orc-zoom-fotos").innerHTML = foto.f.length > 1 ? foto.f.map((u, k) =>
+        '<button type="button" class="' + (k === i ? "ativa" : "") + '" data-zoom-id="' + esc(p.id) + '" data-zoom-idx="' + k + '" aria-label="Foto ' + (k + 1) + '">' +
+        '<img src="' + esc(miniatura(u)) + '" data-grande="' + esc(u) + '" alt=""></button>').join("") : "";
+      el("orc-zoom-legenda").innerHTML = '<div class="orc-preview-nome">' + esc(p.d) + "</div>" +
+        '<div class="orc-preview-cod">CÓD. ' + esc(p.cod) + (foto.u ? ' · <a href="' + esc(foto.u) + '" target="_blank" rel="noopener">ver no site</a>' : "") + "</div>";
+      el("orc-zoom").classList.remove("oculto");
+    }
+    function fecharZoom() { el("orc-zoom").classList.add("oculto"); el("orc-zoom-img").removeAttribute("src"); }
 
     // --- dados do ERP ---
     async function rpc(nome, corpo, parametros) {
@@ -7327,7 +7372,7 @@
       if (!p) { box.innerHTML = '<div class="orc-muted">Clique em um gabinete da lista para ver a foto.</div>'; return; }
       const foto = fotoDe(p);
       box.innerHTML =
-        '<div class="orc-preview-foto">' + (foto ? '<img src="' + esc(foto.f[0]) + '" alt="' + esc(p.d) + '">' : '<div class="orc-sem-foto">Imagem não disponível</div>') + "</div>" +
+        '<div class="orc-preview-foto">' + (foto ? '<img src="' + esc(foto.f[0]) + '" alt="' + esc(p.d) + '" data-zoom-id="' + esc(p.id) + '" title="Ver foto grande">' : '<div class="orc-sem-foto">Imagem não disponível</div>') + "</div>" +
         '<div class="orc-preview-nome">' + esc(p.d) + "</div>" +
         '<div class="orc-preview-cod">CÓD. ' + esc(p.cod) + (foto && foto.u ? ' · <a href="' + esc(foto.u) + '" target="_blank" rel="noopener">ver no site</a>' : "") + "</div>";
       const img = box.querySelector("img");
@@ -7346,16 +7391,19 @@
       const comFoto = ativa === CAT_COM_FOTO;
       const gabFonte = ativa === "Fonte" ? gabineteComFonteNoCarrinho() : null;
       el("orc-produtos").innerHTML = (gabFonte ? '<div class="orc-alerta">O gabinete escolhido (' + esc(gabFonte.d) + ") já vem com fonte. Só adicione outra fonte se o cliente pedir.</div>" : "") +
-        (subset.length ? subset.map((p) =>
-        '<div class="orc-item' + (comFoto ? " clicavel" : "") + (p.id === previewId ? " selecionado" : "") + '" data-item="' + esc(p.id) + '">' +
+        (subset.length ? subset.map((p) => {
+          const foto = fotoDe(p);
+          return '<div class="orc-item' + (comFoto ? " clicavel" : "") + (foto ? " com-mini" : "") + (p.id === previewId ? " selecionado" : "") + '" data-item="' + esc(p.id) + '">' +
+          (foto ? '<button type="button" class="orc-mini" data-zoom-id="' + esc(p.id) + '" title="Ver foto grande">' +
+            '<img src="' + esc(miniatura(foto.f[0])) + '" data-grande="' + esc(foto.f[0]) + '" loading="lazy" alt=""></button>' : "") +
           "<div><h3>" + esc(p.d) + "</h3>" +
           '<div class="orc-meta">CÓD. ' + esc(p.cod) + " · Estoque: <strong>" + p.s + "</strong>" +
             (p.promo && tabela !== 2 ? '<span class="orc-tag-promo">Promoção até ' + dataCurta(p.promo) + "</span>" : "") +
-            (comFoto && fotoDe(p) ? '<span class="orc-tag-foto">foto</span>' : "") +
             (p.c === "Gabinete" && gabineteComFonte(p.d) ? '<span class="orc-tag-fonte">com fonte</span>' : "") +
           "</div></div>" +
           '<div class="orc-pick"><div class="orc-preco">' + money(price(p)) + '</div><button type="button" class="orc-btn" data-add="' + esc(p.id) + '">Adicionar</button></div>' +
-        "</div>").join("")
+        "</div>";
+        }).join("")
         : '<div class="orc-vazio">' + (carregando ? "Carregando…" : erro ? "Estoque não carregado. Use o botão Atualizar estoque." : "Nenhum item disponível para este filtro.") + "</div>");
     }
 
@@ -7485,8 +7533,10 @@
         mudarCategoria(b.dataset.cat);
         render();
       });
-      // clique no botão adiciona; clique no resto do card (gabinete) só mostra a foto, sem mexer no orçamento
+      // clique na miniatura abre a foto grande; no botão, adiciona; no resto do card (gabinete), só mostra a foto ao lado
       el("orc-produtos").addEventListener("click", (ev) => {
+        const zoom = ev.target.closest("[data-zoom-id]");
+        if (zoom) { abrirZoom(zoom.dataset.zoomId); return; }
         const add = ev.target.closest("[data-add]");
         if (add) { adicionar(add.dataset.add); return; }
         const item = ev.target.closest("[data-item]");
@@ -7495,6 +7545,24 @@
         renderPreview();
         el("orc-produtos").querySelectorAll(".orc-item").forEach((x) => x.classList.toggle("selecionado", x === item));
       });
+      // miniatura que não existir no site: usa a foto grande no lugar
+      const usarGrande = (ev) => {
+        const img = ev.target;
+        if (img.tagName === "IMG" && img.dataset.grande && img.src !== img.dataset.grande) img.src = img.dataset.grande;
+      };
+      el("orc-produtos").addEventListener("error", usarGrande, true);
+      el("orc-zoom-fotos").addEventListener("error", usarGrande, true);
+      el("orc-preview").addEventListener("click", (ev) => {
+        const img = ev.target.closest("[data-zoom-id]");
+        if (img) abrirZoom(img.dataset.zoomId);
+      });
+      el("orc-zoom-fotos").addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-zoom-idx]");
+        if (b) abrirZoom(b.dataset.zoomId, Number(b.dataset.zoomIdx));
+      });
+      el("orc-zoom-fechar").addEventListener("click", fecharZoom);
+      el("orc-zoom").addEventListener("click", (ev) => { if (ev.target === el("orc-zoom")) fecharZoom(); });
+      document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !el("orc-zoom").classList.contains("oculto")) fecharZoom(); });
       el("orc-proximo").addEventListener("click", () => {
         const pos = CATS.indexOf(ativa);
         if (!NEXT_CATS.has(ativa) || pos < 0 || pos === CATS.length - 1) return;
