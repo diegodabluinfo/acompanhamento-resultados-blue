@@ -883,7 +883,6 @@
   #view-orcamento .orc-lucro-grid div { display: flex; flex-direction: column; gap: 3px; }
   #view-orcamento .orc-lucro-grid small { font-size: 0.7rem; color: var(--texto-suave); }
   #view-orcamento .orc-alerta { background: #fff6e5; color: #855200; padding: 10px; border-radius: 8px; font-size: 0.76rem; margin-top: 12px; }
-  #view-orcamento .orc-timbre { display: none; }
 
   @media (max-width: 1100px) {
     #view-orcamento .orc-grid { grid-template-columns: 200px minmax(0, 1fr); }
@@ -902,31 +901,49 @@
     #view-orcamento .orc-pick { display: flex; justify-content: space-between; align-items: center; }
   }
 
-  /* Impressão do orçamento: só a folha, com papel timbrado. Ligado pela classe no body. */
+  /* Impressão / PDF: só a folha #orc-impressao, montada na hora por montarFolha(). A página sem margem
+     tira a data e o título que o navegador imprime no topo e no rodapé; a margem fica dentro da folha. */
+  #orc-impressao { display: none; }
   @media print {
-    @page { size: A4 portrait; margin: 16mm 15mm; }
+    @page { size: A4 portrait; margin: 0; }
     body.imprimindo-orcamento { background: #fff !important; }
     body.imprimindo-orcamento #app { padding: 0; }
-    body.imprimindo-orcamento .wrap { max-width: none; }
-    body.imprimindo-orcamento .wrap > :not(#view-orcamento) { display: none !important; }
-    body.imprimindo-orcamento #view-orcamento .orc-noprint,
-    body.imprimindo-orcamento #view-orcamento .orc-muted,
-    body.imprimindo-orcamento #view-orcamento .orc-excluir { display: none !important; }
-    body.imprimindo-orcamento #view-orcamento .orc-grid { display: block; }
-    body.imprimindo-orcamento #view-orcamento .orc-resumo { box-shadow: none; padding: 0; }
-    body.imprimindo-orcamento #view-orcamento .orc-timbre { display: block; margin-bottom: 22px; break-inside: avoid; }
-    body.imprimindo-orcamento #view-orcamento .orc-timbre-topo { display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 70px; }
-    body.imprimindo-orcamento #view-orcamento #orc-logo { width: 190px; height: auto; max-height: 70px; object-fit: contain; }
-    body.imprimindo-orcamento #view-orcamento .orc-timbre-empresa { text-align: right; font-size: 11px; line-height: 1.55; color: #263f5c; }
-    body.imprimindo-orcamento #view-orcamento .orc-timbre-empresa strong { display: block; font-size: 12px; color: #143963; margin-bottom: 4px; }
-    body.imprimindo-orcamento #view-orcamento .orc-timbre-linha { border-bottom: 2px solid #286eb2; margin: 13px 0 16px; }
-    body.imprimindo-orcamento #view-orcamento .orc-timbre-titulo { font-weight: 800; font-size: 16px; letter-spacing: 1px; color: #143963; }
-    body.imprimindo-orcamento #view-orcamento .orc-cliente { padding-bottom: 12px; border-bottom: 1px solid #d6dfeb; }
-    body.imprimindo-orcamento #view-orcamento .orc-cliente input { border: 0; padding: 2px 0; border-radius: 0; font-weight: 600; background: transparent; }
-    body.imprimindo-orcamento #view-orcamento .orc-sel-item { break-inside: avoid; }
-    body.imprimindo-orcamento #view-orcamento .orc-qtd { border: 0; background: transparent; padding: 0; width: 42px; }
-    body.imprimindo-orcamento #view-orcamento .orc-total { border-top: 2px solid #286eb2; padding-top: 12px; margin-top: 18px; }
+    body.imprimindo-orcamento .wrap { max-width: none; margin: 0; }
+    body.imprimindo-orcamento .wrap > :not(#view-orcamento),
+    body.imprimindo-orcamento #view-orcamento > :not(#orc-impressao) { display: none !important; }
+    body.imprimindo-orcamento #orc-impressao { display: block; padding: 14mm 15mm 12mm; color: #1a2b3c; font-size: 11px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
+  #orc-impressao .fl-topo { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  #orc-impressao .fl-logo { width: 170px; height: auto; display: block; }
+  #orc-impressao .fl-empresa { text-align: right; font-size: 10px; line-height: 1.6; color: #4a5d72; }
+  #orc-impressao .fl-empresa strong { display: block; font-size: 11.5px; color: #143963; }
+  #orc-impressao .fl-empresa a { color: #1e5fbf; text-decoration: none; font-weight: 700; }
+  #orc-impressao .fl-faixa { display: flex; justify-content: space-between; align-items: center; margin: 14px 0; padding: 10px 14px; background: #143963; color: #fff; border-radius: 8px; }
+  #orc-impressao .fl-titulo { font-weight: 800; font-size: 14px; letter-spacing: 1.5px; }
+  #orc-impressao .fl-data { font-size: 10px; opacity: 0.85; }
+  #orc-impressao .fl-cliente { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid #d6dfeb; border-radius: 8px; }
+  #orc-impressao .fl-cliente dt { font-size: 9px; font-weight: 700; color: #6a7e92; text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
+  #orc-impressao .fl-cliente dd { margin: 0; font-weight: 600; font-size: 11.5px; }
+  #orc-impressao table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  #orc-impressao thead th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #6a7e92; background: #f3f6fa; padding: 7px 8px; border-bottom: 1px solid #d6dfeb; white-space: nowrap; }
+  #orc-impressao tbody td { text-align: left; font-weight: 400; padding: 8px; border-bottom: 1px solid #e8edf3; vertical-align: middle; white-space: normal; }
+  #orc-impressao th.num, #orc-impressao td.num { text-align: right; white-space: nowrap; }
+  #orc-impressao td.num { color: #1a2b3c; font-weight: 400; }
+  #orc-impressao tbody tr { break-inside: avoid; }
+  #orc-impressao td.fl-foto { width: 58px; padding: 6px 8px; }
+  #orc-impressao .fl-foto img, #orc-impressao .fl-semfoto { width: 52px; height: 52px; object-fit: contain; display: block; border-radius: 6px; }
+  #orc-impressao .fl-semfoto { background: #f3f6fa; }
+  #orc-impressao .fl-cat { font-size: 8.5px; font-weight: 700; color: #1e5fbf; text-transform: uppercase; letter-spacing: 0.5px; }
+  #orc-impressao .fl-desc { font-weight: 600; line-height: 1.35; margin: 2px 0; }
+  #orc-impressao .fl-cod { font-size: 9px; color: #6a7e92; }
+  #orc-impressao .fl-link { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid #1e5fbf; border-radius: 10px; color: #1e5fbf; text-decoration: none; font-size: 8.5px; font-weight: 700; }
+  #orc-impressao .fl-total { display: flex; justify-content: flex-end; align-items: baseline; gap: 16px; margin-top: 12px; padding: 12px 14px; background: #eef4fb; border-radius: 8px; }
+  #orc-impressao .fl-total span { font-size: 10px; font-weight: 700; color: #143963; text-transform: uppercase; letter-spacing: 0.5px; }
+  #orc-impressao .fl-total strong { font-size: 20px; color: #064c81; }
+  #orc-impressao .fl-conjunto { margin-top: 8px; text-align: right; font-size: 10px; font-weight: 600; color: #143963; }
+  #orc-impressao .fl-rodape { margin-top: 22px; padding-top: 10px; border-top: 1px solid #d6dfeb; display: flex; justify-content: space-between; gap: 12px; font-size: 9px; color: #6a7e92; }
+  #orc-impressao .fl-rodape a { color: #1e5fbf; font-weight: 700; text-decoration: none; }
 </style>
 </head>
 <body>
@@ -1721,14 +1738,6 @@
           </main>
 
           <aside class="orc-painel orc-resumo" id="orc-folha">
-            <div class="orc-timbre">
-              <div class="orc-timbre-topo">
-                <img id="orc-logo" alt="Blue Distribuidora">
-                <div class="orc-timbre-empresa"><strong>BLUE DISTRIBUIDORA &amp; IMPORTADORA EIRELI ME</strong>CNPJ: 17.878.215/0001-02</div>
-              </div>
-              <div class="orc-timbre-linha"></div>
-              <div class="orc-timbre-titulo">ORÇAMENTO DE COMPUTADOR</div>
-            </div>
             <h2>Dados do cliente</h2>
             <div class="orc-cliente">
               <label for="orc-cnpj">CNPJ:</label><input id="orc-cnpj" type="text" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" autocomplete="off">
@@ -1741,6 +1750,12 @@
               <option value="1">ISENTO / CORPORATIVO — SEM IE</option>
               <option value="2">CONSUMO — Valor Sugestão</option>
             </select>
+            <label class="orc-muted orc-noprint" for="orc-formato">FORMATO PARA O CLIENTE</label>
+            <select class="orc-noprint" id="orc-formato">
+              <option value="item" selected>Preço por item</option>
+              <option value="conjunto">Preço do conjunto (só o total)</option>
+            </select>
+            <div class="orc-muted orc-noprint" id="orc-formato-info"></div>
             <div class="orc-muted orc-noprint">Clique em “Adicionar” para incluir um componente. Quantidades ajustáveis para memória, HD/SSD e fans.</div>
             <div id="orc-selecionados"></div>
             <div class="orc-total" id="orc-total">R$ 0,00</div>
@@ -1767,7 +1782,7 @@
             </div>
 
             <div class="orc-controles orc-noprint">
-              <button type="button" class="orc-btn" id="orc-imprimir">Imprimir orçamento</button>
+              <button type="button" class="orc-btn" id="orc-imprimir">Gerar PDF / Imprimir</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-copiar">Copiar orçamento em texto</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-csv">Exportar CSV</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-limpar">Começar do zero</button>
@@ -1784,6 +1799,8 @@
             <div id="orc-zoom-legenda" class="orc-zoom-legenda"></div>
           </div>
         </div>
+
+        <div id="orc-impressao"></div>
 
         <div class="rodape-nota orc-noprint">
           Estoque e preços vêm do ERP, copiados para o painel a cada 15 minutos (das 05:10 às 22:00). Preços de revenda já com a promoção vigente.
@@ -7149,6 +7166,7 @@
     let indiceFotos = null;    // codigo -> versão; null enquanto o índice não carregou
     let dados = [], carregando = false, ligado = false, carregadoEm = null, erro = null;
     let ativa = "Processador", carrinho = [], tabela = 0, termo = "", ordem = "asc", ajustado = null, previewId = null;
+    let formato = "item";   // para o cliente: "item" (preço de cada peça) ou "conjunto" (só o total; desconto vale para tudo)
 
     const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const cents = (v) => Math.round((Number(v) + Number.EPSILON) * 100);
@@ -7510,19 +7528,90 @@
       }
       lines.push("", "```");
       if (!carrinho.length) return lines.concat(["Nenhum item selecionado.", "```"]).join("\n");
+      // no formato "conjunto" o cliente vê só as peças e o total: nada de valor por peça
+      const porItem = formato === "item";
       const COL_CODE = 10, COL_DESC = 52, COL_QTY = 6, COL_UNIT = 14, COL_TOTAL = 14;
-      lines.push(padRight("CÓDIGO", COL_CODE) + padRight("DESCRIÇÃO", COL_DESC) + padLeft("QTDE.", COL_QTY) + "  " +
-        padLeft("VALOR UNIT.", COL_UNIT) + "  " + padLeft("VALOR TOTAL", COL_TOTAL), "");
+      lines.push(padRight("CÓDIGO", COL_CODE) + padRight("DESCRIÇÃO", COL_DESC) + padLeft("QTDE.", COL_QTY) +
+        (porItem ? "  " + padLeft("VALOR UNIT.", COL_UNIT) + "  " + padLeft("VALOR TOTAL", COL_TOTAL) : ""), "");
       carrinho.forEach((i, k) => {
         const p = byId(i.id), unit = centsEfetivo(i) / 100;
         quebrar(p.d, COL_DESC).forEach((desc, idx) => {
           lines.push(padRight(idx === 0 ? (k + 1) + ". " + p.cod : "", COL_CODE) + padRight(desc, COL_DESC) +
-            (idx === 0 ? padLeft(String(i.qty), COL_QTY) + "  " + padLeft(money(unit), COL_UNIT) + "  " + padLeft(money(unit * i.qty), COL_TOTAL) : ""));
+            (idx === 0 ? padLeft(String(i.qty), COL_QTY) +
+              (porItem ? "  " + padLeft(money(unit), COL_UNIT) + "  " + padLeft(money(unit * i.qty), COL_TOTAL) : "") : ""));
         });
       });
       const total = carrinho.reduce((acc, i) => acc + centsEfetivo(i) * i.qty, 0);
-      lines.push("```", "", "*TOTAL: " + money(total / 100) + "*");
+      lines.push("```", "", (porItem ? "*TOTAL: " : "*TOTAL DO CONJUNTO: ") + money(total / 100) + "*");
+      if (!porItem) lines.push("_" + AVISO_CONJUNTO + "_");
       return lines.join("\n");
+    }
+
+    // --- folha do orçamento (impressão e PDF) ---
+    const AVISO_CONJUNTO = "Preço válido para o conjunto completo. Os itens não são vendidos separadamente.";
+    const SITE_BLUE = "https://www.bluedistribuidora.com.br";
+    let paginasSite = null;   // codigo -> caminho da página no site (paginas.json do bucket, do sincronizador)
+    async function carregarPaginas() {
+      if (paginasSite) return;
+      try {
+        const res = await fetch(FOTOS_BASE + "paginas.json", { cache: "no-cache" });
+        if (res.ok) { const j = await res.json(); paginasSite = { site: j.site || SITE_BLUE, p: j.paginas || {} }; }
+      } catch (e) {}
+    }
+    function linkDe(p) {
+      if (p.grupo !== "001") return null;
+      if (paginasSite && paginasSite.p[p.cod]) return paginasSite.site + paginasSite.p[p.cod];
+      const f = fotoDe(p);
+      return f && f.u ? f.u : null;
+    }
+    function montarFolha() {
+      const porItem = formato === "item";
+      const cliente = [["CNPJ", el("orc-cnpj").value], ["Razão social", el("orc-razao").value], ["Código", el("orc-codcli").value]]
+        .map(([k, v]) => [k, v.trim()]).filter(([, v]) => v);
+      const total = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0) / 100;
+      const linhas = carrinho.map((i) => {
+        const p = byId(i.id), foto = fotoDe(p), link = linkDe(p), unit = centsEfetivo(i) / 100;
+        return "<tr>" +
+          '<td class="fl-foto">' + (foto ? '<img src="' + esc(foto.mini) + '" data-grande="' + esc(foto.f[0]) + '" alt="">' : '<div class="fl-semfoto"></div>') + "</td>" +
+          '<td><div class="fl-cat">' + esc(p.c) + '</div><div class="fl-desc">' + esc(p.d) + "</div>" +
+            '<div class="fl-cod">Cód. ' + esc(p.cod) + (link ? '<a class="fl-link" href="' + esc(link) + '" target="_blank" rel="noopener">ver no site ↗</a>' : "") + "</div></td>" +
+          '<td class="num">' + i.qty + "</td>" +
+          (porItem ? '<td class="num">' + money(unit) + '</td><td class="num"><strong>' + money(unit * i.qty) + "</strong></td>" : "") +
+          "</tr>";
+      }).join("");
+      el("orc-impressao").innerHTML =
+        '<div class="fl-topo">' + (window.LOGO_BLUE ? '<img class="fl-logo" src="' + window.LOGO_BLUE + '" alt="Blue Distribuidora">' : "<strong>BLUE DISTRIBUIDORA</strong>") +
+          '<div class="fl-empresa"><strong>BLUE DISTRIBUIDORA &amp; IMPORTADORA EIRELI ME</strong>CNPJ: 17.878.215/0001-02<br>' +
+          '<a href="' + SITE_BLUE + '" target="_blank" rel="noopener">bluedistribuidora.com.br</a></div></div>' +
+        '<div class="fl-faixa"><div class="fl-titulo">ORÇAMENTO DE COMPUTADOR</div><div class="fl-data">Emitido em ' + new Date().toLocaleDateString("pt-BR") + "</div></div>" +
+        (cliente.length ? '<dl class="fl-cliente">' + cliente.map(([k, v]) => "<dt>" + k + "</dt><dd>" + esc(v) + "</dd>").join("") + "</dl>" : "") +
+        "<table><thead><tr><th></th><th>Produto</th><th class=\"num\">Qtd.</th>" + (porItem ? '<th class="num">Unitário</th><th class="num">Total</th>' : "") + "</tr></thead>" +
+        "<tbody>" + linhas + "</tbody></table>" +
+        '<div class="fl-total"><span>' + (porItem ? "Total" : "Total do conjunto") + "</span><strong>" + money(total) + "</strong></div>" +
+        (porItem ? "" : '<div class="fl-conjunto">' + AVISO_CONJUNTO + "</div>") +
+        '<div class="fl-rodape"><span>Valores e disponibilidade sujeitos a alteração.</span>' +
+          '<span>Blue Distribuidora · <a href="' + SITE_BLUE + '" target="_blank" rel="noopener">bluedistribuidora.com.br</a></span></div>';
+      // miniatura que o site não tiver: usa a foto grande
+      el("orc-impressao").querySelectorAll("img[data-grande]").forEach((img) => img.addEventListener("error", () => {
+        if (img.src !== img.dataset.grande) img.src = img.dataset.grande;
+      }, { once: true }));
+    }
+    async function gerarPdf() {
+      if (!carrinho.length) { alert("Adicione componentes antes de gerar o orçamento."); return; }
+      await carregarPaginas();
+      montarFolha();
+      // espera as fotos carregarem (até 4 s) para não saírem em branco
+      const imgs = [...el("orc-impressao").querySelectorAll("img")];
+      await Promise.race([
+        Promise.all(imgs.map((img) => img.complete ? 0 : new Promise((r) => { img.addEventListener("load", r); img.addEventListener("error", r); }))),
+        new Promise((r) => setTimeout(r, 4000))
+      ]);
+      // o nome sugerido para o PDF sai do título da página
+      const titulo = document.title, razao = el("orc-razao").value.trim();
+      document.title = "Orçamento Blue - " + (razao || "cliente") + " - " + new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+      document.body.classList.add("imprimindo-orcamento");
+      window.print();
+      document.title = titulo;
     }
     async function copiar() {
       if (!carrinho.length) { alert("Adicione componentes antes de copiar o orçamento."); return; }
@@ -7555,7 +7644,6 @@
     function ligar() {
       if (ligado) return;
       ligado = true;
-      if (window.LOGO_BLUE) el("orc-logo").src = window.LOGO_BLUE;
       el("orc-atualizar").addEventListener("click", () => carregar());
       el("orc-categorias").addEventListener("click", (ev) => {
         const b = ev.target.closest("button[data-cat]");
@@ -7617,7 +7705,12 @@
       el("orc-restaurar").addEventListener("click", () => { invalidarRateio(); render(); });
       el("orc-copiar").addEventListener("click", copiar);
       el("orc-csv").addEventListener("click", exportarCsv);
-      el("orc-imprimir").addEventListener("click", () => window.print());
+      el("orc-imprimir").addEventListener("click", gerarPdf);
+      el("orc-formato").addEventListener("change", (ev) => {
+        formato = ev.target.value;
+        el("orc-formato-info").textContent = formato === "conjunto"
+          ? "O cliente vê as peças e só o total, com o aviso de que o preço vale para o conjunto completo." : "";
+      });
       // orçamento novo: tira peças, dados do cliente e ajuste de total; a tabela de preços escolhida fica
       const comecarDoZero = () => {
         if (!confirm("Começar um orçamento novo? O atual será apagado.")) return;
@@ -7633,7 +7726,12 @@
         comecarDoZero();
       });
       // Ctrl+P na aba também sai como orçamento, não como o painel inteiro
-      window.addEventListener("beforeprint", () => { if (abaAtual === "orcamento") document.body.classList.add("imprimindo-orcamento"); });
+      // Ctrl+P na aba também sai como a folha do orçamento (o botão já monta a folha antes)
+      window.addEventListener("beforeprint", () => {
+        if (abaAtual !== "orcamento" || document.body.classList.contains("imprimindo-orcamento")) return;
+        montarFolha();
+        document.body.classList.add("imprimindo-orcamento");
+      });
       window.addEventListener("afterprint", () => document.body.classList.remove("imprimindo-orcamento"));
     }
 
