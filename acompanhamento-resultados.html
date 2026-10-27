@@ -977,36 +977,76 @@
     body.imprimindo-orcamento #orc-impressao { display: block; padding: 14mm 15mm 12mm; color: #1a2b3c; font-size: 11px;
       -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
-  #orc-impressao .fl-topo { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-  #orc-impressao .fl-logo { width: 170px; height: auto; display: block; }
-  #orc-impressao .fl-empresa { text-align: right; font-size: 10px; line-height: 1.6; color: #4a5d72; }
-  #orc-impressao .fl-empresa strong { display: block; font-size: 11.5px; color: #143963; }
-  #orc-impressao .fl-empresa a { color: #1e5fbf; text-decoration: none; font-weight: 700; }
-  #orc-impressao .fl-faixa { display: flex; justify-content: space-between; align-items: center; margin: 14px 0; padding: 10px 14px; background: #143963; color: #fff; border-radius: 8px; }
-  #orc-impressao .fl-titulo { font-weight: 800; font-size: 14px; letter-spacing: 1.5px; }
-  #orc-impressao .fl-data { font-size: 10px; opacity: 0.85; }
-  #orc-impressao .fl-cliente { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid #d6dfeb; border-radius: 8px; }
-  #orc-impressao .fl-cliente dt { font-size: 9px; font-weight: 700; color: #6a7e92; text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
-  #orc-impressao .fl-cliente dd { margin: 0; font-weight: 600; font-size: 11.5px; }
-  #orc-impressao table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-  #orc-impressao thead th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #6a7e92; background: #f3f6fa; padding: 7px 8px; border-bottom: 1px solid #d6dfeb; white-space: nowrap; }
-  #orc-impressao tbody td { text-align: left; font-weight: 400; padding: 8px; border-bottom: 1px solid #e8edf3; vertical-align: middle; white-space: normal; }
-  #orc-impressao th.num, #orc-impressao td.num { text-align: right; white-space: nowrap; }
-  #orc-impressao td.num { color: #1a2b3c; font-weight: 400; }
-  #orc-impressao tbody tr { break-inside: avoid; }
-  #orc-impressao td.fl-foto { width: 58px; padding: 6px 8px; }
-  #orc-impressao .fl-foto img, #orc-impressao .fl-semfoto { width: 52px; height: 52px; object-fit: contain; display: block; border-radius: 6px; }
-  #orc-impressao .fl-semfoto { background: #f3f6fa; }
-  #orc-impressao .fl-cat { font-size: 8.5px; font-weight: 700; color: #1e5fbf; text-transform: uppercase; letter-spacing: 0.5px; }
-  #orc-impressao .fl-desc { font-weight: 600; line-height: 1.35; margin: 2px 0; }
-  #orc-impressao .fl-cod { font-size: 9px; color: #6a7e92; }
-  #orc-impressao .fl-link { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid #1e5fbf; border-radius: 10px; color: #1e5fbf; text-decoration: none; font-size: 8.5px; font-weight: 700; }
-  #orc-impressao .fl-total { display: flex; justify-content: flex-end; align-items: baseline; gap: 16px; margin-top: 12px; padding: 12px 14px; background: #eef4fb; border-radius: 8px; }
-  #orc-impressao .fl-total span { font-size: 10px; font-weight: 700; color: #143963; text-transform: uppercase; letter-spacing: 0.5px; }
-  #orc-impressao .fl-total strong { font-size: 20px; color: #064c81; }
-  #orc-impressao .fl-conjunto { margin-top: 8px; text-align: right; font-size: 10px; font-weight: 600; color: #143963; }
-  #orc-impressao .fl-rodape { margin-top: 22px; padding-top: 10px; border-top: 1px solid #d6dfeb; display: flex; justify-content: space-between; gap: 12px; font-size: 9px; color: #6a7e92; }
-  #orc-impressao .fl-rodape a { color: #1e5fbf; font-weight: 700; text-decoration: none; }
+  #view-orcamento .fl-folha .fl-topo { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  #view-orcamento .fl-folha .fl-logo { width: 170px; height: auto; display: block; }
+  #view-orcamento .fl-folha .fl-empresa { text-align: right; font-size: 10px; line-height: 1.6; color: #4a5d72; }
+  #view-orcamento .fl-folha .fl-empresa strong { display: block; font-size: 11.5px; color: #143963; }
+  #view-orcamento .fl-folha .fl-empresa a { color: #1e5fbf; text-decoration: none; font-weight: 700; }
+  #view-orcamento .fl-folha .fl-faixa { display: flex; justify-content: space-between; align-items: center; margin: 14px 0; padding: 10px 14px; background: #143963; color: #fff; border-radius: 8px; }
+  #view-orcamento .fl-folha .fl-titulo { font-weight: 800; font-size: 14px; letter-spacing: 1.5px; }
+  #view-orcamento .fl-folha .fl-data { font-size: 10px; opacity: 0.85; }
+  #view-orcamento .fl-folha .fl-cliente { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid #d6dfeb; border-radius: 8px; }
+  #view-orcamento .fl-folha .fl-cliente dt { font-size: 9px; font-weight: 700; color: #6a7e92; text-transform: uppercase; letter-spacing: 0.5px; padding-top: 2px; }
+  #view-orcamento .fl-folha .fl-cliente dd { margin: 0; font-weight: 600; font-size: 11.5px; }
+  #view-orcamento .fl-folha table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  #view-orcamento .fl-folha thead th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #6a7e92; background: #f3f6fa; padding: 7px 8px; border-bottom: 1px solid #d6dfeb; white-space: nowrap; }
+  #view-orcamento .fl-folha tbody td { text-align: left; font-weight: 400; padding: 8px; border-bottom: 1px solid #e8edf3; vertical-align: middle; white-space: normal; }
+  #view-orcamento .fl-folha th.num, #view-orcamento .fl-folha td.num { text-align: right; white-space: nowrap; }
+  #view-orcamento .fl-folha td.num { color: #1a2b3c; font-weight: 400; }
+  #view-orcamento .fl-folha tbody tr { break-inside: avoid; }
+  #view-orcamento .fl-folha td.fl-foto { width: 58px; padding: 6px 8px; }
+  #view-orcamento .fl-folha .fl-foto img, #view-orcamento .fl-folha .fl-semfoto { width: 52px; height: 52px; object-fit: contain; display: block; border-radius: 6px; }
+  #view-orcamento .fl-folha .fl-semfoto { background: #f3f6fa; }
+  #view-orcamento .fl-folha .fl-cat { font-size: 8.5px; font-weight: 700; color: #1e5fbf; text-transform: uppercase; letter-spacing: 0.5px; }
+  #view-orcamento .fl-folha .fl-desc { font-weight: 600; line-height: 1.35; margin: 2px 0; }
+  #view-orcamento .fl-folha .fl-cod { font-size: 9px; color: #6a7e92; }
+  #view-orcamento .fl-folha .fl-link { display: inline-block; margin-left: 6px; padding: 1px 7px; border: 1px solid #1e5fbf; border-radius: 10px; color: #1e5fbf; text-decoration: none; font-size: 8.5px; font-weight: 700; }
+  #view-orcamento .fl-folha .fl-total { display: flex; justify-content: flex-end; align-items: baseline; gap: 16px; margin-top: 12px; padding: 12px 14px; background: #eef4fb; border-radius: 8px; }
+  #view-orcamento .fl-folha .fl-total span { font-size: 10px; font-weight: 700; color: #143963; text-transform: uppercase; letter-spacing: 0.5px; }
+  #view-orcamento .fl-folha .fl-total strong { font-size: 20px; color: #064c81; }
+  #view-orcamento .fl-folha .fl-conjunto { margin-top: 8px; text-align: right; font-size: 10px; font-weight: 600; color: #143963; }
+  #view-orcamento .fl-folha .fl-rodape { margin-top: 22px; padding-top: 10px; border-top: 1px solid #d6dfeb; display: flex; justify-content: space-between; gap: 12px; font-size: 9px; color: #6a7e92; }
+  #view-orcamento .fl-folha .fl-rodape a { color: #1e5fbf; font-weight: 700; text-decoration: none; }
+  /* blocos da folha que dependem da configuração (tela "Visualizar impressão") */
+  #view-orcamento .fl-folha .fl-partes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+  #view-orcamento .fl-folha .fl-partes .fl-cliente { margin: 0; }
+  #view-orcamento .fl-folha .fl-blocos { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin-top: 14px; break-inside: avoid; }
+  #view-orcamento .fl-folha .fl-bloco { border: 1px solid #d6dfeb; border-radius: 8px; padding: 10px 14px; }
+  #view-orcamento .fl-folha .fl-bloco h4 { margin: 0 0 6px; font-size: 9px; font-weight: 700; color: #6a7e92; text-transform: uppercase; letter-spacing: 0.5px; }
+  #view-orcamento .fl-folha .fl-bloco ul { margin: 0; padding: 0; list-style: none; }
+  #view-orcamento .fl-folha .fl-bloco li { padding: 3px 0; font-size: 10.5px; line-height: 1.4; }
+  #view-orcamento .fl-folha .fl-bloco li b { color: #143963; }
+  #view-orcamento .fl-folha .fl-obs { margin-top: 10px; padding: 10px 14px; background: #f7f9fc; border-radius: 8px; font-size: 10.5px; line-height: 1.5; break-inside: avoid; }
+  #view-orcamento .fl-folha .fl-obs h4 { margin: 0 0 4px; font-size: 9px; font-weight: 700; color: #6a7e92; text-transform: uppercase; letter-spacing: 0.5px; }
+  #view-orcamento .fl-folha.sem-foto td.fl-foto, #view-orcamento .fl-folha.sem-foto th.fl-foto { display: none; }
+
+  /* tela "Visualizar impressão": configuração à esquerda, prévia A4 à direita */
+  #view-orcamento .orc-vi { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; align-items: start; }
+  #view-orcamento .orc-vi.oculto { display: none; }
+  #view-orcamento .orc-vi-config h2 { margin-top: 6px; }
+  #view-orcamento .orc-vi-sec { border: 0; border-top: 1px solid var(--borda); margin: 12px 0 0; padding: 10px 0 0; min-width: 0; }
+  #view-orcamento .orc-vi-sec legend { padding: 0 6px 0 0; font-size: 0.72rem; font-weight: 800; color: #496786; text-transform: uppercase; letter-spacing: 0.5px; }
+  #view-orcamento .orc-vi-opc { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 600; color: var(--texto); margin: 6px 0; cursor: pointer; }
+  #view-orcamento .orc-vi-opc input { width: auto; margin: 0; }
+  #view-orcamento .orc-vi-config label:not(.orc-vi-opc) { display: block; font-size: 0.7rem; font-weight: 700; color: #496786; margin: 8px 0 3px; }
+  #view-orcamento .orc-vi-config input[type=text], #view-orcamento .orc-vi-config textarea { width: 100%; padding: 7px 9px; font-size: 0.84rem; }
+  #view-orcamento .orc-vi-config input[type=number] { width: 64px; padding: 6px 7px; font-size: 0.84rem; }
+  #view-orcamento .orc-vi-config label.orc-vi-campo { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 600; color: var(--texto); }
+  #view-orcamento .orc-vi-sub { margin: 4px 0 4px 24px; }
+  #view-orcamento .orc-vi-sub.oculto { display: none; }
+  #view-orcamento .orc-vi-pag { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #view-orcamento .orc-vi-pag > span { font-size: 0.8rem; color: var(--texto-suave); white-space: nowrap; }
+  #view-orcamento .orc-vi-pag input.orc-vi-prazos { width: 92px; }
+  #view-orcamento .orc-vi-pag-outro input[type=text] { margin: 0 0 4px 24px; width: calc(100% - 24px); }
+  #view-orcamento .orc-vi-pag.inativa > span, #view-orcamento .orc-vi-pag.inativa > input { opacity: 0.45; }
+  #view-orcamento .orc-vi-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 8px; padding-top: 12px; border-top: 1px solid var(--borda); }
+  #view-orcamento .orc-vi-salvo { margin: 8px 0 0; }
+  #view-orcamento .orc-vi-previa { background: #e3e9f0; border-radius: 12px; padding: 18px; overflow: hidden; min-width: 0; }
+  #view-orcamento .orc-vi-folha { width: 210mm; min-height: 297mm; box-sizing: border-box; margin: 0 auto; padding: 14mm 15mm 12mm; background: #fff; color: #1a2b3c; font-size: 11px; box-shadow: 0 4px 18px rgba(20,40,70,0.18); }
+  @media (max-width: 900px) {
+    #view-orcamento .orc-vi { grid-template-columns: 1fr; }
+    #view-orcamento .orc-vi-previa { padding: 8px; }
+  }
 </style>
 </head>
 <body>
@@ -1804,6 +1844,69 @@
           </div>
         </section>
 
+        <section id="orc-vi" class="orc-vi orc-noprint oculto">
+          <aside class="orc-painel orc-vi-config">
+            <button type="button" class="orc-link" id="orc-vi-voltar">← Voltar ao montador</button>
+            <h2>Configurar o orçamento</h2>
+            <fieldset class="orc-vi-sec">
+              <legend>Formato</legend>
+              <label class="orc-vi-opc"><input type="radio" name="orc-vi-formato" value="item" data-cfg="formato"> Preço por item</label>
+              <label class="orc-vi-opc"><input type="radio" name="orc-vi-formato" value="conjunto" data-cfg="formato"> Preço do conjunto (só o total)</label>
+              <div class="orc-muted" id="orc-vi-formato-info"></div>
+            </fieldset>
+            <fieldset class="orc-vi-sec">
+              <legend>O que aparece</legend>
+              <label class="orc-vi-opc"><input type="checkbox" data-cfg="mostrar.foto"> Mostrar foto do produto</label>
+              <label class="orc-vi-opc"><input type="checkbox" data-cfg="mostrar.link"> Link “ver no site”</label>
+              <label class="orc-vi-opc"><input type="checkbox" data-cfg="mostrar.codigo"> Código do produto</label>
+              <label class="orc-vi-opc"><input type="checkbox" data-cfg="mostrar.vendedor"> Mostrar dados do vendedor</label>
+              <div class="orc-vi-sub" id="orc-vi-vendedor">
+                <label for="orc-vi-vend-nome">Nome</label><input type="text" id="orc-vi-vend-nome" data-cfg="vendedor.nome" autocomplete="off">
+                <label for="orc-vi-vend-tel">Telefone / WhatsApp</label><input type="text" id="orc-vi-vend-tel" data-cfg="vendedor.telefone" placeholder="(47) 99999-0000" autocomplete="off">
+                <label for="orc-vi-vend-email">E-mail</label><input type="text" id="orc-vi-vend-email" data-cfg="vendedor.email" autocomplete="off">
+              </div>
+            </fieldset>
+            <fieldset class="orc-vi-sec">
+              <legend>Formas de pagamento</legend>
+              <div class="orc-vi-pag">
+                <label class="orc-vi-opc"><input type="checkbox" data-cfg="pagamento.pix.ativo"> Pix / à vista</label>
+                <span>desconto <input type="number" min="0" max="100" step="0.5" data-cfg="pagamento.pix.desconto" aria-label="Desconto no Pix (%)"> %</span>
+              </div>
+              <div class="orc-vi-pag">
+                <label class="orc-vi-opc"><input type="checkbox" data-cfg="pagamento.cartao.ativo"> Cartão de crédito</label>
+                <span>até <input type="number" min="1" max="24" step="1" data-cfg="pagamento.cartao.parcelas" aria-label="Parcelas no cartão"> x sem juros</span>
+              </div>
+              <div class="orc-vi-pag">
+                <label class="orc-vi-opc"><input type="checkbox" data-cfg="pagamento.boleto.ativo"> Boleto</label>
+                <span>prazos <input type="text" class="orc-vi-prazos" data-cfg="pagamento.boleto.prazos" placeholder="28/56/84" aria-label="Prazos do boleto em dias"> dias</span>
+              </div>
+              <div class="orc-vi-pag orc-vi-pag-outro">
+                <label class="orc-vi-opc"><input type="checkbox" data-cfg="pagamento.outro.ativo"> Outra condição</label>
+                <input type="text" data-cfg="pagamento.outro.texto" placeholder="Ex.: faturado para 30 dias" aria-label="Outra condição de pagamento">
+              </div>
+            </fieldset>
+            <fieldset class="orc-vi-sec">
+              <legend>Condições</legend>
+              <label class="orc-vi-campo">Validade da proposta <span><input type="number" min="0" max="90" step="1" data-cfg="validade_dias" aria-label="Validade em dias"> dias</span></label>
+              <label for="orc-vi-prazo">Prazo de entrega</label>
+              <input type="text" id="orc-vi-prazo" data-cfg="prazo_entrega" placeholder="Ex.: 3 dias úteis após o pagamento" autocomplete="off">
+              <label for="orc-vi-obs">Observações</label>
+              <textarea id="orc-vi-obs" rows="3" data-cfg="observacoes" placeholder="Sai no fim da folha e do texto"></textarea>
+            </fieldset>
+            <div class="orc-vi-acoes">
+              <button type="button" class="orc-btn orc-btn-salvar" id="orc-vi-salvar">Salvar orçamento</button>
+              <button type="button" class="orc-btn" id="orc-imprimir">Imprimir / Salvar PDF</button>
+              <button type="button" class="orc-btn orc-btn-claro" id="orc-copiar">Copiar texto (WhatsApp)</button>
+              <button type="button" class="orc-btn orc-btn-claro" id="orc-csv">Exportar CSV</button>
+            </div>
+            <div class="orc-muted">Para o PDF: na janela de impressão, em <strong>Destino</strong>, escolha <strong>“Salvar como PDF”</strong>. A opção “Microsoft Print to PDF” tira os links “ver no site”.</div>
+            <div class="orc-salvo-info" id="orc-vi-salvo"></div>
+          </aside>
+          <div class="orc-vi-previa" id="orc-vi-previa">
+            <div class="fl-folha orc-vi-folha" id="orc-vi-folha"></div>
+          </div>
+        </section>
+
         <div class="orc-grid">
           <nav class="orc-painel orc-lateral orc-noprint">
             <div id="orc-categorias"></div>
@@ -1870,12 +1973,6 @@
               <option value="1">ISENTO / CORPORATIVO — SEM IE</option>
               <option value="2">CONSUMO — Valor Sugestão</option>
             </select>
-            <label class="orc-muted orc-noprint" for="orc-formato">FORMATO PARA O CLIENTE</label>
-            <select class="orc-noprint" id="orc-formato">
-              <option value="item" selected>Preço por item</option>
-              <option value="conjunto">Preço do conjunto (só o total)</option>
-            </select>
-            <div class="orc-muted orc-noprint" id="orc-formato-info"></div>
             <div class="orc-muted orc-noprint">Clique em “Adicionar” para incluir um componente. Quantidades ajustáveis para memória, HD/SSD e fans.</div>
             <div id="orc-selecionados"></div>
             <div class="orc-total" id="orc-total">R$ 0,00</div>
@@ -1905,12 +2002,10 @@
 
             <div class="orc-controles orc-noprint">
               <button type="button" class="orc-btn orc-btn-salvar" id="orc-salvar">Salvar orçamento</button>
-              <button type="button" class="orc-btn" id="orc-imprimir">Gerar PDF / Imprimir</button>
-              <button type="button" class="orc-btn orc-btn-claro" id="orc-copiar">Copiar orçamento em texto</button>
-              <button type="button" class="orc-btn orc-btn-claro" id="orc-csv">Exportar CSV</button>
+              <button type="button" class="orc-btn" id="orc-visualizar">Visualizar impressão</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-limpar">Começar do zero</button>
             </div>
-            <div class="orc-muted orc-noprint">Para o PDF: na janela de impressão, em <strong>Destino</strong>, escolha <strong>“Salvar como PDF”</strong>. A opção “Microsoft Print to PDF” tira os links “ver no site”.</div>
+            <div class="orc-muted orc-noprint">Em <strong>Visualizar impressão</strong> você escolhe o formato, as fotos, as formas de pagamento e as condições, e gera o PDF, o texto do WhatsApp e o CSV.</div>
             <div class="orc-alerta orc-noprint" id="orc-alertas">Compatibilidade: verificações preliminares de socket e DDR. Confirmar BIOS, TDP, cabos, dimensões e especificações antes de fechar a venda.</div>
           </aside>
         </div>
@@ -1931,7 +2026,7 @@
           </div>
         </div>
 
-        <div id="orc-impressao"></div>
+        <div id="orc-impressao" class="fl-folha"></div>
 
         <div class="rodape-nota orc-noprint">
           Estoque e preços vêm do ERP, copiados para o painel a cada 15 minutos (das 05:10 às 22:00). Preços de revenda já com a promoção vigente.
@@ -3951,7 +4046,7 @@
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const d = await res.json();
-      meuAcesso = { email: d.email, ativo: !!d.ativo, admin: !!d.admin, abas: Array.isArray(d.abas) ? d.abas : [] };
+      meuAcesso = { email: d.email, nome: d.nome, ativo: !!d.ativo, admin: !!d.admin, abas: Array.isArray(d.abas) ? d.abas : [] };
     } catch (e) {
       console.error("Erro ao ler o acesso do usuário:", e);
       meuAcesso = { email: sessao.user && sessao.user.email, ativo: false, admin: false, abas: [] };
@@ -7297,8 +7392,18 @@
     let indiceFotos = null;    // codigo -> versão; null enquanto o índice não carregou
     let dados = [], carregando = false, ligado = false, carregadoEm = null, erro = null;
     let ativa = "Processador", carrinho = [], tabela = 0, termo = "", ordem = "asc", ajustado = null, previewId = null;
-    let formato = "item";   // para o cliente: "item" (preço de cada peça) ou "conjunto" (só o total; desconto vale para tudo)
-    let cliente = null;     // {origem: "erp"|"novo", id, codigo_erp, novo_id, nome, fantasia, documento, cidade, uf, telefone, email}
+    // configuração da folha do cliente (tela "Visualizar impressão"); vai junto com o orçamento salvo.
+    // formato: "item" (preço de cada peça) ou "conjunto" (só o total; desconto vale para tudo)
+    const IMPRESSAO_PADRAO = {
+      formato: "item",
+      mostrar: { foto: true, link: true, codigo: true, vendedor: true },
+      vendedor: { nome: "", telefone: "", email: "" },
+      pagamento: { pix: { ativo: true, desconto: 5 }, cartao: { ativo: true, parcelas: 10 },
+                   boleto: { ativo: false, prazos: "28/56/84" }, outro: { ativo: false, texto: "" } },
+      validade_dias: 5, prazo_entrega: "", observacoes: ""
+    };
+    let impressao = null;   // montada em iniciar(), quando o cadastro de quem entrou (meuAcesso) já carregou
+    let cliente = null;    // {origem: "erp"|"novo", id, codigo_erp, novo_id, nome, fantasia, documento, cidade, uf, telefone, email}
     let salvo = null;       // {id, numero, versao, em, assinatura} do orçamento salvo que está na tela
 
     const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -7765,40 +7870,44 @@
     // --- salvar o orçamento (novo ou nova versão do que está na tela) ---
     function numeroTexto(n) { return "ORC-" + String(n).padStart(4, "0"); }
     function assinaturaAtual() {
-      return JSON.stringify([cliente && cliente.origem + ":" + cliente.id, tabela, formato, carrinho.map((i) => [i.id, i.qty, centsEfetivo(i)])]);
+      return JSON.stringify([cliente && cliente.origem + ":" + cliente.id, tabela, impressao, carrinho.map((i) => [i.id, i.qty, centsEfetivo(i)])]);
     }
+    // a situação do salvamento aparece no resumo do montador e na tela "Visualizar impressão"
     function renderSalvo() {
-      const info = el("orc-salvo-info"), btn = el("orc-salvar");
+      let texto, pendente = false, rotulo;
       if (!salvo) {
-        info.className = "orc-salvo-info orc-noprint";
-        info.textContent = carrinho.length && !cliente ? "Para salvar, escolha o cliente." : "";
-        btn.textContent = "Salvar orçamento";
-        return;
+        texto = carrinho.length && !cliente ? "Para salvar, escolha o cliente." : "";
+        rotulo = "Salvar orçamento";
+      } else {
+        pendente = salvo.assinatura !== assinaturaAtual();
+        const hora = salvo.em.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const quando = salvo.em.toDateString() === new Date().toDateString() ? "às " + hora : "em " + salvo.em.toLocaleDateString("pt-BR") + " " + hora;
+        texto = numeroTexto(salvo.numero) + " · versão " + salvo.versao + " · salvo " + quando + (pendente ? " · alterações não salvas" : "");
+        rotulo = pendente ? "Salvar nova versão" : "Salvo ✓";
       }
-      const pendente = salvo.assinatura !== assinaturaAtual();
-      info.className = "orc-salvo-info orc-noprint" + (pendente ? " pendente" : "");
-      const hora = salvo.em.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-      const quando = salvo.em.toDateString() === new Date().toDateString() ? "às " + hora : "em " + salvo.em.toLocaleDateString("pt-BR") + " " + hora;
-      info.textContent = numeroTexto(salvo.numero) + " · versão " + salvo.versao + " · salvo " + quando + (pendente ? " · alterações não salvas" : "");
-      btn.textContent = pendente ? "Salvar nova versão" : "Salvo ✓";
+      ["orc-salvo-info", "orc-vi-salvo"].forEach((id) => {
+        el(id).className = "orc-salvo-info orc-noprint" + (pendente ? " pendente" : "");
+        el(id).textContent = texto;
+      });
+      el("orc-salvar").textContent = el("orc-vi-salvar").textContent = rotulo;
     }
     async function salvarOrcamento() {
       if (!carrinho.length) { alert("Adicione componentes antes de salvar."); return; }
       if (!cliente) {
         alert("Escolha o cliente antes de salvar: busque pelo nome, CNPJ ou código, ou use “+ Cliente novo”.");
+        mostrarTela("montador");
         el("orc-cli-busca").focus();
         return;
       }
       if (salvo && salvo.assinatura === assinaturaAtual()) return;   // nada mudou desde o último salvamento
-      const btn = el("orc-salvar");
-      btn.disabled = true;
-      btn.textContent = "Salvando…";
+      const btns = [el("orc-salvar"), el("orc-vi-salvar")];
+      btns.forEach((b) => { b.disabled = true; b.textContent = "Salvando…"; });
       try {
         const total = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0) / 100;
         const r = await rpc("orcamento_salvar", { p: {
           id: salvo ? salvo.id : null,
           cliente: { origem: cliente.origem, codigo_erp: cliente.codigo_erp, novo_id: cliente.novo_id, nome: cliente.nome, documento: cliente.documento },
-          tabela_preco: tabela, formato, total,
+          tabela_preco: tabela, formato: impressao.formato, impressao, total,
           itens: carrinho.map((i) => {
             const p = byId(i.id);
             return { grupo: p.grupo, codigo: p.cod, descricao: p.d, categoria: p.c, qtd: i.qty,
@@ -7810,9 +7919,10 @@
       } catch (e) {
         alert("Não foi possível salvar: " + e.message);
       } finally {
-        btn.disabled = false;
+        btns.forEach((b) => { b.disabled = false; });
         renderSalvo();
         renderReaberto();
+        if (!el("orc-vi").classList.contains("oculto")) montarFolha();   // número novo na faixa da prévia
       }
     }
 
@@ -7829,10 +7939,15 @@
       const hoje = hojeSP();
       return o.retorno_em < hoje ? "ret-atrasado" : o.retorno_em === hoje ? "ret-hoje" : "";
     }
+    // a aba tem três telas: o montador, "Orçamentos salvos" e "Visualizar impressão"
+    function mostrarTela(tela) {
+      el("orc-salvos").classList.toggle("oculto", tela !== "salvos");
+      el("orc-vi").classList.toggle("oculto", tela !== "vi");
+      document.querySelector("#view-orcamento .orc-grid").classList.toggle("oculto", tela !== "montador");
+      el("orc-ver-salvos").textContent = tela === "salvos" ? "← Voltar ao montador" : "Orçamentos salvos";
+    }
     function mostrarSalvos(sim) {
-      el("orc-salvos").classList.toggle("oculto", !sim);
-      document.querySelector("#view-orcamento .orc-grid").classList.toggle("oculto", sim);
-      el("orc-ver-salvos").textContent = sim ? "← Voltar ao montador" : "Orçamentos salvos";
+      mostrarTela(sim ? "salvos" : "montador");
       if (sim) listarSalvos();
     }
     async function listarSalvos() {
@@ -7948,9 +8063,7 @@
         codigo_erp: o.cliente_codigo_erp, novo_id: o.cliente_novo_id, nome: o.cliente_nome, documento: o.cliente_documento });
       tabela = o.tabela_preco;
       el("orc-tabela").value = String(tabela);
-      formato = o.formato;
-      el("orc-formato").value = formato;
-      el("orc-formato").dispatchEvent(new Event("change"));
+      impressao = impressaoDoOrcamento(o);
       // peças com os preços do dia em que foi salvo (pelo mesmo caminho do "Ajustar total")
       carrinho = [];
       ajustado = {};
@@ -8011,6 +8124,89 @@
       if (current) lines.push(current);
       return lines;
     }
+    // --- configuração da folha (tela "Visualizar impressão") ---
+    const CHAVE_IMPRESSAO = "orc-impressao-v1", CHAVE_VENDEDOR = "orc-vendedor-v1";
+    const copia = (o) => JSON.parse(JSON.stringify(o));
+    // b por cima de a, só nas chaves que a conhece e com o mesmo tipo (configuração velha ou incompleta não quebra)
+    function mesclar(a, b) {
+      if (!b || typeof b !== "object" || Array.isArray(b)) return a;
+      const r = { ...a };
+      for (const k of Object.keys(a)) {
+        if (!(k in b)) continue;
+        if (a[k] && typeof a[k] === "object") r[k] = mesclar(a[k], b[k]);
+        else if (typeof b[k] === typeof a[k]) r[k] = b[k];
+      }
+      return r;
+    }
+    function lerGuardado(chave) {
+      try { return JSON.parse(localStorage.getItem(chave)); } catch (e) { return null; }
+    }
+    // orçamento novo: a última configuração deste navegador, com formato por item e sem observações
+    function novaImpressao() {
+      const c = mesclar(copia(IMPRESSAO_PADRAO), lerGuardado(CHAVE_IMPRESSAO));
+      c.formato = "item";
+      c.observacoes = "";
+      c.vendedor = mesclar(copia(IMPRESSAO_PADRAO.vendedor),
+        lerGuardado(CHAVE_VENDEDOR) || { nome: meuAcesso.nome, email: meuAcesso.email });
+      return c;
+    }
+    // orçamento reaberto: a configuração que foi com ele (salvo antes desta tela: a deste navegador)
+    function impressaoDoOrcamento(o) {
+      const c = mesclar(novaImpressao(), o.impressao);
+      c.formato = o.formato === "conjunto" ? "conjunto" : "item";
+      return c;
+    }
+    function guardarPreferencias(caminho) {
+      try {
+        const resto = copia(impressao);
+        delete resto.formato; delete resto.observacoes; delete resto.vendedor;
+        localStorage.setItem(CHAVE_IMPRESSAO, JSON.stringify(resto));
+        // dados do vendedor só quando ele mesmo edita (reabrir o orçamento de outra pessoa não troca os dele)
+        if (caminho.startsWith("vendedor.")) localStorage.setItem(CHAVE_VENDEDOR, JSON.stringify(impressao.vendedor));
+      } catch (e) {}
+    }
+
+    // formas de pagamento: [rótulo, texto], valores sobre o total (em centavos) já com o rateio
+    const pct = (v) => Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + "%";
+    function prazosBoleto(s) {
+      return String(s || "").split(/[^0-9]+/).map(Number).filter((n) => n > 0);
+    }
+    function linhasPagamento(totalCents) {
+      const pg = impressao.pagamento, out = [];
+      if (pg.pix.ativo) {
+        const d = Math.min(Math.max(Number(pg.pix.desconto) || 0, 0), 100);
+        out.push(["Pix à vista", money(Math.round(totalCents * (1 - d / 100)) / 100) + (d ? " (" + pct(d) + " de desconto)" : "")]);
+      }
+      if (pg.cartao.ativo) {
+        const n = Math.max(1, Math.floor(Number(pg.cartao.parcelas) || 1));
+        out.push(["Cartão de crédito", n === 1 ? money(totalCents / 100) + " à vista"
+          : "até " + n + "x de " + money(Math.round(totalCents / n) / 100) + " sem juros"]);
+      }
+      const prazos = prazosBoleto(pg.boleto.prazos);
+      if (pg.boleto.ativo && prazos.length) {
+        out.push(["Boleto", prazos.length === 1 ? money(totalCents / 100) + " para " + prazos[0] + " dias"
+          : prazos.length + "x de " + money(Math.round(totalCents / prazos.length) / 100) + " (" + prazos.join("/") + " dias)"]);
+      }
+      if (pg.outro.ativo && pg.outro.texto.trim()) out.push(["", pg.outro.texto.trim()]);
+      return out;
+    }
+    function linhasCondicoes() {
+      const out = [], dias = Math.floor(Number(impressao.validade_dias) || 0);
+      if (dias > 0) {
+        const ate = new Date();
+        ate.setDate(ate.getDate() + dias);
+        out.push(["Validade", "proposta válida até " + ate.toLocaleDateString("pt-BR")]);
+      }
+      if (impressao.prazo_entrega.trim()) out.push(["Prazo de entrega", impressao.prazo_entrega.trim()]);
+      return out;
+    }
+    function dadosVendedor() {
+      if (!impressao.mostrar.vendedor) return [];
+      const v = impressao.vendedor;
+      return [["Vendedor", v.nome], ["Telefone", v.telefone], ["E-mail", v.email]]
+        .map(([k, x]) => [k, String(x || "").trim()]).filter(([, x]) => x);
+    }
+
     function textoOrcamento() {
       const lines = ["*ORÇAMENTO" + (salvo ? " " + numeroTexto(salvo.numero) : "") + " — BLUE DISTRIBUIDORA*"];
       const cnpj = el("orc-cnpj").value.trim(), razao = el("orc-razao").value.trim(), codigo = el("orc-codcli").value.trim();
@@ -8023,14 +8219,14 @@
       lines.push("", "```");
       if (!carrinho.length) return lines.concat(["Nenhum item selecionado.", "```"]).join("\n");
       // no formato "conjunto" o cliente vê só as peças e o total: nada de valor por peça
-      const porItem = formato === "item";
-      const COL_CODE = 10, COL_DESC = 52, COL_QTY = 6, COL_UNIT = 14, COL_TOTAL = 14;
-      lines.push(padRight("CÓDIGO", COL_CODE) + padRight("DESCRIÇÃO", COL_DESC) + padLeft("QTDE.", COL_QTY) +
+      const porItem = impressao.formato === "item", comCodigo = impressao.mostrar.codigo;
+      const COL_CODE = comCodigo ? 10 : 4, COL_DESC = 52, COL_QTY = 6, COL_UNIT = 14, COL_TOTAL = 14;
+      lines.push(padRight(comCodigo ? "CÓDIGO" : "", COL_CODE) + padRight("DESCRIÇÃO", COL_DESC) + padLeft("QTDE.", COL_QTY) +
         (porItem ? "  " + padLeft("VALOR UNIT.", COL_UNIT) + "  " + padLeft("VALOR TOTAL", COL_TOTAL) : ""), "");
       carrinho.forEach((i, k) => {
         const p = byId(i.id), unit = centsEfetivo(i) / 100;
         quebrar(p.d, COL_DESC).forEach((desc, idx) => {
-          lines.push(padRight(idx === 0 ? (k + 1) + ". " + p.cod : "", COL_CODE) + padRight(desc, COL_DESC) +
+          lines.push(padRight(idx === 0 ? (k + 1) + "." + (comCodigo ? " " + p.cod : "") : "", COL_CODE) + padRight(desc, COL_DESC) +
             (idx === 0 ? padLeft(String(i.qty), COL_QTY) +
               (porItem ? "  " + padLeft(money(unit), COL_UNIT) + "  " + padLeft(money(unit * i.qty), COL_TOTAL) : "") : ""));
         });
@@ -8038,10 +8234,15 @@
       const total = carrinho.reduce((acc, i) => acc + centsEfetivo(i) * i.qty, 0);
       lines.push("```", "", (porItem ? "*TOTAL: " : "*TOTAL DO CONJUNTO: ") + money(total / 100) + "*");
       if (!porItem) lines.push("_" + AVISO_CONJUNTO + "_");
+      const pagamento = linhasPagamento(total), condicoes = linhasCondicoes(), vendedor = dadosVendedor();
+      if (pagamento.length) lines.push("", "*Formas de pagamento*", ...pagamento.map(([k, v]) => "• " + (k ? k + ": " : "") + v));
+      if (condicoes.length) lines.push("", "*Condições*", ...condicoes.map(([k, v]) => "• " + k + ": " + v));
+      if (impressao.observacoes.trim()) lines.push("", "*Observações*", impressao.observacoes.trim());
+      if (vendedor.length) lines.push("", vendedor.map(([, v]) => v).join(" · "));
       return lines.join("\n");
     }
 
-    // --- folha do orçamento (impressão e PDF) ---
+    // --- folha do orçamento (impressão, PDF e prévia da tela "Visualizar impressão") ---
     const AVISO_CONJUNTO = "Preço válido para o conjunto completo. Os itens não são vendidos separadamente.";
     const SITE_BLUE = "https://www.bluedistribuidora.com.br";
     let paginasSite = null;   // codigo -> caminho da página no site (paginas.json do bucket, do sincronizador)
@@ -8058,38 +8259,106 @@
       const f = fotoDe(p);
       return f && f.u ? f.u : null;
     }
-    function montarFolha() {
-      const porItem = formato === "item";
+    const dl = (pares) => '<dl class="fl-cliente">' + pares.map(([k, v]) => "<dt>" + k + "</dt><dd>" + esc(v) + "</dd>").join("") + "</dl>";
+    const bloco = (titulo, pares) => '<div class="fl-bloco"><h4>' + titulo + "</h4><ul>" +
+      pares.map(([k, v]) => "<li>" + (k ? "<b>" + esc(k) + ":</b> " : "") + esc(v) + "</li>").join("") + "</ul></div>";
+    function htmlFolha() {
+      const porItem = impressao.formato === "item", m = impressao.mostrar;
       const cliente = [["CNPJ", el("orc-cnpj").value], ["Razão social", el("orc-razao").value], ["Código", el("orc-codcli").value]]
         .map(([k, v]) => [k, v.trim()]).filter(([, v]) => v);
-      const total = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0) / 100;
+      const totalCents = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0);
       const linhas = carrinho.map((i) => {
-        const p = byId(i.id), foto = fotoDe(p), link = linkDe(p), unit = centsEfetivo(i) / 100;
+        const p = byId(i.id), foto = m.foto && fotoDe(p), link = m.link && linkDe(p), unit = centsEfetivo(i) / 100;
+        const cod = (m.codigo ? "Cód. " + esc(p.cod) : "") + (link ? '<a class="fl-link" href="' + esc(link) + '" target="_blank" rel="noopener">ver no site ↗</a>' : "");
         return "<tr>" +
-          '<td class="fl-foto">' + (foto ? '<img src="' + esc(foto.mini) + '" data-grande="' + esc(foto.f[0]) + '" alt="">' : '<div class="fl-semfoto"></div>') + "</td>" +
+          (m.foto ? '<td class="fl-foto">' + (foto ? '<img src="' + esc(foto.mini) + '" data-grande="' + esc(foto.f[0]) + '" alt="">' : '<div class="fl-semfoto"></div>') + "</td>" : "") +
           '<td><div class="fl-cat">' + esc(p.c) + '</div><div class="fl-desc">' + esc(p.d) + "</div>" +
-            '<div class="fl-cod">Cód. ' + esc(p.cod) + (link ? '<a class="fl-link" href="' + esc(link) + '" target="_blank" rel="noopener">ver no site ↗</a>' : "") + "</div></td>" +
+            (cod ? '<div class="fl-cod">' + cod + "</div>" : "") + "</td>" +
           '<td class="num">' + i.qty + "</td>" +
           (porItem ? '<td class="num">' + money(unit) + '</td><td class="num"><strong>' + money(unit * i.qty) + "</strong></td>" : "") +
           "</tr>";
       }).join("");
-      el("orc-impressao").innerHTML =
-        '<div class="fl-topo">' + (window.LOGO_BLUE ? '<img class="fl-logo" src="' + window.LOGO_BLUE + '" alt="Blue Distribuidora">' : "<strong>BLUE DISTRIBUIDORA</strong>") +
+      const vendedor = dadosVendedor(), pagamento = linhasPagamento(totalCents), condicoes = linhasCondicoes();
+      const partes = (cliente.length ? dl(cliente) : "") + (vendedor.length ? dl(vendedor) : "");
+      const blocos = (pagamento.length ? bloco("Formas de pagamento", pagamento) : "") + (condicoes.length ? bloco("Condições", condicoes) : "");
+      const obs = impressao.observacoes.trim();
+      return '<div class="fl-topo">' + (window.LOGO_BLUE ? '<img class="fl-logo" src="' + window.LOGO_BLUE + '" alt="Blue Distribuidora">' : "<strong>BLUE DISTRIBUIDORA</strong>") +
           '<div class="fl-empresa"><strong>BLUE DISTRIBUIDORA &amp; IMPORTADORA EIRELI ME</strong>CNPJ: 17.878.215/0001-02<br>' +
           '<a href="' + SITE_BLUE + '" target="_blank" rel="noopener">bluedistribuidora.com.br</a></div></div>' +
         '<div class="fl-faixa"><div class="fl-titulo">ORÇAMENTO DE COMPUTADOR</div><div class="fl-data">' +
           (salvo ? "<strong>" + numeroTexto(salvo.numero) + "</strong> · " : "") + "Emitido em " + new Date().toLocaleDateString("pt-BR") + "</div></div>" +
-        (cliente.length ? '<dl class="fl-cliente">' + cliente.map(([k, v]) => "<dt>" + k + "</dt><dd>" + esc(v) + "</dd>").join("") + "</dl>" : "") +
-        "<table><thead><tr><th></th><th>Produto</th><th class=\"num\">Qtd.</th>" + (porItem ? '<th class="num">Unitário</th><th class="num">Total</th>' : "") + "</tr></thead>" +
+        (partes ? '<div class="fl-partes">' + partes + "</div>" : "") +
+        "<table><thead><tr>" + (m.foto ? "<th></th>" : "") + "<th>Produto</th><th class=\"num\">Qtd.</th>" + (porItem ? '<th class="num">Unitário</th><th class="num">Total</th>' : "") + "</tr></thead>" +
         "<tbody>" + linhas + "</tbody></table>" +
-        '<div class="fl-total"><span>' + (porItem ? "Total" : "Total do conjunto") + "</span><strong>" + money(total) + "</strong></div>" +
+        '<div class="fl-total"><span>' + (porItem ? "Total" : "Total do conjunto") + "</span><strong>" + money(totalCents / 100) + "</strong></div>" +
         (porItem ? "" : '<div class="fl-conjunto">' + AVISO_CONJUNTO + "</div>") +
+        (blocos ? '<div class="fl-blocos">' + blocos + "</div>" : "") +
+        (obs ? '<div class="fl-obs"><h4>Observações</h4>' + esc(obs).replace(/\n/g, "<br>") + "</div>" : "") +
         '<div class="fl-rodape"><span>Valores e disponibilidade sujeitos a alteração.</span>' +
           '<span>Blue Distribuidora · <a href="' + SITE_BLUE + '" target="_blank" rel="noopener">bluedistribuidora.com.br</a></span></div>';
-      // miniatura que o site não tiver: usa a foto grande
-      el("orc-impressao").querySelectorAll("img[data-grande]").forEach((img) => img.addEventListener("error", () => {
-        if (img.src !== img.dataset.grande) img.src = img.dataset.grande;
-      }, { once: true }));
+    }
+    function montarFolha() {
+      const html = htmlFolha();
+      const folhas = [el("orc-impressao")];
+      if (!el("orc-vi").classList.contains("oculto")) folhas.push(el("orc-vi-folha"));
+      folhas.forEach((f) => {
+        f.innerHTML = html;
+        // miniatura que o site não tiver: usa a foto grande
+        f.querySelectorAll("img[data-grande]").forEach((img) => img.addEventListener("error", () => {
+          if (img.src !== img.dataset.grande) img.src = img.dataset.grande;
+        }, { once: true }));
+      });
+    }
+
+    // --- tela "Visualizar impressão" ---
+    const lerCfg = (caminho) => caminho.split(".").reduce((o, k) => o[k], impressao);
+    function gravarCfg(caminho, valor) {
+      const ks = caminho.split("."), ult = ks.pop();
+      ks.reduce((o, k) => o[k], impressao)[ult] = valor;
+    }
+    function preencherConfig() {
+      document.querySelectorAll("#orc-vi [data-cfg]").forEach((inp) => {
+        const v = lerCfg(inp.dataset.cfg);
+        if (inp.type === "radio") inp.checked = inp.value === v;
+        else if (inp.type === "checkbox") inp.checked = !!v;
+        else inp.value = v;
+      });
+      mostrarDependentes();
+    }
+    function mostrarDependentes() {
+      el("orc-vi-formato-info").textContent = impressao.formato === "conjunto"
+        ? "O cliente vê as peças e só o total, com o aviso de que o preço vale para o conjunto completo." : "";
+      el("orc-vi-vendedor").classList.toggle("oculto", !impressao.mostrar.vendedor);
+      document.querySelectorAll("#orc-vi .orc-vi-pag").forEach((linha) =>
+        linha.classList.toggle("inativa", !linha.querySelector("input[type=checkbox]").checked));
+    }
+    function mudouConfig(ev) {
+      const inp = ev.target.closest("[data-cfg]");
+      if (!inp || (inp.type === "radio" && !inp.checked)) return;
+      const caminho = inp.dataset.cfg;
+      gravarCfg(caminho, inp.type === "checkbox" ? inp.checked : inp.type === "number" ? Number(inp.value) || 0 : inp.value);
+      guardarPreferencias(caminho);
+      mostrarDependentes();
+      montarFolha();
+      renderSalvo();
+    }
+    // a prévia é a folha A4 em tamanho real, reduzida para caber na largura da tela
+    function ajustarPrevia() {
+      const previa = el("orc-vi-previa"), folha = el("orc-vi-folha");
+      if (el("orc-vi").classList.contains("oculto")) return;
+      folha.style.zoom = "";
+      const largura = previa.clientWidth - 36;
+      if (largura > 0 && folha.offsetWidth > largura) folha.style.zoom = String(largura / folha.offsetWidth);
+    }
+    async function abrirVisualizar() {
+      if (!carrinho.length) { alert("Adicione componentes antes de visualizar o orçamento."); return; }
+      await carregarPaginas();
+      mostrarTela("vi");
+      preencherConfig();
+      montarFolha();
+      ajustarPrevia();
+      renderSalvo();
+      el("view-orcamento").scrollIntoView({ behavior: "smooth", block: "start" });
     }
     async function gerarPdf() {
       if (!carrinho.length) { alert("Adicione componentes antes de gerar o orçamento."); return; }
@@ -8201,12 +8470,13 @@
       el("orc-copiar").addEventListener("click", copiar);
       el("orc-csv").addEventListener("click", exportarCsv);
       el("orc-imprimir").addEventListener("click", gerarPdf);
-      el("orc-formato").addEventListener("change", (ev) => {
-        formato = ev.target.value;
-        el("orc-formato-info").textContent = formato === "conjunto"
-          ? "O cliente vê as peças e só o total, com o aviso de que o preço vale para o conjunto completo." : "";
-        renderSalvo();
-      });
+      // tela "Visualizar impressão"
+      el("orc-visualizar").addEventListener("click", abrirVisualizar);
+      el("orc-vi-salvar").addEventListener("click", salvarOrcamento);
+      el("orc-vi-voltar").addEventListener("click", () => mostrarTela("montador"));
+      el("orc-vi").addEventListener("input", mudouConfig);
+      el("orc-vi").addEventListener("change", mudouConfig);
+      window.addEventListener("resize", ajustarPrevia);
       // cliente: busca, escolha, troca e cliente novo
       el("orc-cli-busca").addEventListener("input", (ev) => buscarClientes(ev.target.value));
       el("orc-cli-busca").addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharResultados(); });
@@ -8267,6 +8537,7 @@
         carrinho = [];
         salvo = null;   // o próximo salvamento cria outro número
         reaberto = null;
+        impressao = novaImpressao();
         mostrarSalvos(false);
         el("orc-cli-form").classList.add("oculto");
         limparCliente();
@@ -8279,7 +8550,6 @@
       el("orc-limpar").addEventListener("click", () => {
         comecarDoZero();
       });
-      // Ctrl+P na aba também sai como orçamento, não como o painel inteiro
       // Ctrl+P na aba também sai como a folha do orçamento (o botão já monta a folha antes)
       window.addEventListener("beforeprint", () => {
         if (abaAtual !== "orcamento" || document.body.classList.contains("imprimindo-orcamento")) return;
@@ -8289,7 +8559,12 @@
       window.addEventListener("afterprint", () => document.body.classList.remove("imprimindo-orcamento"));
     }
 
-    function iniciar() { ligar(); if (!carregadoEm && !carregando) carregar(); render(); }
+    function iniciar() {
+      if (!impressao) impressao = novaImpressao();
+      ligar();
+      if (!carregadoEm && !carregando) carregar();
+      render();
+    }
     return { iniciar };
   })();
 
