@@ -944,6 +944,14 @@
   #view-orcamento .orc-sug-anexo.oculto { display: none; }
   #view-orcamento .orc-sug-anexo img { max-width: 160px; max-height: 100px; border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
   #view-orcamento .orc-sug-aviso { font-size: 0.8rem; color: var(--texto-suave); }
+  /* item sob encomenda (formulário no lugar da lista de produtos) */
+  #view-orcamento .orc-se { max-width: 620px; }
+  #view-orcamento .orc-se label { display: block; font-size: 0.7rem; font-weight: 700; color: #496786; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  #view-orcamento .orc-se input[type=text], #view-orcamento .orc-se input[type=number] { width: 100%; padding: 9px 11px; border: 1px solid var(--borda); border-radius: 9px; font: inherit; font-size: 0.88rem; background: #fbfcfe; color: var(--texto); box-sizing: border-box; }
+  #view-orcamento .orc-se-linha { display: grid; grid-template-columns: 1fr 1fr 80px; gap: 10px; }
+  #view-orcamento .orc-se .orc-controles { margin: 10px 0 0; }
+  #view-orcamento .orc-se > .orc-muted { margin-top: 12px; }
+  @media (max-width: 560px) { #view-orcamento .orc-se-linha { grid-template-columns: 1fr 1fr; } }
   #view-orcamento .orc-sug-aviso.ok { color: var(--verde); font-weight: 700; }
   #view-orcamento .orc-sug-aviso.erro { color: var(--vermelho); font-weight: 700; }
   #view-orcamento .orc-sug-item { border: 1px solid #e4eaf0; border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
@@ -1998,6 +2006,32 @@
             <div class="orc-catalogo-meta">
               <div class="orc-contagem" id="orc-contagem"></div>
               <button type="button" class="orc-btn" id="orc-proximo" hidden>Próximo →</button>
+            </div>
+            <div id="orc-se" class="orc-se oculto">
+              <label for="orc-se-desc">Descrição do produto</label>
+              <input type="text" id="orc-se-desc" maxlength="200" placeholder="Ex.: Placa de vídeo RTX 5090 32GB ASUS" autocomplete="off">
+              <div class="orc-se-linha">
+                <div><label for="orc-se-custo">Custo (R$)</label><input type="text" id="orc-se-custo" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+                <div><label for="orc-se-venda">Valor de venda (R$)</label><input type="text" id="orc-se-venda" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+                <div><label for="orc-se-qtd">Qtd.</label><input type="number" id="orc-se-qtd" min="1" step="1" value="1"></div>
+              </div>
+              <label for="orc-se-prazo">Prazo de entrega</label>
+              <input type="text" id="orc-se-prazo" maxlength="60" placeholder="Ex.: 10 dias úteis" autocomplete="off">
+              <label>Imagem (opcional)</label>
+              <div id="orc-se-anexo" class="orc-sug-anexo oculto">
+                <img id="orc-se-img" alt="Imagem do item sob encomenda">
+                <button type="button" class="orc-btn orc-btn-claro" id="orc-se-tirar">Tirar imagem</button>
+              </div>
+              <div class="orc-controles">
+                <button type="button" class="orc-btn orc-btn-claro" id="orc-se-anexar">Escolher imagem</button>
+                <span class="orc-muted">ou cole um print com Ctrl+V num dos campos</span>
+                <input type="file" id="orc-se-arquivo" accept="image/*" hidden>
+              </div>
+              <div class="orc-controles">
+                <button type="button" class="orc-btn" id="orc-se-adicionar">Adicionar ao orçamento</button>
+                <span id="orc-se-aviso" class="orc-sug-aviso"></span>
+              </div>
+              <div class="orc-muted">O valor de venda vale para qualquer tabela de preços. O custo entra na lucratividade e não aparece para o cliente.</div>
             </div>
             <div id="orc-produtos"></div>
           </main>
@@ -7458,7 +7492,9 @@
     // essenciais: as peças para montar o computador, na ordem da montagem (avança sozinha ao escolher)
     const ESSENCIAIS = ["Processador", "Placa-mãe", "Memória", "HD / SSD", "Placa de vídeo", "Cooler CPU / Water Cooler", "Gabinete", "Fonte"];
     // não essenciais: acessórios; "Outros" é todo produto com saldo que não entrou em outra categoria
-    const ACESSORIOS = ["Cooler FAN", "Monitor", "Outros"];
+    // "Sob encomenda": produto sem estoque que o vendedor cotou e digita (descrição, custo, venda, prazo, imagem)
+    const SOB_ENCOMENDA = "Sob encomenda";
+    const ACESSORIOS = ["Cooler FAN", "Monitor", "Outros", SOB_ENCOMENDA];
     const CATS = ESSENCIAIS.concat(ACESSORIOS);
     const MULTI = new Set(["Memória", "HD / SSD"].concat(ACESSORIOS));
     const NEXT_CATS = new Set(["Memória", "HD / SSD", "Placa de vídeo"]);
@@ -7485,7 +7521,8 @@
 
     const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const cents = (v) => Math.round((Number(v) + Number.EPSILON) * 100);
-    const byId = (id) => dados.find((p) => p.id === id);
+    let encomendas = [], seqEncomenda = 0;   // itens sob encomenda do orçamento na tela (não vêm do ERP)
+    const byId = (id) => dados.find((p) => p.id === id) || encomendas.find((p) => p.id === id);
     const price = (p) => Number(p.p[tabela] || 0);
     const dataCurta = (s) => new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
@@ -7527,6 +7564,7 @@
     // {f: [fotos grandes], mini: miniatura, u: página no site (só no catálogo embutido)} ou null.
     // Primeiro o bucket; o catálogo embutido dos gabinetes fica de reserva até a 1ª carga do sincronizador.
     function fotoDe(p) {
+      if (p.img) return { f: [p.img], mini: p.img, u: null };   // imagem que o vendedor anexou ao item sob encomenda
       if (p.grupo !== "001") return null;
       const v = indiceFotos && indiceFotos[p.cod];
       if (v) return { f: [FOTOS_BASE + "fotos/" + p.cod + ".jpg?v=" + v], mini: FOTOS_BASE + "mini/" + p.cod + ".jpg?v=" + v, u: null };
@@ -7554,7 +7592,7 @@
         '<button type="button" class="' + (k === i ? "ativa" : "") + '" data-zoom-id="' + esc(p.id) + '" data-zoom-idx="' + k + '" aria-label="Foto ' + (k + 1) + '">' +
         '<img src="' + esc(miniatura(u)) + '" data-grande="' + esc(u) + '" alt=""></button>').join("") : "";
       el("orc-zoom-legenda").innerHTML = '<div class="orc-preview-nome">' + esc(p.d) + "</div>" +
-        '<div class="orc-preview-cod">CÓD. ' + esc(p.cod) + (foto.u ? ' · <a href="' + esc(foto.u) + '" target="_blank" rel="noopener">ver no site</a>' : "") + "</div>";
+        '<div class="orc-preview-cod">' + (p.cod ? "CÓD. " + esc(p.cod) : SOB_ENCOMENDA) + (foto.u ? ' · <a href="' + esc(foto.u) + '" target="_blank" rel="noopener">ver no site</a>' : "") + "</div>";
       el("orc-zoom").classList.remove("oculto");
     }
     function fecharZoom() { el("orc-zoom").classList.add("oculto"); el("orc-zoom-img").removeAttribute("src"); }
@@ -7609,6 +7647,7 @@
         const removidos = [];
         let mudou = false;
         carrinho = carrinho.filter((i) => {
+          if (encomendas.some((e) => e.id === i.id)) return true;   // sob encomenda não depende do estoque
           const p = novos.find((x) => x.id === i.id);
           if (!p) { removidos.push(i.id); mudou = true; return false; }
           if (i.qty > p.s) { i.qty = p.s; mudou = true; }
@@ -7701,8 +7740,64 @@
       invalidarRateio();
       render();
     }
-    function remover(id) { carrinho = carrinho.filter((i) => i.id !== id); invalidarRateio(); render(); }
-    function mudarCategoria(cat) { ativa = cat; termo = ""; el("orc-busca").value = ""; previewId = null; pagina = 1; }
+    function remover(id) {
+      carrinho = carrinho.filter((i) => i.id !== id);
+      encomendas = encomendas.filter((e) => e.id !== id);
+      invalidarRateio();
+      render();
+    }
+
+    // --- item sob encomenda ---
+    function novaEncomenda(x) {
+      const e = { id: "SE-" + (++seqEncomenda), cod: "", grupo: "SE", d: x.d, s: 9999, p: [x.venda, x.venda, x.venda], c: SOB_ENCOMENDA,
+        cost: x.cost, promo: null, prazo: x.prazo || "", img: x.img || null };
+      encomendas.push(e);
+      return e;
+    }
+    // descrição com o aviso de encomenda, para o texto do WhatsApp e o CSV
+    function descricaoCompleta(p) {
+      return p.c === SOB_ENCOMENDA ? p.d + " (sob encomenda" + (p.prazo ? ", prazo " + p.prazo : "") + ")" : p.d;
+    }
+    let seImagem = null;   // data URL da imagem do item sob encomenda em edição
+    function avisoEncomenda(texto, classe) {
+      el("orc-se-aviso").className = "orc-sug-aviso" + (classe ? " " + classe : "");
+      el("orc-se-aviso").textContent = texto;
+    }
+    async function anexarImagemEncomenda(arquivo) {
+      try {
+        seImagem = await prepararImagem(arquivo, 800, 380000);
+        el("orc-se-img").src = seImagem;
+        el("orc-se-anexo").classList.remove("oculto");
+        avisoEncomenda("");
+      } catch (e) {
+        avisoEncomenda(e.message, "erro");
+      }
+    }
+    function tirarImagemEncomenda() {
+      seImagem = null;
+      el("orc-se-anexo").classList.add("oculto");
+      el("orc-se-img").removeAttribute("src");
+      el("orc-se-arquivo").value = "";
+    }
+    function adicionarEncomenda() {
+      const d = el("orc-se-desc").value.trim().replace(/\s+/g, " "), prazo = el("orc-se-prazo").value.trim();
+      const custo = parseMoedaBR(el("orc-se-custo").value), venda = parseMoedaBR(el("orc-se-venda").value);
+      const qtd = Math.floor(Number(el("orc-se-qtd").value));
+      if (!d) { avisoEncomenda("Escreva a descrição do produto.", "erro"); el("orc-se-desc").focus(); return; }
+      if (!Number.isFinite(custo) || custo < 0) { avisoEncomenda("Informe o custo (ex.: 1.250,00).", "erro"); el("orc-se-custo").focus(); return; }
+      if (!Number.isFinite(venda) || venda <= 0) { avisoEncomenda("Informe o valor de venda (ex.: 1.590,00).", "erro"); el("orc-se-venda").focus(); return; }
+      if (!Number.isFinite(qtd) || qtd < 1) { avisoEncomenda("A quantidade precisa ser 1 ou mais.", "erro"); el("orc-se-qtd").focus(); return; }
+      if (venda < custo && !confirm("O valor de venda (" + money(venda) + ") é menor que o custo (" + money(custo) + "). Adicionar assim mesmo?")) return;
+      const e = novaEncomenda({ d, cost: Math.round(custo * 100) / 100, venda: Math.round(venda * 100) / 100, prazo, img: seImagem });
+      carrinho.push({ id: e.id, qty: qtd });
+      ["orc-se-desc", "orc-se-custo", "orc-se-venda", "orc-se-prazo"].forEach((id) => { el(id).value = ""; });
+      el("orc-se-qtd").value = "1";
+      tirarImagemEncomenda();
+      avisoEncomenda("Adicionado ao orçamento.", "ok");
+      invalidarRateio();
+      render();
+    }
+    function mudarCategoria(cat) { ativa = cat; termo = ""; el("orc-busca").value = ""; previewId = null; pagina = 1; avisoEncomenda(""); }
 
     // --- tela ---
     function renderStatus() {
@@ -7725,7 +7820,7 @@
         const feita = essencial && (noOrc > 0 || (c === "Fonte" && fonteNoGabinete));
         return '<button type="button" class="' + (c === ativa ? "ativa" : "") + (feita ? " feita" : "") + '" data-cat="' + esc(c) + '"' +
           (feita ? ' title="Já escolhido. Clique para trocar."' : "") + ">" +
-          '<span class="orc-cat-qtd">' + dados.filter((p) => p.c === c).length.toLocaleString("pt-BR") + "</span>" +
+          '<span class="orc-cat-qtd">' + (c === SOB_ENCOMENDA ? "+" : dados.filter((p) => p.c === c).length.toLocaleString("pt-BR")) + "</span>" +
           '<span class="orc-cat-check">' + (feita || noOrc ? "✓" : "") + "</span>" +
           '<span class="orc-cat-nome">' + esc(c) + "</span>" +
           (c === "Fonte" && fonteNoGabinete ? '<span class="orc-cat-obs">no gabinete</span>' : "") +
@@ -7755,6 +7850,16 @@
 
     function renderCatalogo() {
       el("orc-cat-titulo").textContent = ativa;
+      // "Sob encomenda" não tem lista: mostra o formulário do item digitado
+      const encomenda = ativa === SOB_ENCOMENDA;
+      el("orc-busca").parentNode.classList.toggle("oculto", encomenda);
+      el("orc-se").classList.toggle("oculto", !encomenda);
+      if (encomenda) {
+        el("orc-contagem").textContent = "Produto que não está no estoque: digite os dados da cotação.";
+        el("orc-proximo").hidden = true;
+        el("orc-produtos").innerHTML = "";
+        return;
+      }
       const t = termo.toUpperCase();
       const subset = dados.filter((p) => p.c === ativa && compativel(p) && (p.cod + " " + p.d).toUpperCase().includes(t));
       subset.sort((a, b) => ordem === "az" ? a.d.localeCompare(b.d, "pt-BR") || a.id.localeCompare(b.id)
@@ -7803,8 +7908,10 @@
     function renderCarrinho() {
       el("orc-selecionados").innerHTML = carrinho.map((i) => {
         const p = byId(i.id), unit = centsEfetivo(i) / 100;
+        const encomenda = p.c === SOB_ENCOMENDA;
         return '<div class="orc-sel-item"><strong>' + esc(p.c) + "</strong><div>" + esc(p.d) + "</div>" +
-          '<div class="orc-muted">' + esc(p.cod) + " · " + money(unit) + " un. " + (ajustado ? "(ajustado)" : "") + " · estoque " + p.s + "</div>" +
+          '<div class="orc-muted">' + (encomenda ? (p.prazo ? "prazo " + esc(p.prazo) : "sem prazo informado") : esc(p.cod)) + " · " + money(unit) + " un. " + (ajustado ? "(ajustado)" : "") +
+            (encomenda ? " · custo " + money(p.cost) : " · estoque " + p.s) + "</div>" +
           '<div class="orc-linha"><span>Qtd. <input class="orc-qtd" type="number" min="1" step="1" max="' + p.s + '" ' + (MULTI.has(p.c) ? "" : "disabled") + ' value="' + i.qty + '" data-qty="' + esc(p.id) + '"></span>' +
           "<b>" + money(i.qty * unit) + '</b><button type="button" class="orc-excluir" data-del="' + esc(p.id) + '">Excluir</button></div></div>';
       }).join("") || '<div class="orc-vazio">Nenhum componente selecionado.</div>';
@@ -8011,14 +8118,17 @@
       btns.forEach((b) => { b.disabled = true; b.textContent = "Salvando…"; });
       try {
         const total = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0) / 100;
+        let se = 0;
         const r = await rpc("orcamento_salvar", { p: {
           id: salvo ? salvo.id : null,
           cliente: { origem: cliente.origem, codigo_erp: cliente.codigo_erp, novo_id: cliente.novo_id, nome: cliente.nome, documento: cliente.documento },
           tabela_preco: tabela, formato: impressao.formato, impressao, total,
           itens: carrinho.map((i) => {
-            const p = byId(i.id);
-            return { grupo: p.grupo, codigo: p.cod, descricao: p.d, categoria: p.c, qtd: i.qty,
+            const p = byId(i.id), item = { grupo: p.grupo, codigo: p.cod, descricao: p.d, categoria: p.c, qtd: i.qty,
               preco_tabela: price(p), preco_unit: centsEfetivo(i) / 100, custo: p.cost };
+            // sob encomenda: código SE1, SE2... na ordem do orçamento (não existe no ERP)
+            if (p.c === SOB_ENCOMENDA) Object.assign(item, { codigo: "SE" + (++se), prazo: p.prazo, imagem: p.img });
+            return item;
           })
         } });
         salvo = { id: r.id, numero: r.numero, versao: r.versao, em: new Date(), assinatura: assinaturaAtual() };
@@ -8111,7 +8221,8 @@
             .filter(Boolean).join(" · ") + "</div></div>" +
           '<div class="dt-total">' + money(o.total) + "<span>" + TABELAS[o.tabela_preco] + " · " + (o.formato === "conjunto" ? "preço do conjunto" : "preço por item") + "</span></div></div>" +
         '<div class="dt-grid"><div class="tabela-scroll"><table class="dt-itens"><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>' +
-          o.itens.map((i) => "<tr><td>" + esc(i.descricao) + '<small class="orc-muted" style="display:block">' + esc(i.categoria || "") + " · Cód. " + esc(i.codigo) + "</small></td>" +
+          o.itens.map((i) => "<tr><td>" + esc(i.descricao) + '<small class="orc-muted" style="display:block">' + esc(i.categoria || "") +
+            (i.grupo === "SE" ? (i.prazo ? " · prazo " + esc(i.prazo) : "") : " · Cód. " + esc(i.codigo)) + "</small></td>" +
             '<td class="num">' + i.qtd + '</td><td class="num">' + money(i.preco_unit) + '</td><td class="num"><strong>' + money(i.preco_unit * i.qtd) + "</strong></td></tr>").join("") +
           "</tbody></table></div>" +
           '<div class="dt-acomp">' +
@@ -8175,9 +8286,16 @@
       impressao = impressaoDoOrcamento(o);
       // peças com os preços do dia em que foi salvo (pelo mesmo caminho do "Ajustar total")
       carrinho = [];
+      encomendas = [];
       ajustado = {};
       const fora = [], mudou = [], estoque = [];
       for (const it of o.itens) {
+        if (it.grupo === "SE") {
+          const e = novaEncomenda({ d: it.descricao, cost: it.custo == null ? null : Number(it.custo), venda: Number(it.preco_tabela), prazo: it.prazo, img: it.imagem });
+          carrinho.push({ id: e.id, qty: it.qtd });
+          ajustado[e.id] = cents(it.preco_unit);
+          continue;
+        }
         const id = it.grupo === "001" ? it.codigo : it.grupo + "-" + it.codigo, p = byId(id);
         if (!p) { fora.push(it.descricao + " (cód. " + it.codigo + ")"); continue; }
         let qtd = it.qtd;
@@ -8282,14 +8400,15 @@
       el("orc-sug-aviso").className = "orc-sug-aviso" + (classe ? " " + classe : "");
       el("orc-sug-aviso").textContent = texto;
     }
-    // a imagem vai reduzida (no máximo 1.600 px, JPEG) para caber no banco e carregar rápido
-    function prepararImagem(arquivo) {
+    // a imagem vai reduzida (no máximo 1.600 px, JPEG) para caber no banco e carregar rápido;
+    // o item sob encomenda usa menos (800 px), porque ela é gravada de novo em cada versão do orçamento
+    function prepararImagem(arquivo, lado = 1600, limite = 1900000) {
       return new Promise((ok, falha) => {
         if (!arquivo || !/^image\//.test(arquivo.type)) { falha(new Error("O arquivo não é uma imagem.")); return; }
         const url = URL.createObjectURL(arquivo), img = new Image();
         img.onload = () => {
           URL.revokeObjectURL(url);
-          const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+          const k = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
           const c = document.createElement("canvas");
           c.width = Math.max(1, Math.round(img.naturalWidth * k));
           c.height = Math.max(1, Math.round(img.naturalHeight * k));
@@ -8298,8 +8417,8 @@
           g.fillRect(0, 0, c.width, c.height);
           g.drawImage(img, 0, 0, c.width, c.height);
           let dados = c.toDataURL("image/jpeg", 0.82);
-          if (dados.length > 1900000) dados = c.toDataURL("image/jpeg", 0.6);
-          if (dados.length > 1900000) { falha(new Error("A imagem é grande demais, mesmo reduzida.")); return; }
+          if (dados.length > limite) dados = c.toDataURL("image/jpeg", 0.6);
+          if (dados.length > limite) { falha(new Error("A imagem é grande demais, mesmo reduzida.")); return; }
           ok(dados);
         };
         img.onerror = () => { URL.revokeObjectURL(url); falha(new Error("Não foi possível ler a imagem.")); };
@@ -8488,7 +8607,7 @@
         (porItem ? "  " + padLeft("VALOR UNIT.", COL_UNIT) + "  " + padLeft("VALOR TOTAL", COL_TOTAL) : ""), "");
       carrinho.forEach((i, k) => {
         const p = byId(i.id), unit = centsEfetivo(i) / 100;
-        quebrar(p.d, COL_DESC).forEach((desc, idx) => {
+        quebrar(descricaoCompleta(p), COL_DESC).forEach((desc, idx) => {
           lines.push(padRight(idx === 0 ? (k + 1) + "." + (comCodigo ? " " + p.cod : "") : "", COL_CODE) + padRight(desc, COL_DESC) +
             (idx === 0 ? padLeft(String(i.qty), COL_QTY) +
               (porItem ? "  " + padLeft(money(unit), COL_UNIT) + "  " + padLeft(money(unit * i.qty), COL_TOTAL) : "") : ""));
@@ -8532,7 +8651,7 @@
       const totalCents = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0);
       const linhas = carrinho.map((i) => {
         const p = byId(i.id), foto = m.foto && fotoDe(p), link = m.link && linkDe(p), unit = centsEfetivo(i) / 100;
-        const cod = (m.codigo ? "Cód. " + esc(p.cod) : "") + (link ? '<a class="fl-link" href="' + esc(link) + '" target="_blank" rel="noopener">ver no site ↗</a>' : "");
+        const cod = (p.c === SOB_ENCOMENDA ? (p.prazo ? "Prazo de entrega: " + esc(p.prazo) : "") : m.codigo ? "Cód. " + esc(p.cod) : "") + (link ? '<a class="fl-link" href="' + esc(link) + '" target="_blank" rel="noopener">ver no site ↗</a>' : "");
         return "<tr>" +
           (m.foto ? '<td class="fl-foto">' + (foto ? '<img src="' + esc(foto.mini) + '" data-grande="' + esc(foto.f[0]) + '" alt="">' : '<div class="fl-semfoto"></div>') + "</td>" : "") +
           '<td><div class="fl-cat">' + esc(p.c) + '</div><div class="fl-desc">' + esc(p.d) + "</div>" +
@@ -8661,7 +8780,7 @@
     }
     function exportarCsv() {
       const lines = [["Categoria", "Código", "Descrição", "Quantidade", "Valor unitário ajustado", "Subtotal"],
-        ...carrinho.map((i) => { const p = byId(i.id), u = centsEfetivo(i) / 100; return [p.c, p.cod, p.d, i.qty, u.toFixed(2), (i.qty * u).toFixed(2)]; })];
+        ...carrinho.map((i) => { const p = byId(i.id), u = centsEfetivo(i) / 100; return [p.c, p.cod, descricaoCompleta(p), i.qty, u.toFixed(2), (i.qty * u).toFixed(2)]; })];
       const csv = "﻿" + lines.map((row) => row.map((x) => '"' + String(x).replace(/"/g, '""') + '"').join(";")).join("\r\n");
       const a = document.createElement("a"), u = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
       a.href = u; a.download = "orcamento_blue.csv"; a.click();
@@ -8737,6 +8856,16 @@
         render();
       });
       el("orc-restaurar").addEventListener("click", () => { invalidarRateio(); render(); });
+      // item sob encomenda: imagem por arquivo ou print colado (Ctrl+V) em qualquer campo do formulário
+      el("orc-se-adicionar").addEventListener("click", adicionarEncomenda);
+      el("orc-se-anexar").addEventListener("click", () => el("orc-se-arquivo").click());
+      el("orc-se-arquivo").addEventListener("change", (ev) => { if (ev.target.files[0]) anexarImagemEncomenda(ev.target.files[0]); });
+      el("orc-se-tirar").addEventListener("click", tirarImagemEncomenda);
+      el("orc-se").addEventListener("paste", (ev) => {
+        const item = [...(ev.clipboardData ? ev.clipboardData.items : [])].find((i) => i.kind === "file" && /^image\//.test(i.type));
+        if (item) { ev.preventDefault(); anexarImagemEncomenda(item.getAsFile()); }
+      });
+      el("orc-se").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && ev.target.tagName === "INPUT") adicionarEncomenda(); });
       el("orc-copiar").addEventListener("click", copiar);
       el("orc-csv").addEventListener("click", exportarCsv);
       el("orc-imprimir").addEventListener("click", gerarPdf);
@@ -8818,6 +8947,7 @@
       const comecarDoZero = () => {
         if (!confirm("Começar um orçamento novo? O atual será apagado.")) return;
         carrinho = [];
+        encomendas = [];
         salvo = null;   // o próximo salvamento cria outro número
         reaberto = null;
         impressao = novaImpressao();
