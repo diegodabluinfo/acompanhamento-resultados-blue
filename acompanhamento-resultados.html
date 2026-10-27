@@ -936,6 +936,34 @@
   @media (max-width: 760px) {
     #view-orcamento .dt-grid { grid-template-columns: 1fr; }
   }
+  /* sugestões de melhoria */
+  #view-orcamento .orc-sug-form { margin: 14px 0 18px; padding: 14px; background: #f3f7fc; border: 1px solid #dce8f2; border-radius: 10px; }
+  #view-orcamento #orc-sug-texto { width: 100%; padding: 10px 12px; font-size: 0.9rem; margin-bottom: 10px; resize: vertical; }
+  #view-orcamento .orc-sug-form .orc-controles { margin-bottom: 0; }
+  #view-orcamento .orc-sug-anexo { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  #view-orcamento .orc-sug-anexo.oculto { display: none; }
+  #view-orcamento .orc-sug-anexo img { max-width: 160px; max-height: 100px; border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
+  #view-orcamento .orc-sug-aviso { font-size: 0.8rem; color: var(--texto-suave); }
+  #view-orcamento .orc-sug-aviso.ok { color: var(--verde); font-weight: 700; }
+  #view-orcamento .orc-sug-aviso.erro { color: var(--vermelho); font-weight: 700; }
+  #view-orcamento .orc-sug-item { border: 1px solid #e4eaf0; border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+  #view-orcamento .orc-sug-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.76rem; color: var(--texto-suave); }
+  #view-orcamento .orc-sug-texto { margin: 8px 0; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #view-orcamento .orc-sug-rodape { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--texto-suave); }
+  #view-orcamento .orc-sug-rodape a { color: var(--azul); }
+  #view-orcamento .orc-sug-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+  #view-orcamento .orc-sug-apoio, #view-orcamento .orc-sug-ver { padding: 6px 11px; border: 1px solid var(--borda); border-radius: 16px; background: #fff; color: #16466e; font-size: 0.78rem; font-weight: 700; }
+  #view-orcamento .orc-sug-apoio.ativo { background: #dbeaf9; border-color: #9ec3ea; color: #06478a; }
+  #view-orcamento .orc-sug-apoio:disabled { opacity: 0.55; cursor: default; }
+  #view-orcamento .orc-sug-resposta { margin-top: 10px; padding: 9px 12px; background: #f3f8fd; border-left: 3px solid var(--azul); border-radius: 6px; font-size: 0.82rem; white-space: pre-wrap; }
+  #view-orcamento .orc-sug-resposta small { display: block; color: var(--texto-suave); margin-bottom: 2px; white-space: normal; }
+  #view-orcamento .orc-sug-admin { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--borda); }
+  #view-orcamento .orc-sug-admin select { width: auto; padding: 7px 9px; font-size: 0.82rem; }
+  #view-orcamento .orc-sug-admin input { flex: 1; min-width: 180px; padding: 7px 9px; font-size: 0.82rem; }
+  #view-orcamento .sug-nova { background: #eef1f6; color: #4a5d72; }
+  #view-orcamento .sug-aprovada { background: #dbeaf9; color: #06478a; }
+  #view-orcamento .sug-feita { background: var(--verde-fundo); color: var(--verde); }
+  #view-orcamento .sug-descartada { background: var(--vermelho-fundo); color: var(--vermelho); }
   /* salvar */
   #view-orcamento .orc-btn-salvar { background: var(--verde); }
   #view-orcamento .orc-salvo-info { font-size: 0.78rem; color: var(--texto-suave); margin: -8px 0 12px; min-height: 1em; }
@@ -1823,6 +1851,7 @@
           <button type="button" id="orc-atualizar" class="btn-2via">Atualizar estoque</button>
           <button type="button" id="orc-novo" class="btn-2via">Começar do zero</button>
           <button type="button" id="orc-ver-salvos" class="btn-2via">Orçamentos salvos</button>
+          <button type="button" id="orc-ver-sugestoes" class="btn-2via">💡 Sugestões</button>
           <span id="freshness-orcamento" class="freshness"></span>
         </div>
 
@@ -1850,6 +1879,39 @@
                 <tbody id="orc-salvos-corpo"></tbody>
               </table>
             </div>
+          </div>
+        </section>
+
+        <section id="orc-sug" class="orc-sug orc-noprint oculto">
+          <div class="orc-painel">
+            <h2>Sugestões de melhoria</h2>
+            <div class="orc-muted">Ideias para melhorar a tela de orçamento. Todos veem as sugestões, e cada uma mostra quem pediu, para tirarmos dúvidas com a pessoa. Se a sua ideia já está na lista, clique em “👍 Eu também”.</div>
+            <div class="orc-sug-form">
+              <textarea id="orc-sug-texto" rows="3" maxlength="2000" placeholder="O que poderia ser melhor na tela de orçamento? Dá para colar um print aqui com Ctrl+V."></textarea>
+              <div id="orc-sug-anexo" class="orc-sug-anexo oculto">
+                <img id="orc-sug-anexo-img" alt="Imagem anexada">
+                <button type="button" class="orc-link" id="orc-sug-remover">remover imagem</button>
+              </div>
+              <div class="orc-controles">
+                <button type="button" class="orc-btn orc-btn-claro" id="orc-sug-anexar">Anexar imagem</button>
+                <input type="file" id="orc-sug-arquivo" accept="image/*" hidden>
+                <button type="button" class="orc-btn" id="orc-sug-enviar">Enviar sugestão</button>
+                <span id="orc-sug-aviso" class="orc-sug-aviso"></span>
+              </div>
+            </div>
+            <div class="orc-salvos-filtros">
+              <select id="orc-sug-filtro" aria-label="Situação">
+                <option value="abertas">Abertas (novas e aprovadas)</option>
+                <option value="">Todas</option>
+                <option value="nova">Novas</option>
+                <option value="aprovada">Aprovadas</option>
+                <option value="feita">Feitas</option>
+                <option value="descartada">Descartadas</option>
+              </select>
+              <button type="button" class="orc-btn orc-btn-claro" id="orc-sug-atualizar">Atualizar</button>
+              <span class="orc-salvos-resumo" id="orc-sug-resumo"></span>
+            </div>
+            <div id="orc-sug-lista"></div>
           </div>
         </section>
 
@@ -7984,12 +8046,14 @@
       const hoje = hojeSP();
       return o.retorno_em < hoje ? "ret-atrasado" : o.retorno_em === hoje ? "ret-hoje" : "";
     }
-    // a aba tem três telas: o montador, "Orçamentos salvos" e "Visualizar impressão"
+    // a aba tem quatro telas: o montador, "Orçamentos salvos", "Sugestões" e "Visualizar impressão"
     function mostrarTela(tela) {
       el("orc-salvos").classList.toggle("oculto", tela !== "salvos");
+      el("orc-sug").classList.toggle("oculto", tela !== "sug");
       el("orc-vi").classList.toggle("oculto", tela !== "vi");
       document.querySelector("#view-orcamento .orc-grid").classList.toggle("oculto", tela !== "montador");
       el("orc-ver-salvos").textContent = tela === "salvos" ? "← Voltar ao montador" : "Orçamentos salvos";
+      el("orc-ver-sugestoes").textContent = tela === "sug" ? "← Voltar ao montador" : "💡 Sugestões";
     }
     function mostrarSalvos(sim) {
       mostrarTela(sim ? "salvos" : "montador");
@@ -8169,6 +8233,160 @@
       if (current) lines.push(current);
       return lines;
     }
+    // --- sugestões de melhoria: todos com a aba veem todas; só o administrador muda a situação e responde ---
+    const SUG_SITUACOES = { nova: "Nova", aprovada: "Aprovada", feita: "Feita", descartada: "Descartada" };
+    let sugLista = [], sugImagem = null, sugCarregando = false;   // sugImagem: data URL anexada à sugestão em edição
+    function mostrarSugestoes(sim) {
+      mostrarTela(sim ? "sug" : "montador");
+      if (sim) listarSugestoes();
+    }
+    async function listarSugestoes() {
+      if (sugCarregando) return;
+      sugCarregando = true;
+      el("orc-sug-lista").innerHTML = '<div class="orc-vazio">Carregando…</div>';
+      try {
+        sugLista = await rpc("sugestao_listar", { p_aba: "orcamento" });
+        renderSugestoes();
+      } catch (e) {
+        el("orc-sug-lista").innerHTML = '<div class="orc-vazio">Não foi possível carregar: ' + esc(e.message) + "</div>";
+      } finally {
+        sugCarregando = false;
+      }
+    }
+    function renderSugestoes() {
+      const filtro = el("orc-sug-filtro").value, admin = !!meuAcesso.admin;
+      const lista = sugLista.filter((s) => !filtro || (filtro === "abertas" ? s.situacao === "nova" || s.situacao === "aprovada" : s.situacao === filtro));
+      const abertas = sugLista.filter((s) => s.situacao === "nova" || s.situacao === "aprovada").length;
+      el("orc-sug-resumo").textContent = sugLista.length ? sugLista.length + (sugLista.length > 1 ? " sugestões" : " sugestão") + " · " + abertas + (abertas === 1 ? " aberta" : " abertas") : "";
+      el("orc-sug-lista").innerHTML = lista.length ? lista.map((s) =>
+        '<article class="orc-sug-item">' +
+          '<div class="orc-sug-cab"><span class="orc-sit sug-' + esc(s.situacao) + '">' + SUG_SITUACOES[s.situacao] + "</span>" +
+            "<span>#" + s.id + " · " + dataBR(s.criado_em) + "</span></div>" +
+          '<div class="orc-sug-texto">' + esc(s.texto) + "</div>" +
+          '<div class="orc-sug-rodape"><span>Pedido por <strong>' + esc(s.criado_por_nome || "—") + "</strong>" +
+            (s.criado_por_email ? ' · <a href="mailto:' + esc(s.criado_por_email) + '">' + esc(s.criado_por_email) + "</a>" : "") + "</span>" +
+            '<span class="orc-sug-botoes">' +
+              (s.tem_imagem ? '<button type="button" class="orc-sug-ver" data-sug-img="' + s.id + '">🖼 Ver imagem</button>' : "") +
+              '<button type="button" class="orc-sug-apoio' + (s.apoiei ? " ativo" : "") + '" data-sug-apoio="' + s.id + '"' +
+                (s.minha ? ' disabled title="A sugestão é sua"' : ' title="' + (s.apoiei ? "Clique para tirar o seu apoio" : "Também quero essa melhoria") + '"') + ">👍 Eu também · " + s.apoios + "</button>" +
+            "</span></div>" +
+          (s.resposta ? '<div class="orc-sug-resposta"><small>Resposta de ' + esc(s.respondido_por_nome || "") + " em " + dataBR(s.respondido_em) + "</small>" + esc(s.resposta) + "</div>" : "") +
+          (admin ? '<div class="orc-sug-admin" data-sug-adm="' + s.id + '">' +
+            '<select aria-label="Situação">' + Object.keys(SUG_SITUACOES).map((k) => '<option value="' + k + '"' + (k === s.situacao ? " selected" : "") + ">" + SUG_SITUACOES[k] + "</option>").join("") + "</select>" +
+            '<input type="text" maxlength="2000" placeholder="Resposta para quem pediu (opcional)" value="' + esc(s.resposta || "") + '" aria-label="Resposta">' +
+            '<button type="button" class="orc-btn" data-sug-responder="' + s.id + '">Salvar</button></div>' : "") +
+        "</article>").join("")
+        : '<div class="orc-vazio">' + (sugLista.length ? "Nenhuma sugestão nesta situação." : "Nenhuma sugestão ainda. Seja o primeiro!") + "</div>";
+    }
+    function avisoSugestao(texto, classe) {
+      el("orc-sug-aviso").className = "orc-sug-aviso" + (classe ? " " + classe : "");
+      el("orc-sug-aviso").textContent = texto;
+    }
+    // a imagem vai reduzida (no máximo 1.600 px, JPEG) para caber no banco e carregar rápido
+    function prepararImagem(arquivo) {
+      return new Promise((ok, falha) => {
+        if (!arquivo || !/^image\//.test(arquivo.type)) { falha(new Error("O arquivo não é uma imagem.")); return; }
+        const url = URL.createObjectURL(arquivo), img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(img.naturalWidth * k));
+          c.height = Math.max(1, Math.round(img.naturalHeight * k));
+          const g = c.getContext("2d");
+          g.fillStyle = "#fff";
+          g.fillRect(0, 0, c.width, c.height);
+          g.drawImage(img, 0, 0, c.width, c.height);
+          let dados = c.toDataURL("image/jpeg", 0.82);
+          if (dados.length > 1900000) dados = c.toDataURL("image/jpeg", 0.6);
+          if (dados.length > 1900000) { falha(new Error("A imagem é grande demais, mesmo reduzida.")); return; }
+          ok(dados);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); falha(new Error("Não foi possível ler a imagem.")); };
+        img.src = url;
+      });
+    }
+    async function anexarImagem(arquivo) {
+      try {
+        sugImagem = await prepararImagem(arquivo);
+        el("orc-sug-anexo-img").src = sugImagem;
+        el("orc-sug-anexo").classList.remove("oculto");
+        avisoSugestao("");
+      } catch (e) {
+        avisoSugestao(e.message, "erro");
+      }
+    }
+    function removerImagem() {
+      sugImagem = null;
+      el("orc-sug-anexo").classList.add("oculto");
+      el("orc-sug-anexo-img").removeAttribute("src");
+      el("orc-sug-arquivo").value = "";
+    }
+    async function enviarSugestao() {
+      const texto = el("orc-sug-texto").value.trim();
+      if (texto.length < 5) { avisoSugestao("Escreva a sugestão antes de enviar.", "erro"); el("orc-sug-texto").focus(); return; }
+      const btn = el("orc-sug-enviar");
+      btn.disabled = true;
+      avisoSugestao("Enviando…");
+      try {
+        await rpc("sugestao_enviar", { p: { aba: "orcamento", texto, imagem: sugImagem } });
+        el("orc-sug-texto").value = "";
+        removerImagem();
+        avisoSugestao("Sugestão enviada. Obrigado!", "ok");
+        el("orc-sug-filtro").value = "abertas";
+        await listarSugestoes();
+      } catch (e) {
+        avisoSugestao("Não foi possível enviar: " + e.message, "erro");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+    async function cliqueSugestoes(ev) {
+      const img = ev.target.closest("[data-sug-img]");
+      if (img) {
+        img.disabled = true;
+        try {
+          const dados = await rpc("sugestao_imagem", { p_id: Number(img.dataset.sugImg) });
+          if (!dados) return;
+          el("orc-zoom-img").src = dados;
+          el("orc-zoom-img").alt = "Imagem da sugestão #" + img.dataset.sugImg;
+          el("orc-zoom-fotos").innerHTML = "";
+          el("orc-zoom-legenda").textContent = "Sugestão #" + img.dataset.sugImg;
+          el("orc-zoom").classList.remove("oculto");
+        } catch (e) {
+          alert("Não foi possível abrir a imagem: " + e.message);
+        } finally {
+          img.disabled = false;
+        }
+        return;
+      }
+      const apoio = ev.target.closest("[data-sug-apoio]");
+      if (apoio) {
+        const s = sugLista.find((x) => x.id === Number(apoio.dataset.sugApoio));
+        apoio.disabled = true;
+        try {
+          s.apoios = await rpc("sugestao_apoiar", { p_id: s.id, p_apoiar: !s.apoiei });
+          s.apoiei = !s.apoiei;
+        } catch (e) {
+          alert("Não foi possível registrar: " + e.message);
+        }
+        renderSugestoes();
+        return;
+      }
+      const responder = ev.target.closest("[data-sug-responder]");
+      if (responder) {
+        const caixa = responder.closest("[data-sug-adm]"), s = sugLista.find((x) => x.id === Number(responder.dataset.sugResponder));
+        responder.disabled = true;
+        try {
+          const r = await rpc("sugestao_responder", { p: { id: s.id, situacao: caixa.querySelector("select").value, resposta: caixa.querySelector("input").value } });
+          Object.assign(s, r);
+        } catch (e) {
+          alert("Não foi possível salvar: " + e.message);
+        }
+        renderSugestoes();
+      }
+    }
+
     // --- configuração da folha (tela "Visualizar impressão") ---
     const CHAVE_IMPRESSAO = "orc-impressao-v1", CHAVE_VENDEDOR = "orc-vendedor-v1";
     const copia = (o) => JSON.parse(JSON.stringify(o));
@@ -8552,6 +8770,19 @@
       el("orc-salvar").addEventListener("click", salvarOrcamento);
       // orçamentos salvos
       el("orc-ver-salvos").addEventListener("click", () => mostrarSalvos(el("orc-salvos").classList.contains("oculto")));
+      // sugestões de melhoria
+      el("orc-ver-sugestoes").addEventListener("click", () => mostrarSugestoes(el("orc-sug").classList.contains("oculto")));
+      el("orc-sug-enviar").addEventListener("click", enviarSugestao);
+      el("orc-sug-anexar").addEventListener("click", () => el("orc-sug-arquivo").click());
+      el("orc-sug-arquivo").addEventListener("change", (ev) => { if (ev.target.files[0]) anexarImagem(ev.target.files[0]); });
+      el("orc-sug-remover").addEventListener("click", removerImagem);
+      el("orc-sug-texto").addEventListener("paste", (ev) => {
+        const item = [...(ev.clipboardData ? ev.clipboardData.items : [])].find((i) => i.kind === "file" && /^image\//.test(i.type));
+        if (item) { ev.preventDefault(); anexarImagem(item.getAsFile()); }
+      });
+      el("orc-sug-filtro").addEventListener("change", renderSugestoes);
+      el("orc-sug-atualizar").addEventListener("click", listarSugestoes);
+      el("orc-sug-lista").addEventListener("click", cliqueSugestoes);
       el("orc-salvos-quem").addEventListener("click", (ev) => {
         const b = ev.target.closest("[data-meus]");
         if (!b) return;
