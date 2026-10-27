@@ -866,6 +866,12 @@
   #view-orcamento .orc-pick { text-align: right; }
   #view-orcamento .orc-pick .orc-btn { margin-top: 6px; }
   #view-orcamento .orc-preco { font-weight: 800; color: #114e80; font-size: 1.02rem; white-space: nowrap; }
+  #view-orcamento .orc-paginas { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin: 16px 0 4px; }
+  #view-orcamento .orc-pag { min-width: 38px; padding: 8px 11px; border: 1px solid var(--borda); border-radius: 8px; background: #fff; color: #16466e; font-size: 0.84rem; font-weight: 700; }
+  #view-orcamento .orc-pag:hover:not(:disabled):not(.ativa) { border-color: var(--azul); background: #f3f8fd; }
+  #view-orcamento .orc-pag.ativa { background: var(--azul); border-color: var(--azul); color: #fff; }
+  #view-orcamento .orc-pag:disabled { opacity: 0.4; cursor: default; }
+  #view-orcamento .orc-pag-sep { color: var(--texto-suave); padding: 0 2px; }
   #view-orcamento .orc-vazio { padding: 30px 14px; text-align: center; color: var(--texto-suave); font-size: 0.85rem; }
 
   #view-orcamento .orc-cliente { display: grid; gap: 5px; margin: 6px 0 14px; }
@@ -7399,6 +7405,8 @@
     let indiceFotos = null;    // codigo -> versão; null enquanto o índice não carregou
     let dados = [], carregando = false, ligado = false, carregadoEm = null, erro = null;
     let ativa = "Processador", carrinho = [], tabela = 0, termo = "", ordem = "asc", ajustado = null, previewId = null;
+    const POR_PAGINA = 30;
+    let pagina = 1;   // página da lista de produtos; volta para 1 ao trocar categoria, busca ou ordem
     // configuração da folha do cliente (tela "Visualizar impressão"); vai junto com o orçamento salvo.
     // formato: "item" (preço de cada peça) ou "conjunto" (só o total; desconto vale para tudo)
     const IMPRESSAO_PADRAO = {
@@ -7632,7 +7640,7 @@
       render();
     }
     function remover(id) { carrinho = carrinho.filter((i) => i.id !== id); invalidarRateio(); render(); }
-    function mudarCategoria(cat) { ativa = cat; termo = ""; el("orc-busca").value = ""; previewId = null; }
+    function mudarCategoria(cat) { ativa = cat; termo = ""; el("orc-busca").value = ""; previewId = null; pagina = 1; }
 
     // --- tela ---
     function renderStatus() {
@@ -7688,11 +7696,15 @@
       subset.sort((a, b) => ordem === "az" ? a.d.localeCompare(b.d, "pt-BR") || a.id.localeCompare(b.id)
         : ordem === "za" ? b.d.localeCompare(a.d, "pt-BR") || a.id.localeCompare(b.id)
         : ((price(a) - price(b)) * (ordem === "asc" ? 1 : -1) || a.d.localeCompare(b.d, "pt-BR")));
-      el("orc-contagem").textContent = subset.length + " produtos disponíveis · descrição integral";
+      const paginas = Math.max(1, Math.ceil(subset.length / POR_PAGINA));
+      pagina = Math.min(Math.max(pagina, 1), paginas);
+      const ini = (pagina - 1) * POR_PAGINA, daPagina = subset.slice(ini, ini + POR_PAGINA);
+      el("orc-contagem").textContent = subset.length.toLocaleString("pt-BR") + " produtos disponíveis" +
+        (paginas > 1 ? " · mostrando " + (ini + 1) + "–" + (ini + daPagina.length) : "") + " · descrição integral";
       el("orc-proximo").hidden = !NEXT_CATS.has(ativa);
       const gabFonte = ativa === "Fonte" ? gabineteComFonteNoCarrinho() : null;
       el("orc-produtos").innerHTML = (gabFonte ? '<div class="orc-alerta">O gabinete escolhido (' + esc(gabFonte.d) + ") já vem com fonte. Só adicione outra fonte se o cliente pedir.</div>" : "") +
-        (subset.length ? subset.map((p) => {
+        (subset.length ? daPagina.map((p) => {
           const foto = fotoDe(p);
           return '<div class="orc-item' + (foto ? " clicavel com-mini" : "") + (p.id === previewId ? " selecionado" : "") + '" data-item="' + esc(p.id) + '">' +
           (foto ? '<button type="button" class="orc-mini" data-zoom-id="' + esc(p.id) + '" title="Ver foto grande">' +
@@ -7705,7 +7717,23 @@
           '<div class="orc-pick"><div class="orc-preco">' + money(price(p)) + '</div><button type="button" class="orc-btn" data-add="' + esc(p.id) + '">Adicionar</button></div>' +
         "</div>";
         }).join("")
-        : '<div class="orc-vazio">' + (carregando ? "Carregando…" : erro ? "Estoque não carregado. Use o botão Atualizar estoque." : "Nenhum item disponível para este filtro.") + "</div>");
+        : '<div class="orc-vazio">' + (carregando ? "Carregando…" : erro ? "Estoque não carregado. Use o botão Atualizar estoque." : "Nenhum item disponível para este filtro.") + "</div>") +
+        htmlPaginas(paginas);
+    }
+    // ‹ Anterior · 1 … 4 5 [6] 7 8 … 45 · Próxima ›
+    function htmlPaginas(paginas) {
+      if (paginas <= 1) return "";
+      const nums = [];
+      for (let n = 1; n <= paginas; n++) {
+        if (n === 1 || n === paginas || Math.abs(n - pagina) <= 2) nums.push(n);
+        else if (nums[nums.length - 1] !== "…") nums.push("…");
+      }
+      const b = (n, rotulo, desligado) => '<button type="button" class="orc-pag' + (n === pagina && !rotulo ? " ativa" : "") + '"' +
+        (desligado ? " disabled" : ' data-pag="' + n + '"') + (n === pagina && !rotulo ? ' aria-current="page"' : "") + ">" + (rotulo || n) + "</button>";
+      return '<nav class="orc-paginas" aria-label="Páginas da lista">' +
+        b(pagina - 1, "‹ Anterior", pagina === 1) +
+        nums.map((n) => n === "…" ? '<span class="orc-pag-sep">…</span>' : b(n)).join("") +
+        b(pagina + 1, "Próxima ›", pagina === paginas) + "</nav>";
     }
 
     function renderCarrinho() {
@@ -8432,6 +8460,13 @@
       });
       // clique na miniatura abre a foto grande; no botão, adiciona; no resto do card (com foto), só mostra a foto ao lado
       el("orc-produtos").addEventListener("click", (ev) => {
+        const pag = ev.target.closest("[data-pag]");
+        if (pag) {
+          pagina = Number(pag.dataset.pag);
+          renderCatalogo();
+          el("orc-cat-titulo").scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
         const zoom = ev.target.closest("[data-zoom-id]");
         if (zoom) { abrirZoom(zoom.dataset.zoomId); return; }
         const add = ev.target.closest("[data-add]");
@@ -8466,8 +8501,8 @@
         mudarCategoria(ESSENCIAIS[pos + 1]);
         render();
       });
-      el("orc-busca").addEventListener("input", (ev) => { termo = ev.target.value; renderCatalogo(); });
-      el("orc-ordem").addEventListener("change", (ev) => { ordem = ev.target.value; renderCatalogo(); });
+      el("orc-busca").addEventListener("input", (ev) => { termo = ev.target.value; pagina = 1; renderCatalogo(); });
+      el("orc-ordem").addEventListener("change", (ev) => { ordem = ev.target.value; pagina = 1; renderCatalogo(); });
       el("orc-tabela").addEventListener("change", (ev) => { tabela = Number(ev.target.value); invalidarRateio(); render(); });
       el("orc-selecionados").addEventListener("change", (ev) => { const q = ev.target.closest("[data-qty]"); if (q) mudarQtd(q.dataset.qty, q.value); });
       el("orc-selecionados").addEventListener("click", (ev) => { const d = ev.target.closest("[data-del]"); if (d) remover(d.dataset.del); });
