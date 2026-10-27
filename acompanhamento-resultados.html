@@ -889,6 +889,45 @@
   #view-orcamento .orc-cli-linha { display: grid; grid-template-columns: 1fr 70px; gap: 8px; }
   #view-orcamento .orc-cli-aviso { margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 0.78rem; background: var(--erro-fundo); color: var(--erro); }
   #view-orcamento .orc-cli-aviso.ok { background: var(--sucesso-fundo); color: var(--sucesso); }
+  /* orçamentos salvos: lista, detalhe e reaberto */
+  #view-orcamento .orc-salvos-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+  #view-orcamento .orc-salvos-filtros select { width: auto; padding: 8px 10px; font-size: 0.85rem; }
+  #view-orcamento #orc-salvos-busca { flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--borda); border-radius: 9px; font: inherit; font-size: 0.85rem; background: #fbfcfe; color: var(--texto); }
+  #view-orcamento .orc-salvos-resumo { font-size: 0.8rem; color: var(--texto-suave); margin: 4px 0 10px; }
+  #view-orcamento .orc-salvos-tabela th, #view-orcamento .orc-salvos-tabela td { text-align: left; white-space: normal; vertical-align: middle; }
+  #view-orcamento .orc-salvos-tabela th.num, #view-orcamento .orc-salvos-tabela td.num { text-align: right; white-space: nowrap; }
+  #view-orcamento .orc-salvos-tabela tbody td:first-child { font-weight: 700; white-space: nowrap; }
+  #view-orcamento .orc-salvos-tabela tbody tr { cursor: pointer; }
+  #view-orcamento .orc-salvos-tabela tbody tr:hover td { background: #f3f8fd; }
+  #view-orcamento .orc-salvos-tabela small { display: block; color: var(--texto-suave); font-weight: 400; }
+  #view-orcamento .orc-sit { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+  #view-orcamento .sit-aberto { background: #eef1f6; color: #4a5d72; }
+  #view-orcamento .sit-enviado { background: #dbeaf9; color: #06478a; }
+  #view-orcamento .sit-aprovado { background: var(--verde-fundo); color: var(--verde); }
+  #view-orcamento .sit-perdido { background: var(--vermelho-fundo); color: var(--vermelho); }
+  #view-orcamento .ret-atrasado { color: var(--vermelho); font-weight: 700; }
+  #view-orcamento .ret-hoje { color: var(--amarelo); font-weight: 700; }
+  #view-orcamento .orc-detalhe-caixa { width: min(900px, 100%); }
+  #view-orcamento .dt-topo { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding-right: 40px; margin-bottom: 14px; }
+  #view-orcamento .dt-num { font-size: 0.78rem; font-weight: 700; color: var(--azul); }
+  #view-orcamento .dt-topo h2 { margin: 2px 0 4px; }
+  #view-orcamento .dt-total { text-align: right; font-size: 1.3rem; font-weight: 800; color: #064c81; white-space: nowrap; }
+  #view-orcamento .dt-total span { display: block; font-size: 0.72rem; font-weight: 600; color: var(--texto-suave); }
+  #view-orcamento .dt-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); gap: 18px; }
+  #view-orcamento .dt-itens td, #view-orcamento .dt-itens th { text-align: left; white-space: normal; font-size: 0.78rem; padding: 7px 8px; }
+  #view-orcamento .dt-itens td.num, #view-orcamento .dt-itens th.num { text-align: right; white-space: nowrap; }
+  #view-orcamento .dt-acomp label { display: block; font-size: 0.7rem; font-weight: 700; color: #496786; margin: 10px 0 4px; }
+  #view-orcamento .dt-acomp select, #view-orcamento .dt-acomp input, #view-orcamento .dt-acomp textarea { padding: 8px 10px; font-size: 0.85rem; }
+  #view-orcamento .dt-acomp h3 { font-size: 0.85rem; color: var(--azul-escuro); margin: 16px 0 6px; }
+  #view-orcamento .dt-hist { list-style: none; margin: 0; padding: 0; font-size: 0.78rem; max-height: 220px; overflow: auto; }
+  #view-orcamento .dt-hist li { padding: 6px 0; border-bottom: 1px solid #eef1f6; }
+  #view-orcamento .dt-hist small { display: block; color: var(--texto-suave); }
+  #view-orcamento .orc-reaberto { background: #fff8e8; border-color: #f0dcae; font-size: 0.78rem; margin-top: 0; }
+  #view-orcamento .orc-reaberto ul { margin: 6px 0 8px; padding-left: 18px; }
+  #view-orcamento .orc-reaberto .orc-btn { margin-top: 4px; }
+  @media (max-width: 760px) {
+    #view-orcamento .dt-grid { grid-template-columns: 1fr; }
+  }
   /* salvar */
   #view-orcamento .orc-btn-salvar { background: var(--verde); }
   #view-orcamento .orc-salvo-info { font-size: 0.78rem; color: var(--texto-suave); margin: -8px 0 12px; min-height: 1em; }
@@ -1734,8 +1773,36 @@
           <span id="orc-status" class="cod-cliente">Estoque e preços direto do ERP</span>
           <button type="button" id="orc-atualizar" class="btn-2via">Atualizar estoque</button>
           <button type="button" id="orc-novo" class="btn-2via">Começar do zero</button>
+          <button type="button" id="orc-ver-salvos" class="btn-2via">Orçamentos salvos</button>
           <span id="freshness-orcamento" class="freshness"></span>
         </div>
+
+        <section id="orc-salvos" class="orc-salvos orc-noprint oculto">
+          <div class="orc-painel">
+            <div class="orc-salvos-filtros">
+              <div class="filtro-periodo" id="orc-salvos-quem">
+                <button type="button" data-meus="1" class="ativa">Meus orçamentos</button>
+                <button type="button" data-meus="0">Ver todos</button>
+              </div>
+              <select id="orc-salvos-situacao" aria-label="Situação">
+                <option value="">Todas as situações</option>
+                <option value="aberto">Em aberto</option>
+                <option value="enviado">Enviado</option>
+                <option value="aprovado">Aprovado</option>
+                <option value="perdido">Perdido</option>
+              </select>
+              <input type="search" id="orc-salvos-busca" placeholder="Cliente, número (ORC-0001) ou CNPJ" autocomplete="off">
+              <button type="button" class="btn-2via" id="orc-salvos-atualizar">Atualizar</button>
+            </div>
+            <div id="orc-salvos-resumo" class="orc-salvos-resumo"></div>
+            <div class="tabela-scroll">
+              <table class="orc-salvos-tabela">
+                <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Quem fez</th><th class="num">Total</th><th>Situação</th><th>Retorno</th></tr></thead>
+                <tbody id="orc-salvos-corpo"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
         <div class="orc-grid">
           <nav class="orc-painel orc-lateral orc-noprint">
@@ -1813,6 +1880,7 @@
             <div id="orc-selecionados"></div>
             <div class="orc-total" id="orc-total">R$ 0,00</div>
             <div class="orc-salvo-info orc-noprint" id="orc-salvo-info"></div>
+            <div class="orc-caixa orc-reaberto orc-noprint oculto" id="orc-reaberto"></div>
 
             <div class="orc-caixa orc-noprint">
               <label class="orc-muted" for="orc-total-manual">AJUSTAR TOTAL DO ORÇAMENTO (R$)</label>
@@ -1853,6 +1921,13 @@
             <div class="orc-zoom-foto"><img id="orc-zoom-img" alt=""></div>
             <div id="orc-zoom-fotos" class="orc-zoom-fotos"></div>
             <div id="orc-zoom-legenda" class="orc-zoom-legenda"></div>
+          </div>
+        </div>
+
+        <div id="orc-detalhe" class="orc-zoom oculto orc-noprint" role="dialog" aria-modal="true" aria-label="Orçamento salvo">
+          <div class="orc-zoom-caixa orc-detalhe-caixa">
+            <button type="button" class="orc-zoom-fechar" id="orc-detalhe-fechar" aria-label="Fechar">×</button>
+            <div id="orc-detalhe-corpo"></div>
           </div>
         </div>
 
@@ -7550,6 +7625,7 @@
       }
       el("orc-alertas").textContent = avisos.length ? avisos.join(" ") : "Compatibilidade: verificação preliminar de socket e DDR. Confirmar BIOS, consumo da GPU/fonte, conexões e dimensões antes de vender.";
       renderSalvo();
+      renderReaberto();
     }
 
     // --- cliente do orçamento: do ERP (busca) ou novo (cadastro no painel; o ERP é só leitura) ---
@@ -7701,8 +7777,9 @@
       }
       const pendente = salvo.assinatura !== assinaturaAtual();
       info.className = "orc-salvo-info orc-noprint" + (pendente ? " pendente" : "");
-      info.textContent = numeroTexto(salvo.numero) + " · versão " + salvo.versao + " · salvo às " +
-        salvo.em.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + (pendente ? " · alterações não salvas" : "");
+      const hora = salvo.em.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const quando = salvo.em.toDateString() === new Date().toDateString() ? "às " + hora : "em " + salvo.em.toLocaleDateString("pt-BR") + " " + hora;
+      info.textContent = numeroTexto(salvo.numero) + " · versão " + salvo.versao + " · salvo " + quando + (pendente ? " · alterações não salvas" : "");
       btn.textContent = pendente ? "Salvar nova versão" : "Salvo ✓";
     }
     async function salvarOrcamento() {
@@ -7729,12 +7806,185 @@
           })
         } });
         salvo = { id: r.id, numero: r.numero, versao: r.versao, em: new Date(), assinatura: assinaturaAtual() };
+        reaberto = null;
       } catch (e) {
         alert("Não foi possível salvar: " + e.message);
       } finally {
         btn.disabled = false;
         renderSalvo();
+        renderReaberto();
       }
+    }
+
+    // --- orçamentos salvos: lista, detalhe com acompanhamento e "Abrir no montador" ---
+    const SITUACOES = { aberto: "Em aberto", enviado: "Enviado", aprovado: "Aprovado", perdido: "Perdido" };
+    const MOTIVOS = ["Preço", "Prazo de entrega", "Sem estoque", "Comprou em outro lugar", "Desistiu", "Outro"];
+    const TABELAS = ["TAB 04", "Sem IE", "Consumo"];
+    let salvosMeus = true, salvosLista = [], salvosTimer = null, detalhe = null;
+    let reaberto = null;   // {numero, versao, fora: [], mudou: [], estoque: []} do orçamento aberto no montador
+    const dataBR = (s) => s ? new Date(s.length === 10 ? s + "T12:00:00" : s).toLocaleDateString("pt-BR") : "";
+    const ativo = (o) => o.situacao === "aberto" || o.situacao === "enviado";
+    function classeRetorno(o) {
+      if (!o.retorno_em || !ativo(o)) return "";
+      const hoje = hojeSP();
+      return o.retorno_em < hoje ? "ret-atrasado" : o.retorno_em === hoje ? "ret-hoje" : "";
+    }
+    function mostrarSalvos(sim) {
+      el("orc-salvos").classList.toggle("oculto", !sim);
+      document.querySelector("#view-orcamento .orc-grid").classList.toggle("oculto", sim);
+      el("orc-ver-salvos").textContent = sim ? "← Voltar ao montador" : "Orçamentos salvos";
+      if (sim) listarSalvos();
+    }
+    async function listarSalvos() {
+      const corpo = el("orc-salvos-corpo");
+      corpo.innerHTML = '<tr><td colspan="7" class="estado-vazio">Carregando…</td></tr>';
+      try {
+        salvosLista = await rpc("orcamento_listar", { p_meus: salvosMeus, p_situacao: el("orc-salvos-situacao").value || null,
+          p_busca: el("orc-salvos-busca").value.trim() || null });
+        renderSalvos();
+      } catch (e) {
+        corpo.innerHTML = '<tr><td colspan="7" class="estado-vazio">Não foi possível carregar: ' + esc(e.message) + "</td></tr>";
+      }
+    }
+    function renderSalvos() {
+      const atrasados = salvosLista.filter((o) => classeRetorno(o) === "ret-atrasado").length;
+      const hoje = salvosLista.filter((o) => classeRetorno(o) === "ret-hoje").length;
+      el("orc-salvos-resumo").innerHTML = salvosLista.length + (salvosLista.length === 1 ? " orçamento" : " orçamentos") +
+        (atrasados ? ' · <span class="ret-atrasado">' + atrasados + (atrasados === 1 ? " retorno atrasado" : " retornos atrasados") + "</span>" : "") +
+        (hoje ? ' · <span class="ret-hoje">' + hoje + (hoje === 1 ? " retorno para hoje" : " retornos para hoje") + "</span>" : "");
+      el("orc-salvos-corpo").innerHTML = salvosLista.length ? salvosLista.map((o) =>
+        '<tr data-orc="' + o.id + '">' +
+          "<td>" + numeroTexto(o.numero) + (o.versao > 1 ? "<small>versão " + o.versao + "</small>" : "") + "</td>" +
+          "<td>" + dataBR(o.criado_em) + "</td>" +
+          "<td>" + esc(o.cliente_nome) + "<small>" + (o.cliente_codigo_erp ? "ERP " + esc(o.cliente_codigo_erp) : "cliente novo") +
+            (o.cliente_documento ? " · " + formatarDocumento(o.cliente_documento) : "") + "</small></td>" +
+          "<td>" + esc(o.criado_por_nome || "") + "</td>" +
+          '<td class="num">' + money(o.total) + "</td>" +
+          '<td><span class="orc-sit sit-' + o.situacao + '">' + SITUACOES[o.situacao] + "</span>" +
+            (o.situacao === "perdido" && o.motivo_perda ? "<small>" + esc(o.motivo_perda) + "</small>" : "") + "</td>" +
+          '<td class="' + classeRetorno(o) + '">' + dataBR(o.retorno_em) + "</td>" +
+        "</tr>").join("")
+        : '<tr><td colspan="7" class="estado-vazio">' + (salvosMeus ? "Você ainda não salvou orçamentos com esse filtro. Use “Ver todos” para ver os da equipe." : "Nenhum orçamento com esse filtro.") + "</td></tr>";
+    }
+
+    async function abrirDetalhe(id) {
+      try {
+        detalhe = await rpc("orcamento_abrir", { p_id: id });
+        renderDetalhe();
+        el("orc-detalhe").classList.remove("oculto");
+      } catch (e) {
+        alert("Não foi possível abrir o orçamento: " + e.message);
+      }
+    }
+    function fecharDetalhe() { el("orc-detalhe").classList.add("oculto"); detalhe = null; }
+    function renderDetalhe(aviso, bom) {
+      const o = detalhe;
+      el("orc-detalhe-corpo").innerHTML =
+        '<div class="dt-topo"><div><div class="dt-num">' + numeroTexto(o.numero) + " · versão " + o.versao + "</div>" +
+          "<h2>" + esc(o.cliente_nome) + "</h2>" +
+          '<div class="orc-muted">' + [o.cliente_codigo_erp ? "ERP " + esc(o.cliente_codigo_erp) : "cliente novo",
+            o.cliente_documento ? formatarDocumento(o.cliente_documento) : "", "feito por " + esc(o.criado_por_nome || "—") + " em " + dataBR(o.criado_em)]
+            .filter(Boolean).join(" · ") + "</div></div>" +
+          '<div class="dt-total">' + money(o.total) + "<span>" + TABELAS[o.tabela_preco] + " · " + (o.formato === "conjunto" ? "preço do conjunto" : "preço por item") + "</span></div></div>" +
+        '<div class="dt-grid"><div class="tabela-scroll"><table class="dt-itens"><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>' +
+          o.itens.map((i) => "<tr><td>" + esc(i.descricao) + '<small class="orc-muted" style="display:block">' + esc(i.categoria || "") + " · Cód. " + esc(i.codigo) + "</small></td>" +
+            '<td class="num">' + i.qtd + '</td><td class="num">' + money(i.preco_unit) + '</td><td class="num"><strong>' + money(i.preco_unit * i.qtd) + "</strong></td></tr>").join("") +
+          "</tbody></table></div>" +
+          '<div class="dt-acomp">' +
+            '<label for="dt-situacao">Situação</label><select id="dt-situacao">' +
+              Object.keys(SITUACOES).map((k) => '<option value="' + k + '"' + (k === o.situacao ? " selected" : "") + ">" + SITUACOES[k] + "</option>").join("") + "</select>" +
+            '<div id="dt-motivo-box"' + (o.situacao === "perdido" ? "" : ' class="oculto"') + '><label for="dt-motivo">Motivo da perda</label><select id="dt-motivo"' + (o.situacao === "perdido" ? " disabled" : "") + '><option value="">Escolha…</option>' +
+              MOTIVOS.map((m) => "<option" + (m === o.motivo_perda ? " selected" : "") + ">" + m + "</option>").join("") + "</select></div>" +
+            '<label for="dt-retorno">Próximo retorno</label><input type="date" id="dt-retorno" value="' + (o.retorno_em || "") + '">' +
+            '<label for="dt-nota">Anotação</label><textarea id="dt-nota" rows="3" placeholder="Ex.: cliente pediu para ligar depois do dia 5"></textarea>' +
+            '<div id="dt-aviso" class="orc-cli-aviso' + (aviso ? (bom ? " ok" : "") : " oculto") + '">' + esc(aviso || "") + "</div>" +
+            '<div class="orc-controles" style="margin-top:10px"><button type="button" class="orc-btn" data-dt="salvar">Salvar acompanhamento</button>' +
+              '<button type="button" class="orc-btn orc-btn-claro" data-dt="montador">Abrir no montador</button></div>' +
+            "<h3>Histórico</h3><ul class=\"dt-hist\">" + o.historico.map((h) =>
+              "<li>" + esc(h.texto || "") + "<small>" + new Date(h.quando).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) + " · " + esc(h.quem_nome || "") + "</small></li>").join("") + "</ul>" +
+          "</div></div>";
+    }
+    // manda só o que mudou; o motivo vai junto com a mudança para Perdido
+    async function salvarAcompanhamento() {
+      const o = detalhe, p = { id: o.id };
+      const sit = el("dt-situacao").value, retorno = el("dt-retorno").value || null, nota = el("dt-nota").value.trim();
+      if (sit !== o.situacao) {
+        p.situacao = sit;
+        if (sit === "perdido") {
+          p.motivo = el("dt-motivo").value;
+          if (!p.motivo) { renderDetalheAviso("Escolha o motivo da perda."); return; }
+        }
+      }
+      if (retorno !== (o.retorno_em || null)) p.retorno = retorno;
+      if (nota) p.nota = nota;
+      if (Object.keys(p).length === 1) { renderDetalheAviso("Nada mudou."); return; }
+      try {
+        detalhe = await rpc("orcamento_acompanhar", { p });
+        renderDetalhe("Acompanhamento salvo.", true);
+        listarSalvos();
+      } catch (e) {
+        renderDetalheAviso(e.message);
+      }
+    }
+    function renderDetalheAviso(msg) {
+      const a = el("dt-aviso");
+      a.classList.remove("oculto", "ok");
+      a.textContent = msg;
+    }
+
+    // o estoque precisa estar carregado para montar as peças
+    async function esperarEstoque() {
+      if (!carregadoEm && !carregando) await carregar();
+      for (let k = 0; k < 100 && carregando; k++) await new Promise((r) => setTimeout(r, 200));
+    }
+    async function abrirNoMontador() {
+      const o = detalhe;
+      if (carrinho.length && !(salvo && salvo.id === o.id) && !confirm("Abrir " + numeroTexto(o.numero) + " no montador? O orçamento que está na tela será substituído.")) return;
+      await esperarEstoque();
+      fecharDetalhe();
+      mostrarSalvos(false);
+      el("orc-cli-form").classList.add("oculto");
+      escolherCliente({ origem: o.cliente_origem, id: o.cliente_origem === "erp" ? o.cliente_codigo_erp : String(o.cliente_novo_id),
+        codigo_erp: o.cliente_codigo_erp, novo_id: o.cliente_novo_id, nome: o.cliente_nome, documento: o.cliente_documento });
+      tabela = o.tabela_preco;
+      el("orc-tabela").value = String(tabela);
+      formato = o.formato;
+      el("orc-formato").value = formato;
+      el("orc-formato").dispatchEvent(new Event("change"));
+      // peças com os preços do dia em que foi salvo (pelo mesmo caminho do "Ajustar total")
+      carrinho = [];
+      ajustado = {};
+      const fora = [], mudou = [], estoque = [];
+      for (const it of o.itens) {
+        const id = it.grupo === "001" ? it.codigo : it.grupo + "-" + it.codigo, p = byId(id);
+        if (!p) { fora.push(it.descricao + " (cód. " + it.codigo + ")"); continue; }
+        let qtd = it.qtd;
+        if (qtd > p.s) { estoque.push(p.d + ": " + it.qtd + " no orçamento, " + p.s + " em estoque hoje"); qtd = p.s; }
+        carrinho.push({ id, qty: qtd });
+        ajustado[id] = cents(it.preco_unit);
+        if (cents(price(p)) !== cents(it.preco_tabela)) mudou.push(p.d + ": " + money(it.preco_tabela) + " → " + money(price(p)) + " hoje");
+      }
+      if (!carrinho.length) ajustado = null;
+      el("orc-rateio-info").textContent = "Preços do orçamento salvo " + numeroTexto(o.numero) + " (versão " + o.versao + ").";
+      reaberto = { numero: o.numero, versao: o.versao, fora, mudou, estoque };
+      salvo = { id: o.id, numero: o.numero, versao: o.versao, em: new Date(o.atualizado_em),
+        assinatura: fora.length || estoque.length ? "" : assinaturaAtual() };   // peça que saiu ou diminuiu já conta como alteração
+      mudarCategoria("Processador");
+      render();
+      el("view-orcamento").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function renderReaberto() {
+      const box = el("orc-reaberto");
+      box.classList.toggle("oculto", !reaberto);
+      if (!reaberto) { box.innerHTML = ""; return; }
+      const lista = (titulo, itens) => itens.length ? "<div><strong>" + titulo + "</strong><ul>" + itens.map((t) => "<li>" + esc(t) + "</li>").join("") + "</ul></div>" : "";
+      box.innerHTML = "<strong>" + numeroTexto(reaberto.numero) + " reaberto</strong> · " +
+          (ajustado ? "com os preços do dia em que foi salvo." : "com os preços de hoje.") +
+        lista("Fora do estoque hoje (não entraram):", reaberto.fora) +
+        lista("Estoque menor que o orçamento (quantidade ajustada):", reaberto.estoque) +
+        lista("Preço de tabela diferente hoje:", reaberto.mudou) +
+        (ajustado ? '<button type="button" class="orc-btn orc-btn-claro" data-precos-hoje>Atualizar para os preços de hoje</button>' : "") +
+        '<div class="orc-muted">Só vira nova versão quando você salvar.</div>';
     }
 
     function render() {
@@ -7978,11 +8228,46 @@
       el("ncl-salvar").addEventListener("click", salvarClienteNovo);
       el("ncl-cancelar").addEventListener("click", fecharFormCliente);
       el("orc-salvar").addEventListener("click", salvarOrcamento);
+      // orçamentos salvos
+      el("orc-ver-salvos").addEventListener("click", () => mostrarSalvos(el("orc-salvos").classList.contains("oculto")));
+      el("orc-salvos-quem").addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-meus]");
+        if (!b) return;
+        salvosMeus = b.dataset.meus === "1";
+        el("orc-salvos-quem").querySelectorAll("button").forEach((x) => x.classList.toggle("ativa", x === b));
+        listarSalvos();
+      });
+      el("orc-salvos-situacao").addEventListener("change", listarSalvos);
+      el("orc-salvos-busca").addEventListener("input", () => { clearTimeout(salvosTimer); salvosTimer = setTimeout(listarSalvos, 400); });
+      el("orc-salvos-atualizar").addEventListener("click", listarSalvos);
+      el("orc-salvos-corpo").addEventListener("click", (ev) => {
+        const tr = ev.target.closest("tr[data-orc]");
+        if (tr) abrirDetalhe(Number(tr.dataset.orc));
+      });
+      el("orc-detalhe-fechar").addEventListener("click", fecharDetalhe);
+      el("orc-detalhe").addEventListener("click", (ev) => { if (ev.target === el("orc-detalhe")) fecharDetalhe(); });
+      document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !el("orc-detalhe").classList.contains("oculto")) fecharDetalhe(); });
+      el("orc-detalhe-corpo").addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-dt]");
+        if (!b) return;
+        if (b.dataset.dt === "salvar") salvarAcompanhamento();
+        if (b.dataset.dt === "montador") abrirNoMontador();
+      });
+      el("orc-detalhe-corpo").addEventListener("change", (ev) => {
+        if (ev.target.id === "dt-situacao") el("dt-motivo-box").classList.toggle("oculto", ev.target.value !== "perdido");
+      });
+      el("orc-reaberto").addEventListener("click", (ev) => {
+        if (!ev.target.closest("[data-precos-hoje]")) return;
+        invalidarRateio();
+        render();
+      });
       // orçamento novo: tira peças, dados do cliente e ajuste de total; a tabela de preços escolhida fica
       const comecarDoZero = () => {
         if (!confirm("Começar um orçamento novo? O atual será apagado.")) return;
         carrinho = [];
         salvo = null;   // o próximo salvamento cria outro número
+        reaberto = null;
+        mostrarSalvos(false);
         el("orc-cli-form").classList.add("oculto");
         limparCliente();
         mudarCategoria("Processador");
