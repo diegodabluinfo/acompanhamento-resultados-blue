@@ -7653,12 +7653,13 @@
     }
 
     // essencial com peça no orçamento sai riscada com ✓ (a Fonte também, quando o gabinete já traz fonte);
-    // acessório não é riscado: mostra ✓ e quantos itens dele estão no orçamento
+    // acessório não é riscado. Categoria que aceita mais de um item mostra embaixo quanto já está no orçamento.
     function renderCategorias() {
       const fonteNoGabinete = !doCarrinho("Fonte") && gabineteComFonteNoCarrinho();
       const botao = (c) => {
         const essencial = ESSENCIAIS.includes(c);
-        const noOrc = carrinho.filter((i) => byId(i.id).c === c).length;
+        const linhas = carrinho.filter((i) => byId(i.id).c === c), noOrc = linhas.length;
+        const unidades = linhas.reduce((s, i) => s + i.qty, 0);
         const feita = essencial && (noOrc > 0 || (c === "Fonte" && fonteNoGabinete));
         return '<button type="button" class="' + (c === ativa ? "ativa" : "") + (feita ? " feita" : "") + '" data-cat="' + esc(c) + '"' +
           (feita ? ' title="Já escolhido. Clique para trocar."' : "") + ">" +
@@ -7666,7 +7667,8 @@
           '<span class="orc-cat-check">' + (feita || noOrc ? "✓" : "") + "</span>" +
           '<span class="orc-cat-nome">' + esc(c) + "</span>" +
           (c === "Fonte" && fonteNoGabinete ? '<span class="orc-cat-obs">no gabinete</span>' : "") +
-          (!essencial && noOrc ? '<span class="orc-cat-obs">' + noOrc + (noOrc > 1 ? " itens" : " item") + " no orçamento</span>" : "") + "</button>";
+          (MULTI.has(c) && noOrc ? '<span class="orc-cat-obs">' + unidades + (unidades > 1 ? " unidades" : " unidade") +
+            (noOrc > 1 ? " · " + noOrc + " produtos" : "") + "</span>" : "") + "</button>";
       };
       el("orc-categorias").innerHTML =
         '<div class="orc-cat-grupo">Essenciais</div>' + ESSENCIAIS.map(botao).join("") +
