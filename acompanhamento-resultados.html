@@ -869,6 +869,30 @@
   #view-orcamento .orc-cliente { display: grid; gap: 5px; margin: 6px 0 14px; }
   #view-orcamento .orc-cliente label { font-size: 0.7rem; font-weight: 700; color: #496786; margin: 4px 0 0; }
   #view-orcamento .orc-cliente input { padding: 9px 11px; font-size: 0.85rem; }
+  #view-orcamento .orc-cliente input[readonly] { background: #f3f6fa; }
+  /* cliente: busca, escolhido e cliente novo */
+  #view-orcamento .orc-cli-busca { position: relative; margin-bottom: 6px; }
+  #view-orcamento #orc-cli-busca { width: 100%; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 9px; font: inherit; font-size: 0.85rem; background: #fbfcfe; color: var(--texto); }
+  #view-orcamento .orc-cli-resultados { position: absolute; z-index: 20; left: 0; right: 0; top: 42px; background: #fff; border: 1px solid var(--borda); border-radius: 10px; box-shadow: 0 8px 24px rgba(20,40,70,0.14); max-height: 320px; overflow: auto; }
+  #view-orcamento .orc-cli-res { display: block; width: 100%; text-align: left; background: #fff; color: var(--texto); border: 0; border-bottom: 1px solid #eef1f6; border-radius: 0; padding: 9px 12px; font-size: 0.78rem; font-weight: 400; }
+  #view-orcamento .orc-cli-res:hover { background: #eef4fb; }
+  #view-orcamento .orc-cli-res strong { display: block; font-size: 0.82rem; margin-bottom: 2px; }
+  #view-orcamento .orc-cli-res small { color: var(--texto-suave); }
+  #view-orcamento .orc-cli-vazio { padding: 12px; font-size: 0.8rem; color: var(--texto-suave); }
+  #view-orcamento .orc-cli-tag { float: right; margin-left: 8px; font-size: 0.65rem; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: #dbeaf9; color: #06478a; }
+  #view-orcamento .orc-cli-tag.novo { background: var(--amarelo-fundo); color: var(--amarelo); }
+  #view-orcamento .orc-link { background: none; border: 0; color: var(--azul); padding: 4px 0; font-size: 0.8rem; font-weight: 700; border-radius: 0; }
+  #view-orcamento .orc-cli-escolhido { padding: 10px 12px; border: 1px solid #cfe0f2; background: #f3f8fd; border-radius: 10px; font-size: 0.78rem; color: var(--texto-suave); margin-bottom: 8px; }
+  #view-orcamento .orc-cli-escolhido strong { display: block; font-size: 0.86rem; color: var(--texto); margin-bottom: 2px; }
+  #view-orcamento #orc-cli-form label { display: block; font-size: 0.7rem; font-weight: 700; color: #496786; margin: 8px 0 3px; }
+  #view-orcamento #orc-cli-form input { padding: 8px 10px; font-size: 0.85rem; }
+  #view-orcamento .orc-cli-linha { display: grid; grid-template-columns: 1fr 70px; gap: 8px; }
+  #view-orcamento .orc-cli-aviso { margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 0.78rem; background: var(--erro-fundo); color: var(--erro); }
+  #view-orcamento .orc-cli-aviso.ok { background: var(--sucesso-fundo); color: var(--sucesso); }
+  /* salvar */
+  #view-orcamento .orc-btn-salvar { background: var(--verde); }
+  #view-orcamento .orc-salvo-info { font-size: 0.78rem; color: var(--texto-suave); margin: -8px 0 12px; min-height: 1em; }
+  #view-orcamento .orc-salvo-info.pendente { color: var(--amarelo); font-weight: 600; }
   #view-orcamento #orc-tabela { margin: 6px 0 10px; }
   #view-orcamento .orc-sel-item { border-bottom: 1px solid #e8edf2; padding: 10px 0; font-size: 0.78rem; }
   #view-orcamento .orc-sel-item strong { display: block; margin-bottom: 4px; }
@@ -1739,6 +1763,35 @@
 
           <aside class="orc-painel orc-resumo" id="orc-folha">
             <h2>Dados do cliente</h2>
+            <div class="orc-cli-busca" id="orc-cli-busca-box">
+              <input type="search" id="orc-cli-busca" placeholder="Buscar cliente: nome, CNPJ ou código" autocomplete="off">
+              <div id="orc-cli-resultados" class="orc-cli-resultados oculto"></div>
+              <button type="button" class="orc-link" id="orc-cli-novo-abrir">+ Cliente novo</button>
+            </div>
+            <div id="orc-cli-escolhido" class="orc-cli-escolhido oculto"></div>
+            <div id="orc-cli-form" class="orc-caixa oculto">
+              <strong>Cliente novo</strong>
+              <div class="orc-muted">Ainda não cadastrado no ERP. Fica guardado só no painel.</div>
+              <label for="ncl-doc">CNPJ ou CPF</label>
+              <div class="orc-controles orc-controles-rateio">
+                <input type="text" id="ncl-doc" inputmode="numeric" maxlength="18" autocomplete="off">
+                <button type="button" class="orc-btn orc-btn-claro" id="ncl-receita">Buscar na Receita</button>
+              </div>
+              <label for="ncl-razao">Razão social / nome</label><input type="text" id="ncl-razao" autocomplete="off">
+              <label for="ncl-fantasia">Fantasia</label><input type="text" id="ncl-fantasia" autocomplete="off">
+              <label for="ncl-contato">Contato</label><input type="text" id="ncl-contato" autocomplete="off">
+              <label for="ncl-telefone">Telefone / WhatsApp</label><input type="text" id="ncl-telefone" inputmode="tel" autocomplete="off">
+              <label for="ncl-email">E-mail</label><input type="email" id="ncl-email" autocomplete="off">
+              <div class="orc-cli-linha">
+                <div><label for="ncl-cidade">Cidade</label><input type="text" id="ncl-cidade" autocomplete="off"></div>
+                <div><label for="ncl-uf">UF</label><input type="text" id="ncl-uf" maxlength="2" autocomplete="off"></div>
+              </div>
+              <div id="orc-cli-aviso" class="orc-cli-aviso oculto"></div>
+              <div class="orc-controles" style="margin: 10px 0 0">
+                <button type="button" class="orc-btn" id="ncl-salvar">Salvar cliente</button>
+                <button type="button" class="orc-btn orc-btn-claro" id="ncl-cancelar">Cancelar</button>
+              </div>
+            </div>
             <div class="orc-cliente">
               <label for="orc-cnpj">CNPJ:</label><input id="orc-cnpj" type="text" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" autocomplete="off">
               <label for="orc-razao">RAZÃO SOCIAL:</label><input id="orc-razao" type="text" placeholder="Nome da empresa" autocomplete="off">
@@ -1759,6 +1812,7 @@
             <div class="orc-muted orc-noprint">Clique em “Adicionar” para incluir um componente. Quantidades ajustáveis para memória, HD/SSD e fans.</div>
             <div id="orc-selecionados"></div>
             <div class="orc-total" id="orc-total">R$ 0,00</div>
+            <div class="orc-salvo-info orc-noprint" id="orc-salvo-info"></div>
 
             <div class="orc-caixa orc-noprint">
               <label class="orc-muted" for="orc-total-manual">AJUSTAR TOTAL DO ORÇAMENTO (R$)</label>
@@ -1782,6 +1836,7 @@
             </div>
 
             <div class="orc-controles orc-noprint">
+              <button type="button" class="orc-btn orc-btn-salvar" id="orc-salvar">Salvar orçamento</button>
               <button type="button" class="orc-btn" id="orc-imprimir">Gerar PDF / Imprimir</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-copiar">Copiar orçamento em texto</button>
               <button type="button" class="orc-btn orc-btn-claro" id="orc-csv">Exportar CSV</button>
@@ -7168,6 +7223,8 @@
     let dados = [], carregando = false, ligado = false, carregadoEm = null, erro = null;
     let ativa = "Processador", carrinho = [], tabela = 0, termo = "", ordem = "asc", ajustado = null, previewId = null;
     let formato = "item";   // para o cliente: "item" (preço de cada peça) ou "conjunto" (só o total; desconto vale para tudo)
+    let cliente = null;     // {origem: "erp"|"novo", id, codigo_erp, novo_id, nome, fantasia, documento, cidade, uf, telefone, email}
+    let salvo = null;       // {id, numero, versao, em, assinatura} do orçamento salvo que está na tela
 
     const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const cents = (v) => Math.round((Number(v) + Number.EPSILON) * 100);
@@ -7492,6 +7549,192 @@
         for (const x of carrinho.filter((i) => byId(i.id).c === "Memória")) if (board && ram(byId(x.id).d) !== board) avisos.push("Memória incompatível com padrão DDR da placa-mãe.");
       }
       el("orc-alertas").textContent = avisos.length ? avisos.join(" ") : "Compatibilidade: verificação preliminar de socket e DDR. Confirmar BIOS, consumo da GPU/fonte, conexões e dimensões antes de vender.";
+      renderSalvo();
+    }
+
+    // --- cliente do orçamento: do ERP (busca) ou novo (cadastro no painel; o ERP é só leitura) ---
+    const soDigitos = (s) => String(s == null ? "" : s).replace(/\D/g, "");
+    function formatarDocumento(d) {
+      d = soDigitos(d);
+      if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+      if (d.length === 11) return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+      return d;
+    }
+    function formatarTelefone(t) {
+      const d = soDigitos(t);
+      if (d.length === 10) return d.replace(/^(\d{2})(\d{4})(\d{4})$/, "($1) $2-$3");
+      if (d.length === 11) return d.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+      return String(t || "").trim();
+    }
+    let resultadosCli = [], buscaTimer = null, buscaSeq = 0;
+    function fecharResultados() { el("orc-cli-resultados").classList.add("oculto"); }
+    function buscarClientes(texto) {
+      clearTimeout(buscaTimer);
+      const t = texto.trim();
+      if (t.length < 2) { fecharResultados(); return; }
+      buscaTimer = setTimeout(async () => {
+        const seq = ++buscaSeq, box = el("orc-cli-resultados");
+        box.classList.remove("oculto");
+        box.innerHTML = '<div class="orc-cli-vazio">Buscando…</div>';
+        try {
+          const lista = await rpc("orcamento_buscar_clientes", { p_texto: t });
+          if (seq !== buscaSeq) return;   // chegou resposta de uma busca mais antiga
+          resultadosCli = lista;
+          box.innerHTML = lista.length ? lista.map((c, k) =>
+            '<button type="button" class="orc-cli-res" data-k="' + k + '">' +
+              '<span class="orc-cli-tag' + (c.origem === "novo" ? " novo" : "") + '">' + (c.origem === "erp" ? "ERP " + esc(c.codigo_erp) : "novo") + "</span>" +
+              "<strong>" + esc(c.nome) + "</strong>" +
+              "<small>" + [c.fantasia, c.documento ? formatarDocumento(c.documento) : "", [c.cidade, c.uf].filter(Boolean).join("/")].filter(Boolean).map(esc).join(" · ") + "</small>" +
+            "</button>").join("")
+            : '<div class="orc-cli-vazio">Nenhum cliente encontrado. Use “+ Cliente novo”.</div>';
+        } catch (e) {
+          if (seq === buscaSeq) box.innerHTML = '<div class="orc-cli-vazio">Não foi possível buscar: ' + esc(e.message) + "</div>";
+        }
+      }, 300);
+    }
+    function escolherCliente(c) {
+      cliente = c;
+      el("orc-cnpj").value = c.documento ? formatarDocumento(c.documento) : "";
+      el("orc-razao").value = c.nome || "";
+      el("orc-codcli").value = c.codigo_erp || "";
+      ["orc-cnpj", "orc-razao", "orc-codcli"].forEach((id) => { el(id).readOnly = true; });
+      el("orc-cli-busca").value = "";
+      fecharResultados();
+      renderCliente();
+      renderSalvo();
+    }
+    function limparCliente() {
+      cliente = null;
+      ["orc-cnpj", "orc-razao", "orc-codcli"].forEach((id) => { el(id).readOnly = false; el(id).value = ""; });
+      renderCliente();
+      renderSalvo();
+    }
+    function renderCliente() {
+      const box = el("orc-cli-escolhido");
+      el("orc-cli-busca-box").classList.toggle("oculto", !!cliente);
+      box.classList.toggle("oculto", !cliente);
+      if (!cliente) { box.innerHTML = ""; return; }
+      box.innerHTML = '<span class="orc-cli-tag' + (cliente.origem === "novo" ? " novo" : "") + '">' +
+          (cliente.origem === "erp" ? "ERP " + esc(cliente.codigo_erp) : "cliente novo") + "</span>" +
+        "<strong>" + esc(cliente.nome) + "</strong>" +
+        [cliente.fantasia, [cliente.cidade, cliente.uf].filter(Boolean).join("/"), cliente.telefone ? formatarTelefone(cliente.telefone) : ""]
+          .filter(Boolean).map(esc).join(" · ") +
+        ' <button type="button" class="orc-link" data-cli-trocar>trocar</button>';
+    }
+
+    const CAMPOS_NOVO = ["ncl-doc", "ncl-razao", "ncl-fantasia", "ncl-contato", "ncl-telefone", "ncl-email", "ncl-cidade", "ncl-uf"];
+    function avisoCliente(msg, bom) {
+      const a = el("orc-cli-aviso");
+      a.classList.toggle("oculto", !msg);
+      a.classList.toggle("ok", !!bom);
+      a.textContent = msg || "";
+    }
+    function abrirFormCliente() {
+      CAMPOS_NOVO.forEach((id) => { el(id).value = ""; });
+      const digitado = el("orc-cli-busca").value;   // quem buscou pelo CNPJ e não achou já leva o número
+      if ([11, 14].includes(soDigitos(digitado).length)) el("ncl-doc").value = formatarDocumento(digitado);
+      avisoCliente("");
+      fecharResultados();
+      el("orc-cli-busca-box").classList.add("oculto");
+      el("orc-cli-form").classList.remove("oculto");
+      el("ncl-doc").focus();
+    }
+    function fecharFormCliente() {
+      el("orc-cli-form").classList.add("oculto");
+      renderCliente();
+    }
+    // consulta pública da Receita (BrasilAPI): só o CNPJ sai do navegador
+    async function buscarReceita() {
+      const d = soDigitos(el("ncl-doc").value);
+      if (d.length !== 14) { avisoCliente("A busca na Receita é só para CNPJ (14 números). Para CPF, preencha à mão."); return; }
+      avisoCliente("Buscando na Receita…", true);
+      try {
+        const res = await fetch("https://brasilapi.com.br/api/cnpj/v1/" + d);
+        if (res.status === 404) { avisoCliente("CNPJ não encontrado na Receita. Confira o número."); return; }
+        if (!res.ok) throw new Error("a consulta respondeu " + res.status);
+        const r = await res.json();
+        el("ncl-doc").value = formatarDocumento(d);
+        el("ncl-razao").value = r.razao_social || el("ncl-razao").value;
+        el("ncl-fantasia").value = r.nome_fantasia || el("ncl-fantasia").value;
+        el("ncl-cidade").value = r.municipio || el("ncl-cidade").value;
+        el("ncl-uf").value = r.uf || el("ncl-uf").value;
+        if (!el("ncl-telefone").value && r.ddd_telefone_1) el("ncl-telefone").value = formatarTelefone(r.ddd_telefone_1);
+        if (!el("ncl-email").value && r.email) el("ncl-email").value = String(r.email).toLowerCase();
+        const situacao = r.descricao_situacao_cadastral;
+        avisoCliente("Dados preenchidos pela Receita." + (situacao && situacao !== "ATIVA" ? " Atenção: situação " + situacao + "." : " Complete contato e telefone."), !situacao || situacao === "ATIVA");
+      } catch (e) {
+        avisoCliente("Não foi possível consultar a Receita agora (" + e.message + "). Preencha à mão.");
+      }
+    }
+    async function salvarClienteNovo() {
+      const v = (id) => el(id).value.trim();
+      const dados = { documento: soDigitos(v("ncl-doc")), razao_social: v("ncl-razao"), fantasia: v("ncl-fantasia"), contato: v("ncl-contato"),
+        telefone: v("ncl-telefone"), email: v("ncl-email"), cidade: v("ncl-cidade"), uf: v("ncl-uf").toUpperCase() };
+      if (![11, 14].includes(dados.documento.length)) { avisoCliente("Informe o CNPJ (14 números) ou o CPF (11 números)."); return; }
+      if (!dados.razao_social) { avisoCliente("Informe a razão social ou o nome."); return; }
+      const btn = el("ncl-salvar");
+      btn.disabled = true;
+      try {
+        const r = await rpc("orcamento_salvar_cliente_novo", { p: dados });
+        el("orc-cli-form").classList.add("oculto");
+        escolherCliente({ origem: "novo", id: String(r.id), novo_id: r.id, codigo_erp: null, nome: dados.razao_social, fantasia: dados.fantasia,
+          documento: dados.documento, cidade: dados.cidade, uf: dados.uf, telefone: dados.telefone, email: dados.email });
+      } catch (e) {
+        avisoCliente(e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // --- salvar o orçamento (novo ou nova versão do que está na tela) ---
+    function numeroTexto(n) { return "ORC-" + String(n).padStart(4, "0"); }
+    function assinaturaAtual() {
+      return JSON.stringify([cliente && cliente.origem + ":" + cliente.id, tabela, formato, carrinho.map((i) => [i.id, i.qty, centsEfetivo(i)])]);
+    }
+    function renderSalvo() {
+      const info = el("orc-salvo-info"), btn = el("orc-salvar");
+      if (!salvo) {
+        info.className = "orc-salvo-info orc-noprint";
+        info.textContent = carrinho.length && !cliente ? "Para salvar, escolha o cliente." : "";
+        btn.textContent = "Salvar orçamento";
+        return;
+      }
+      const pendente = salvo.assinatura !== assinaturaAtual();
+      info.className = "orc-salvo-info orc-noprint" + (pendente ? " pendente" : "");
+      info.textContent = numeroTexto(salvo.numero) + " · versão " + salvo.versao + " · salvo às " +
+        salvo.em.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + (pendente ? " · alterações não salvas" : "");
+      btn.textContent = pendente ? "Salvar nova versão" : "Salvo ✓";
+    }
+    async function salvarOrcamento() {
+      if (!carrinho.length) { alert("Adicione componentes antes de salvar."); return; }
+      if (!cliente) {
+        alert("Escolha o cliente antes de salvar: busque pelo nome, CNPJ ou código, ou use “+ Cliente novo”.");
+        el("orc-cli-busca").focus();
+        return;
+      }
+      if (salvo && salvo.assinatura === assinaturaAtual()) return;   // nada mudou desde o último salvamento
+      const btn = el("orc-salvar");
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+      try {
+        const total = carrinho.reduce((s, i) => s + centsEfetivo(i) * i.qty, 0) / 100;
+        const r = await rpc("orcamento_salvar", { p: {
+          id: salvo ? salvo.id : null,
+          cliente: { origem: cliente.origem, codigo_erp: cliente.codigo_erp, novo_id: cliente.novo_id, nome: cliente.nome, documento: cliente.documento },
+          tabela_preco: tabela, formato, total,
+          itens: carrinho.map((i) => {
+            const p = byId(i.id);
+            return { grupo: p.grupo, codigo: p.cod, descricao: p.d, categoria: p.c, qtd: i.qty,
+              preco_tabela: price(p), preco_unit: centsEfetivo(i) / 100, custo: p.cost };
+          })
+        } });
+        salvo = { id: r.id, numero: r.numero, versao: r.versao, em: new Date(), assinatura: assinaturaAtual() };
+      } catch (e) {
+        alert("Não foi possível salvar: " + e.message);
+      } finally {
+        btn.disabled = false;
+        renderSalvo();
+      }
     }
 
     function render() {
@@ -7519,7 +7762,7 @@
       return lines;
     }
     function textoOrcamento() {
-      const lines = ["*ORÇAMENTO — BLUE DISTRIBUIDORA*"];
+      const lines = ["*ORÇAMENTO" + (salvo ? " " + numeroTexto(salvo.numero) : "") + " — BLUE DISTRIBUIDORA*"];
       const cnpj = el("orc-cnpj").value.trim(), razao = el("orc-razao").value.trim(), codigo = el("orc-codcli").value.trim();
       if (cnpj || razao || codigo) {
         lines.push("");
@@ -7584,7 +7827,8 @@
         '<div class="fl-topo">' + (window.LOGO_BLUE ? '<img class="fl-logo" src="' + window.LOGO_BLUE + '" alt="Blue Distribuidora">' : "<strong>BLUE DISTRIBUIDORA</strong>") +
           '<div class="fl-empresa"><strong>BLUE DISTRIBUIDORA &amp; IMPORTADORA EIRELI ME</strong>CNPJ: 17.878.215/0001-02<br>' +
           '<a href="' + SITE_BLUE + '" target="_blank" rel="noopener">bluedistribuidora.com.br</a></div></div>' +
-        '<div class="fl-faixa"><div class="fl-titulo">ORÇAMENTO DE COMPUTADOR</div><div class="fl-data">Emitido em ' + new Date().toLocaleDateString("pt-BR") + "</div></div>" +
+        '<div class="fl-faixa"><div class="fl-titulo">ORÇAMENTO DE COMPUTADOR</div><div class="fl-data">' +
+          (salvo ? "<strong>" + numeroTexto(salvo.numero) + "</strong> · " : "") + "Emitido em " + new Date().toLocaleDateString("pt-BR") + "</div></div>" +
         (cliente.length ? '<dl class="fl-cliente">' + cliente.map(([k, v]) => "<dt>" + k + "</dt><dd>" + esc(v) + "</dd>").join("") + "</dl>" : "") +
         "<table><thead><tr><th></th><th>Produto</th><th class=\"num\">Qtd.</th>" + (porItem ? '<th class="num">Unitário</th><th class="num">Total</th>' : "") + "</tr></thead>" +
         "<tbody>" + linhas + "</tbody></table>" +
@@ -7711,12 +7955,36 @@
         formato = ev.target.value;
         el("orc-formato-info").textContent = formato === "conjunto"
           ? "O cliente vê as peças e só o total, com o aviso de que o preço vale para o conjunto completo." : "";
+        renderSalvo();
       });
+      // cliente: busca, escolha, troca e cliente novo
+      el("orc-cli-busca").addEventListener("input", (ev) => buscarClientes(ev.target.value));
+      el("orc-cli-busca").addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharResultados(); });
+      el("orc-cli-resultados").addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-k]");
+        if (!b) return;
+        const c = resultadosCli[Number(b.dataset.k)];
+        escolherCliente({ origem: c.origem, id: c.id, codigo_erp: c.codigo_erp, novo_id: c.origem === "novo" ? Number(c.id) : null,
+          nome: c.nome, fantasia: c.fantasia, documento: c.documento, cidade: c.cidade, uf: c.uf, telefone: c.telefone, email: c.email });
+      });
+      document.addEventListener("click", (ev) => { if (!ev.target.closest(".orc-cli-busca")) fecharResultados(); });
+      el("orc-cli-escolhido").addEventListener("click", (ev) => {
+        if (!ev.target.closest("[data-cli-trocar]")) return;
+        limparCliente();
+        el("orc-cli-busca").focus();
+      });
+      el("orc-cli-novo-abrir").addEventListener("click", abrirFormCliente);
+      el("ncl-receita").addEventListener("click", buscarReceita);
+      el("ncl-salvar").addEventListener("click", salvarClienteNovo);
+      el("ncl-cancelar").addEventListener("click", fecharFormCliente);
+      el("orc-salvar").addEventListener("click", salvarOrcamento);
       // orçamento novo: tira peças, dados do cliente e ajuste de total; a tabela de preços escolhida fica
       const comecarDoZero = () => {
         if (!confirm("Começar um orçamento novo? O atual será apagado.")) return;
         carrinho = [];
-        ["orc-cnpj", "orc-razao", "orc-codcli"].forEach((id) => { el(id).value = ""; });
+        salvo = null;   // o próximo salvamento cria outro número
+        el("orc-cli-form").classList.add("oculto");
+        limparCliente();
         mudarCategoria("Processador");
         invalidarRateio();
         render();
