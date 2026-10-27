@@ -823,6 +823,8 @@
   #view-orcamento #orc-categorias .orc-cat-qtd { float: right; color: var(--texto-suave); }
   #view-orcamento #orc-categorias .orc-cat-check { display: inline-block; width: 1.1em; color: var(--verde); font-weight: 800; }
   /* categoria que já tem peça no orçamento: riscada e apagada, mas continua clicável para trocar */
+  #view-orcamento .orc-cat-grupo { font-size: 0.66rem; font-weight: 800; color: var(--texto-suave); text-transform: uppercase; letter-spacing: 0.6px; padding: 12px 12px 4px; }
+  #view-orcamento .orc-cat-grupo:first-child { padding-top: 2px; }
   #view-orcamento #orc-categorias button.feita { color: #8a98a8; }
   #view-orcamento #orc-categorias button.feita .orc-cat-nome { text-decoration: line-through; }
   #view-orcamento #orc-categorias button.feita.ativa { background: #eef3f8; }
@@ -956,6 +958,7 @@
     #view-orcamento #orc-categorias { display: flex; overflow-x: auto; gap: 5px; }
     #view-orcamento #orc-categorias button { white-space: nowrap; width: auto; flex-shrink: 0; }
     #view-orcamento #orc-categorias .orc-cat-qtd, #view-orcamento #orc-categorias .orc-cat-obs { display: none; }
+    #view-orcamento .orc-cat-grupo { flex-shrink: 0; align-self: center; padding: 0 2px 0 6px; }
     #view-orcamento .orc-preview-foto { max-width: 260px; margin: 0 auto 10px; }
     #view-orcamento .orc-item { grid-template-columns: 1fr; }
     #view-orcamento .orc-item.com-mini { grid-template-columns: 56px minmax(0, 1fr); }
@@ -7384,9 +7387,13 @@
   const Orcamento = (() => {
     const el = (id) => document.getElementById(id);
     // gabinete vem antes da fonte: gabinete com fonte dispensa a fonte avulsa
-    const CATS = ["Processador", "Placa-mãe", "Memória", "HD / SSD", "Placa de vídeo", "Cooler CPU / Water Cooler", "Cooler FAN", "Gabinete", "Fonte"];
-    const MULTI = new Set(["Memória", "HD / SSD", "Cooler FAN"]);
-    const NEXT_CATS = new Set(["Memória", "HD / SSD", "Placa de vídeo", "Cooler FAN"]);
+    // essenciais: as peças para montar o computador, na ordem da montagem (avança sozinha ao escolher)
+    const ESSENCIAIS = ["Processador", "Placa-mãe", "Memória", "HD / SSD", "Placa de vídeo", "Cooler CPU / Water Cooler", "Gabinete", "Fonte"];
+    // não essenciais: acessórios; "Outros" é todo produto com saldo que não entrou em outra categoria
+    const ACESSORIOS = ["Cooler FAN", "Monitor", "Outros"];
+    const CATS = ESSENCIAIS.concat(ACESSORIOS);
+    const MULTI = new Set(["Memória", "HD / SSD"].concat(ACESSORIOS));
+    const NEXT_CATS = new Set(["Memória", "HD / SSD", "Placa de vídeo"]);
     // fotos no bucket produtos-fotos (sincronizador sincronizar_fotos.py): fotos/<cod>.jpg, mini/<cod>.jpg e indice.json
     const FOTOS_BASE = SUPABASE_URL + "/storage/v1/object/public/produtos-fotos/";
     let indiceFotos = null;    // codigo -> versão; null enquanto o índice não carregou
@@ -7415,7 +7422,7 @@
     // --- regras do Montador (classificação e compatibilidade pela descrição) ---
     function classificar(d) {
       d = String(d || "").toUpperCase().trim();
-      if (/NOTEBOOK|DESKTOP MINI|COMPUTADOR COMPLETO|MINI PC|ALL IN ONE/.test(d)) return null;
+      if (/NOTEBOOK|DESKTOP MINI|COMPUTADOR COMPLETO|MINI PC|ALL IN ONE/.test(d)) return "Outros";
       if (d.startsWith("PROCESSADOR") || /\b(CORE I[3579]|RYZEN [3579])\b/.test(d)) return "Processador";
       if (d.startsWith("PLACA MAE") || d.startsWith("PLACA-MAE")) return "Placa-mãe";
       if (d.startsWith("MEMORIA") && !/SODIMM|SO-DIMM|NOTEBOOK|CARD|CARTAO/.test(d)) return "Memória";
@@ -7425,7 +7432,8 @@
       if (d.startsWith("COOLER") && !/CPU|PROCESSADOR|NOTEBOOK|BASE COOLER/.test(d)) return "Cooler FAN";
       if (d.startsWith("FONTE") && !/FONTE NB|NOTEBOOK|CARREGADOR|ADAPTADOR|TESTADOR|CHAVEADA/.test(d) && (/ATX|SFX|ITX|\b\d{3,4}W\b|80 PLUS/.test(d))) return "Fonte";
       if (d.startsWith("GABINETE")) return "Gabinete";
-      return null;
+      if (d.startsWith("MONITOR")) return "Monitor";
+      return "Outros";
     }
     function sock(d) { const m = d.match(/\b(1150|1151|1155|1156|1200|1700|1851|AM4|AM5)\b/i); return m ? m[1].toUpperCase() : null; }
     function ram(d) { const m = d.match(/\bDDR[345]\b/i); return m ? m[0].toUpperCase() : null; }
@@ -7606,12 +7614,12 @@
         carrinho.push({ id, qty: 1 });
       }
       invalidarRateio();
-      const pos = CATS.indexOf(ativa);
+      const pos = ESSENCIAIS.indexOf(ativa);
       if (p.c === "Gabinete" && gabineteComFonte(p.d)) {
         // o gabinete já traz fonte: não avança para Fonte e oferece tirar a fonte avulsa que já estiver no orçamento
         const fonte = doCarrinho("Fonte");
         if (fonte && confirm("Este gabinete já vem com fonte. Retirar do orçamento a fonte " + fonte.d + "?")) carrinho = carrinho.filter((i) => i.id !== fonte.id);
-      } else if (pos < CATS.length - 1 && !MULTI.has(p.c)) mudarCategoria(CATS[pos + 1]);
+      } else if (pos >= 0 && pos < ESSENCIAIS.length - 1 && !MULTI.has(p.c)) mudarCategoria(ESSENCIAIS[pos + 1]);
       render();
     }
     function mudarQtd(id, q) {
@@ -7632,22 +7640,29 @@
       if (carregando) return;
       if (erro) { status.textContent = "Não foi possível carregar o estoque: " + erro; return; }
       if (!carregadoEm) { status.textContent = "Estoque e preços direto do ERP"; return; }
-      status.textContent = dados.length + " peças de PC com estoque";
+      status.textContent = dados.length.toLocaleString("pt-BR") + " produtos com estoque";
       el("freshness-orcamento").textContent = "Carregado às " + carregadoEm.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + " · o ERP é copiado a cada 15 min";
     }
 
-    // categoria com peça no orçamento sai riscada com ✓; a Fonte também, quando o gabinete já traz fonte
+    // essencial com peça no orçamento sai riscada com ✓ (a Fonte também, quando o gabinete já traz fonte);
+    // acessório não é riscado: mostra ✓ e quantos itens dele estão no orçamento
     function renderCategorias() {
       const fonteNoGabinete = !doCarrinho("Fonte") && gabineteComFonteNoCarrinho();
-      el("orc-categorias").innerHTML = CATS.map((c) => {
-        const feita = !!doCarrinho(c) || (c === "Fonte" && fonteNoGabinete);
+      const botao = (c) => {
+        const essencial = ESSENCIAIS.includes(c);
+        const noOrc = carrinho.filter((i) => byId(i.id).c === c).length;
+        const feita = essencial && (noOrc > 0 || (c === "Fonte" && fonteNoGabinete));
         return '<button type="button" class="' + (c === ativa ? "ativa" : "") + (feita ? " feita" : "") + '" data-cat="' + esc(c) + '"' +
           (feita ? ' title="Já escolhido. Clique para trocar."' : "") + ">" +
-          '<span class="orc-cat-qtd">' + dados.filter((p) => p.c === c).length + "</span>" +
-          '<span class="orc-cat-check">' + (feita ? "✓" : "") + "</span>" +
+          '<span class="orc-cat-qtd">' + dados.filter((p) => p.c === c).length.toLocaleString("pt-BR") + "</span>" +
+          '<span class="orc-cat-check">' + (feita || noOrc ? "✓" : "") + "</span>" +
           '<span class="orc-cat-nome">' + esc(c) + "</span>" +
-          (c === "Fonte" && fonteNoGabinete ? '<span class="orc-cat-obs">no gabinete</span>' : "") + "</button>";
-      }).join("");
+          (c === "Fonte" && fonteNoGabinete ? '<span class="orc-cat-obs">no gabinete</span>' : "") +
+          (!essencial && noOrc ? '<span class="orc-cat-obs">' + noOrc + (noOrc > 1 ? " itens" : " item") + " no orçamento</span>" : "") + "</button>";
+      };
+      el("orc-categorias").innerHTML =
+        '<div class="orc-cat-grupo">Essenciais</div>' + ESSENCIAIS.map(botao).join("") +
+        '<div class="orc-cat-grupo">Não essenciais</div>' + ACESSORIOS.map(botao).join("");
     }
 
     function renderPreview() {
@@ -7674,7 +7689,7 @@
         : ordem === "za" ? b.d.localeCompare(a.d, "pt-BR") || a.id.localeCompare(b.id)
         : ((price(a) - price(b)) * (ordem === "asc" ? 1 : -1) || a.d.localeCompare(b.d, "pt-BR")));
       el("orc-contagem").textContent = subset.length + " produtos disponíveis · descrição integral";
-      el("orc-proximo").hidden = !NEXT_CATS.has(ativa) || CATS.indexOf(ativa) >= CATS.length - 1;
+      el("orc-proximo").hidden = !NEXT_CATS.has(ativa);
       const gabFonte = ativa === "Fonte" ? gabineteComFonteNoCarrinho() : null;
       el("orc-produtos").innerHTML = (gabFonte ? '<div class="orc-alerta">O gabinete escolhido (' + esc(gabFonte.d) + ") já vem com fonte. Só adicione outra fonte se o cliente pedir.</div>" : "") +
         (subset.length ? subset.map((p) => {
@@ -8446,9 +8461,9 @@
       el("orc-zoom").addEventListener("click", (ev) => { if (ev.target === el("orc-zoom")) fecharZoom(); });
       document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !el("orc-zoom").classList.contains("oculto")) fecharZoom(); });
       el("orc-proximo").addEventListener("click", () => {
-        const pos = CATS.indexOf(ativa);
-        if (!NEXT_CATS.has(ativa) || pos < 0 || pos === CATS.length - 1) return;
-        mudarCategoria(CATS[pos + 1]);
+        const pos = ESSENCIAIS.indexOf(ativa);
+        if (!NEXT_CATS.has(ativa) || pos < 0 || pos === ESSENCIAIS.length - 1) return;
+        mudarCategoria(ESSENCIAIS[pos + 1]);
         render();
       });
       el("orc-busca").addEventListener("input", (ev) => { termo = ev.target.value; renderCatalogo(); });
