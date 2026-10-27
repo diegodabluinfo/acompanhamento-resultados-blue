@@ -947,7 +947,10 @@
   /* item sob encomenda (formulário no lugar da lista de produtos) */
   #view-orcamento .orc-se { max-width: 620px; }
   #view-orcamento .orc-se label { display: block; font-size: 0.7rem; font-weight: 700; color: #496786; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.3px; }
-  #view-orcamento .orc-se input[type=text], #view-orcamento .orc-se input[type=number] { width: 100%; padding: 9px 11px; border: 1px solid var(--borda); border-radius: 9px; font: inherit; font-size: 0.88rem; background: #fbfcfe; color: var(--texto); box-sizing: border-box; }
+  #view-orcamento .orc-se textarea { resize: vertical; }
+  #view-orcamento .orc-se-prazo { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--texto); }
+  #view-orcamento .orc-se .orc-se-prazo input[type=number] { width: 110px; }
+  #view-orcamento .orc-se input[type=text], #view-orcamento .orc-se input[type=number], #view-orcamento .orc-se textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--borda); border-radius: 9px; font: inherit; font-size: 0.88rem; background: #fbfcfe; color: var(--texto); box-sizing: border-box; }
   #view-orcamento .orc-se-linha { display: grid; grid-template-columns: 1fr 1fr 80px; gap: 10px; }
   #view-orcamento .orc-se .orc-controles { margin: 10px 0 0; }
   #view-orcamento .orc-se > .orc-muted { margin-top: 12px; }
@@ -2016,7 +2019,9 @@
                 <div><label for="orc-se-qtd">Qtd.</label><input type="number" id="orc-se-qtd" min="1" step="1" value="1"></div>
               </div>
               <label for="orc-se-prazo">Prazo de entrega</label>
-              <input type="text" id="orc-se-prazo" maxlength="60" placeholder="Ex.: 10 dias úteis" autocomplete="off">
+              <div class="orc-se-prazo"><input type="number" id="orc-se-prazo" min="1" max="365" step="1" placeholder="10"><span>dias</span></div>
+              <label for="orc-se-obs">Observação interna (não aparece para o cliente)</label>
+              <textarea id="orc-se-obs" rows="2" maxlength="300" placeholder="Ex.: fornecedor cotado, contato, validade da cotação"></textarea>
               <label>Imagem (opcional)</label>
               <div id="orc-se-anexo" class="orc-sug-anexo oculto">
                 <img id="orc-se-img" alt="Imagem do item sob encomenda">
@@ -7750,9 +7755,14 @@
     // --- item sob encomenda ---
     function novaEncomenda(x) {
       const e = { id: "SE-" + (++seqEncomenda), cod: "", grupo: "SE", d: x.d, s: 9999, p: [x.venda, x.venda, x.venda], c: SOB_ENCOMENDA,
-        cost: x.cost, promo: null, prazo: x.prazo || "", img: x.img || null };
+        cost: x.cost, promo: null, prazo: prazoEmDias(x.prazo), img: x.img || null, obs: x.obs || "" };
       encomendas.push(e);
       return e;
+    }
+    // orçamento salvo antes do campo em dias pode ter só o número ("10"): mostra "10 dias"
+    function prazoEmDias(prazo) {
+      const t = String(prazo || "").trim();
+      return /^\d+$/.test(t) ? Number(t) + (Number(t) === 1 ? " dia" : " dias") : t;
     }
     // descrição com o aviso de encomenda, para o texto do WhatsApp e o CSV
     function descricaoCompleta(p) {
@@ -7780,7 +7790,11 @@
       el("orc-se-arquivo").value = "";
     }
     function adicionarEncomenda() {
-      const d = el("orc-se-desc").value.trim().replace(/\s+/g, " "), prazo = el("orc-se-prazo").value.trim();
+      const d = el("orc-se-desc").value.trim().replace(/\s+/g, " "), obs = el("orc-se-obs").value.trim();
+      // prazo em dias: grava "10 dias" (ou "1 dia"); em branco fica sem prazo
+      const dias = el("orc-se-prazo").value.trim(), nDias = Number(dias);
+      if (dias && !(Number.isInteger(nDias) && nDias >= 1 && nDias <= 365)) { avisoEncomenda("O prazo de entrega é em dias: um número de 1 a 365.", "erro"); el("orc-se-prazo").focus(); return; }
+      const prazo = prazoEmDias(dias);
       const custo = parseMoedaBR(el("orc-se-custo").value), venda = parseMoedaBR(el("orc-se-venda").value);
       const qtd = Math.floor(Number(el("orc-se-qtd").value));
       if (!d) { avisoEncomenda("Escreva a descrição do produto.", "erro"); el("orc-se-desc").focus(); return; }
@@ -7788,9 +7802,9 @@
       if (!Number.isFinite(venda) || venda <= 0) { avisoEncomenda("Informe o valor de venda (ex.: 1.590,00).", "erro"); el("orc-se-venda").focus(); return; }
       if (!Number.isFinite(qtd) || qtd < 1) { avisoEncomenda("A quantidade precisa ser 1 ou mais.", "erro"); el("orc-se-qtd").focus(); return; }
       if (venda < custo && !confirm("O valor de venda (" + money(venda) + ") é menor que o custo (" + money(custo) + "). Adicionar assim mesmo?")) return;
-      const e = novaEncomenda({ d, cost: Math.round(custo * 100) / 100, venda: Math.round(venda * 100) / 100, prazo, img: seImagem });
+      const e = novaEncomenda({ d, cost: Math.round(custo * 100) / 100, venda: Math.round(venda * 100) / 100, prazo, img: seImagem, obs });
       carrinho.push({ id: e.id, qty: qtd });
-      ["orc-se-desc", "orc-se-custo", "orc-se-venda", "orc-se-prazo"].forEach((id) => { el(id).value = ""; });
+      ["orc-se-desc", "orc-se-custo", "orc-se-venda", "orc-se-prazo", "orc-se-obs"].forEach((id) => { el(id).value = ""; });
       el("orc-se-qtd").value = "1";
       tirarImagemEncomenda();
       avisoEncomenda("Adicionado ao orçamento.", "ok");
@@ -7912,6 +7926,7 @@
         return '<div class="orc-sel-item"><strong>' + esc(p.c) + "</strong><div>" + esc(p.d) + "</div>" +
           '<div class="orc-muted">' + (encomenda ? (p.prazo ? "prazo " + esc(p.prazo) : "sem prazo informado") : esc(p.cod)) + " · " + money(unit) + " un. " + (ajustado ? "(ajustado)" : "") +
             (encomenda ? " · custo " + money(p.cost) : " · estoque " + p.s) + "</div>" +
+          (encomenda && p.obs ? '<div class="orc-muted orc-sel-obs">Obs.: ' + esc(p.obs) + "</div>" : "") +
           '<div class="orc-linha"><span>Qtd. <input class="orc-qtd" type="number" min="1" step="1" max="' + p.s + '" ' + (MULTI.has(p.c) ? "" : "disabled") + ' value="' + i.qty + '" data-qty="' + esc(p.id) + '"></span>' +
           "<b>" + money(i.qty * unit) + '</b><button type="button" class="orc-excluir" data-del="' + esc(p.id) + '">Excluir</button></div></div>';
       }).join("") || '<div class="orc-vazio">Nenhum componente selecionado.</div>';
@@ -8127,7 +8142,7 @@
             const p = byId(i.id), item = { grupo: p.grupo, codigo: p.cod, descricao: p.d, categoria: p.c, qtd: i.qty,
               preco_tabela: price(p), preco_unit: centsEfetivo(i) / 100, custo: p.cost };
             // sob encomenda: código SE1, SE2... na ordem do orçamento (não existe no ERP)
-            if (p.c === SOB_ENCOMENDA) Object.assign(item, { codigo: "SE" + (++se), prazo: p.prazo, imagem: p.img });
+            if (p.c === SOB_ENCOMENDA) Object.assign(item, { codigo: "SE" + (++se), prazo: p.prazo, imagem: p.img, obs: p.obs });
             return item;
           })
         } });
@@ -8222,7 +8237,7 @@
           '<div class="dt-total">' + money(o.total) + "<span>" + TABELAS[o.tabela_preco] + " · " + (o.formato === "conjunto" ? "preço do conjunto" : "preço por item") + "</span></div></div>" +
         '<div class="dt-grid"><div class="tabela-scroll"><table class="dt-itens"><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Total</th></tr></thead><tbody>' +
           o.itens.map((i) => "<tr><td>" + esc(i.descricao) + '<small class="orc-muted" style="display:block">' + esc(i.categoria || "") +
-            (i.grupo === "SE" ? (i.prazo ? " · prazo " + esc(i.prazo) : "") : " · Cód. " + esc(i.codigo)) + "</small></td>" +
+            (i.grupo === "SE" ? (i.prazo ? " · prazo " + esc(prazoEmDias(i.prazo)) : "") + (i.obs ? " · obs.: " + esc(i.obs) : "") : " · Cód. " + esc(i.codigo)) + "</small></td>" +
             '<td class="num">' + i.qtd + '</td><td class="num">' + money(i.preco_unit) + '</td><td class="num"><strong>' + money(i.preco_unit * i.qtd) + "</strong></td></tr>").join("") +
           "</tbody></table></div>" +
           '<div class="dt-acomp">' +
@@ -8291,7 +8306,7 @@
       const fora = [], mudou = [], estoque = [];
       for (const it of o.itens) {
         if (it.grupo === "SE") {
-          const e = novaEncomenda({ d: it.descricao, cost: it.custo == null ? null : Number(it.custo), venda: Number(it.preco_tabela), prazo: it.prazo, img: it.imagem });
+          const e = novaEncomenda({ d: it.descricao, cost: it.custo == null ? null : Number(it.custo), venda: Number(it.preco_tabela), prazo: it.prazo, img: it.imagem, obs: it.obs });
           carrinho.push({ id: e.id, qty: it.qtd });
           ajustado[e.id] = cents(it.preco_unit);
           continue;
