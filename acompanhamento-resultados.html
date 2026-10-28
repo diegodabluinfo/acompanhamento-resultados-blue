@@ -274,6 +274,35 @@
   .modal-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
   #corpo-fornecedores input[type="text"] { padding: 6px 8px; font-size: 0.82rem; }
   #assist-subabas { margin-top: 2px; }
+
+  /* --- sub-aba Histórico (acompanhamento anual da assistência) --- */
+  #assist-historico .hist-controles { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-end; background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,40,70,0.06); margin-bottom: 16px; }
+  #assist-historico .hist-ctl { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin: 0; }
+  #assist-historico .hist-ctl > span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); font-weight: 700; }
+  #assist-historico .hist-pt { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  .hist-cartao { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(20,40,70,0.06); margin-bottom: 14px; }
+  .hist-cartao h3 { margin: 0 0 2px; font-size: 0.95rem; color: var(--azul-escuro); }
+  .hist-cartao .hist-sub { margin: 0 0 14px; font-size: 0.76rem; color: var(--texto-suave); }
+  .hist-legenda { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.76rem; color: var(--texto-suave); }
+  .hist-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  .hist-legenda .hist-tracejado { display: inline-block; width: 14px; height: 0; border-top: 2px dashed #64748b; margin-right: 6px; vertical-align: 3px; }
+  .hist-cartao svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .hist-cartao svg .gx, .hist-cartao svg .gy { font-size: 10.5px; fill: var(--texto-suave); }
+  .hist-cartao svg .grade { stroke: var(--borda); stroke-width: 1; }
+  .hist-cartao svg .eixo { stroke: #bcc7d8; stroke-width: 1; }
+  .hist-cartao svg .rotulo { font-size: 10.5px; font-weight: 600; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+  .hist-cartao svg .alvo { fill: transparent; cursor: pointer; }
+  .hist-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 860px) { .hist-dupla { grid-template-columns: 1fr; } }
+  #assist-historico td.hist-mes { font-weight: 600; }
+  #assist-historico .hist-vazio { color: var(--texto-suave); }
+  #assist-historico tfoot td { font-weight: 700; background: #f7fafd; border-top: 1px solid var(--borda); }
+  #assist-historico thead th { cursor: pointer; user-select: none; }
+  #hist-dica { position: fixed; pointer-events: none; opacity: 0; transition: opacity .09s; z-index: 60; background: #182433; color: #fff; border-radius: 7px; padding: 8px 11px; font-size: 0.76rem; line-height: 1.5; box-shadow: 0 6px 20px rgba(14,25,40,.28); max-width: 260px; }
+  #hist-dica b { display: block; margin-bottom: 3px; }
+  #hist-dica .l { display: flex; justify-content: space-between; gap: 14px; }
+  #hist-dica .l i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  #hist-dica .l span:last-child { font-variant-numeric: tabular-nums; }
   /* --- Histórico do cliente (conversas e ligações da Sonax) --- */
   .link-hist { color: var(--azul); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
   .link-hist:hover { text-decoration-style: solid; }
@@ -2187,6 +2216,7 @@
           <button data-sub="mes" class="ativa">Mês</button>
           <button data-sub="lancamentos">Lançamentos</button>
           <button data-sub="anual">Resumo Anual</button>
+          <button data-sub="historico">Histórico</button>
           <button data-sub="os">Ordens de Serviço</button>
         </div>
 
@@ -2368,6 +2398,100 @@
             </div>
           </div>
           <div class="rodape-nota">Cobrado = soma dos valores de OS. Pago a terceiros = o que saiu para o fornecedor. Margem = a diferença.</div>
+        </div>
+
+        <!-- ===== sub-aba: Histórico (acompanhamento anual) ===== -->
+        <div id="assist-historico" class="oculto">
+          <div class="hist-controles">
+            <div class="hist-ctl">
+              <span>Período</span>
+              <div class="filtro-periodo" id="hist-periodo">
+                <button data-per="12" class="ativa">Últimos 12 meses</button>
+                <button data-per="24">24 meses</button>
+                <button data-per="0">Tudo</button>
+              </div>
+            </div>
+            <div class="hist-ctl" style="flex:1 1 320px;">
+              <span>Mostrar</span>
+              <div class="filtro-periodo" id="hist-blocos">
+                <button data-bloco="result" class="ativa"><i class="hist-pt" style="background:#2a78d6"></i>Produzido × meta</button>
+                <button data-bloco="pct" class="ativa"><i class="hist-pt" style="background:#1baf7a"></i>% atingido</button>
+                <button data-bloco="vol" class="ativa"><i class="hist-pt" style="background:#123d80"></i>Volume e ticket</button>
+                <button data-bloco="yoy" class="ativa"><i class="hist-pt" style="background:#eb6834"></i>vs. ano anterior</button>
+                <button data-bloco="tab" class="ativa">Tabela</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="hist-kpis"></div>
+
+          <div class="hist-cartao" id="hist-bloco-result">
+            <h3>Produzido de serviço × meta</h3>
+            <p class="hist-sub" id="hist-sub-result"></p>
+            <div class="hist-legenda">
+              <span><i style="background:#2a78d6"></i>Final (depois dos fornecedores)</span>
+              <span><i style="background:#eb6834"></i>Custo de fornecedores</span>
+              <span><span class="hist-tracejado"></span><span id="hist-leg-meta">Meta</span></span>
+            </div>
+            <svg id="hist-g-result" viewBox="0 0 980 300" preserveAspectRatio="xMidYMid meet" role="img"
+                 aria-label="Barras empilhadas do produzido de serviço por mês com a linha da meta"></svg>
+          </div>
+
+          <div class="hist-cartao" id="hist-bloco-pct">
+            <h3>% da meta atingido, mês a mês</h3>
+            <p class="hist-sub">Final dividido pela meta do mês. A faixa verde marca 100%.</p>
+            <svg id="hist-g-pct" viewBox="0 0 980 230" preserveAspectRatio="xMidYMid meet" role="img"
+                 aria-label="Linha do percentual da meta atingido por mês"></svg>
+          </div>
+
+          <div class="hist-dupla" id="hist-bloco-vol">
+            <div class="hist-cartao" style="margin-bottom:0;">
+              <h3>Pedidos de serviço faturados</h3>
+              <p class="hist-sub">Quantos serviços saíram no mês.</p>
+              <svg id="hist-g-qtd" viewBox="0 0 470 220" preserveAspectRatio="xMidYMid meet" role="img"
+                   aria-label="Barras da quantidade de pedidos de serviço por mês"></svg>
+            </div>
+            <div class="hist-cartao" style="margin-bottom:0;">
+              <h3>Ticket médio do serviço</h3>
+              <p class="hist-sub">Produzido dividido pelo número de pedidos.</p>
+              <svg id="hist-g-tkt" viewBox="0 0 470 220" preserveAspectRatio="xMidYMid meet" role="img"
+                   aria-label="Linha do ticket médio por mês"></svg>
+            </div>
+          </div>
+
+          <div class="hist-cartao" id="hist-bloco-yoy" style="margin-top:14px;">
+            <h3>Contra o mesmo mês do ano anterior</h3>
+            <p class="hist-sub">Variação do produzido de serviço. Só aparece quando existe o mesmo mês 12 meses antes.</p>
+            <svg id="hist-g-yoy" viewBox="0 0 980 230" preserveAspectRatio="xMidYMid meet" role="img"
+                 aria-label="Barras da variação percentual contra o mesmo mês do ano anterior"></svg>
+          </div>
+
+          <div id="hist-bloco-tab">
+            <h3 class="grupo-titulo">Mês a mês</h3>
+            <div class="card-tabela">
+              <div class="tabela-scroll">
+                <table id="hist-tabela">
+                  <thead>
+                    <tr>
+                      <th data-col="mes">Mês</th>
+                      <th data-col="meta">Meta</th>
+                      <th data-col="prod">Produzido</th>
+                      <th data-col="custo">Custos forn.</th>
+                      <th data-col="final">Final</th>
+                      <th data-col="pct">% Atingido</th>
+                      <th data-col="ped">Pedidos</th>
+                      <th data-col="tkt">Ticket médio</th>
+                      <th data-col="yoy">vs. ano ant.</th>
+                    </tr>
+                  </thead>
+                  <tbody><tr><td colspan="9" class="estado-vazio">Carregando...</td></tr></tbody>
+                  <tfoot></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="rodape-nota" id="hist-nota"></div>
         </div>
 
       </div>
@@ -3704,6 +3828,7 @@
       filtrosGastosProntos = false;
       if (assistSub === "lancamentos") renderGastosFiltro();
       if (assistSub === "anual") renderResumoAnual();
+      if (assistSub === "historico") HistAssist.render();
       if (seletorMesAssist.value) {
         renderizarTabelaAssistencia(seletorMesAssist.value);
         renderResumoAssistencia(seletorMesAssist.value);
@@ -3892,7 +4017,7 @@
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
     viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "performance" || aba === "ritmo" || aba === "lista" || aba === "ranking" || aba === "orcamento" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
+    document.querySelector(".wrap").classList.toggle("largo", aba === "resultados" || aba === "performance" || aba === "ritmo" || aba === "lista" || aba === "ranking" || aba === "orcamento" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewLista.classList.toggle("oculto", aba !== "lista");
     viewRanking.classList.toggle("oculto", aba !== "ranking");
@@ -5970,16 +6095,418 @@
     assistMes.classList.toggle("oculto", sub !== "mes");
     assistLancamentos.classList.toggle("oculto", sub !== "lancamentos");
     assistAnual.classList.toggle("oculto", sub !== "anual");
+    document.getElementById("assist-historico").classList.toggle("oculto", sub !== "historico");
     document.getElementById("assist-os").classList.toggle("oculto", sub !== "os");
     assistSubabas.querySelectorAll("button").forEach((b) => b.classList.toggle("ativa", b.dataset.sub === sub));
     if (sub === "os") OSAssist.renderLista();
     if (sub === "lancamentos") renderGastosFiltro();
     if (sub === "anual") renderResumoAnual();
+    if (sub === "historico" && gastosCarregados) HistAssist.render();
   }
   assistSubabas.addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-sub]");
     if (b) mostrarSubAssist(b.dataset.sub);
   });
+
+  // --- sub-aba Histórico: acompanhamento anual da assistência ---
+  const HistAssist = (() => {
+    const NS = "http://www.w3.org/2000/svg";
+    const COR = { final: "#2a78d6", custo: "#eb6834", pct: "#1baf7a", neg: "#d6453a", meta: "#64748b", azul: "#123d80" };
+    const MES3 = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+    let periodo = 12;
+    const blocos = { result: true, pct: true, vol: true, yoy: true, tab: true };
+    let ordem = { col: "mes", dir: 1 };
+    let ligado = false;
+
+    const dica = (() => {
+      let d = document.getElementById("hist-dica");
+      if (!d) { d = document.createElement("div"); d.id = "hist-dica"; document.body.appendChild(d); }
+      return d;
+    })();
+    function mover(ev) {
+      const r = dica.getBoundingClientRect();
+      let x = ev.clientX + 14, y = ev.clientY - r.height - 12;
+      if (x + r.width > window.innerWidth - 8) x = ev.clientX - r.width - 14;
+      if (y < 8) y = ev.clientY + 18;
+      dica.style.left = x + "px"; dica.style.top = y + "px";
+    }
+    function ligarDica(el, html) {
+      el.addEventListener("pointerenter", (ev) => { dica.innerHTML = html; dica.style.opacity = 1; mover(ev); });
+      el.addEventListener("pointermove", mover);
+      el.addEventListener("pointerleave", () => { dica.style.opacity = 0; });
+      el.addEventListener("pointercancel", () => { dica.style.opacity = 0; });
+    }
+    const ld = (cor, nome, valor) =>
+      '<div class="l"><span>' + (cor ? '<i style="background:' + cor + '"></i>' : "") + nome + "</span><span>" + valor + "</span></div>";
+
+    function rotMes(comp) {
+      const p = String(comp).split("-");
+      return MES3[parseInt(p[1], 10) - 1] + "/" + p[0].slice(2);
+    }
+    const moedaCurta = (v) => "R$ " + Math.round(v / 1000).toLocaleString("pt-BR") + "k";
+    const pct1 = (v) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+
+    // competência do mês corrente, no formato da view ('YYYY-MM-01')
+    function compAtual() {
+      const h = new Date();
+      return h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0") + "-01";
+    }
+    function series() {
+      const hoje = compAtual();
+      // só até o mês corrente: uma meta cadastrada ou um gasto lançado para o mês que vem
+      // criaria uma linha com produzido zero e estragaria média, contagem e comparação anual
+      const base = (resumoAssistencia || [])
+        .filter((r) => String(r.competencia).slice(0, 10) <= hoje)
+        .sort((a, b) => String(a.competencia).localeCompare(String(b.competencia)));
+      const porComp = new Map(base.map((r) => [String(r.competencia).slice(0, 10), r]));
+      const comCusto = new Set((todosOsGastos || []).map((g) => g.competencia));
+      return base.map((r) => {
+        const comp = String(r.competencia).slice(0, 10);
+        // mesmo mês do ano anterior, procurado pela competência (não pela posição: a view não gera mês sem movimento)
+        const ant = porComp.get((parseInt(comp.slice(0, 4), 10) - 1) + comp.slice(4));
+        const prod = n(r.produzido_servico);
+        const prodAnt = ant ? n(ant.produzido_servico) : null;
+        return {
+          comp: comp, rot: rotMes(comp),
+          meta: n(r.meta), prod: prod, custo: n(r.custos_fornecedores), final: n(r.final),
+          ped: n(r.pedidos), tkt: n(r.ticket_medio), pct: n(r.pct_atingido) * 100,
+          temCusto: comCusto.has(r.competencia),
+          parcial: comp === hoje,
+          prodAnt: prodAnt,
+          yoy: (prodAnt > 0) ? (prod - prodAnt) / prodAnt * 100 : null
+        };
+      });
+    }
+    const janela = (todas) => periodo ? todas.slice(-periodo) : todas;
+
+    function el(tag, attrs, pai) {
+      const nó = document.createElementNS(NS, tag);
+      for (const k in attrs) nó.setAttribute(k, attrs[k]);
+      if (pai) pai.appendChild(nó);
+      return nó;
+    }
+    function limpa(id) { const s = document.getElementById(id); s.innerHTML = ""; return s; }
+    function topoEscala(max) {
+      if (max <= 0) return 1;
+      const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+      return Math.ceil(max / passo) * passo;
+    }
+
+    function gResult(d) {
+      const s = limpa("hist-g-result");
+      const W = 980, H = 300, L = 62, R = 14, T = 16, B = 38;
+      const iw = W - L - R, ih = H - T - B;
+      const topo = topoEscala(Math.max(...d.map((x) => Math.max(x.prod, x.meta))) * 1.08);
+      const y = (v) => T + ih - (Math.min(Math.max(v, 0), topo) / topo) * ih;
+      const passo = iw / d.length, lw = Math.min(40, passo * 0.62);
+      const salto = Math.ceil(d.length / 14);
+
+      document.getElementById("hist-sub-result").textContent =
+        d.length + " meses · a barra inteira é o produzido; a parte laranja é o que foi pago a fornecedores.";
+
+      for (let i = 0; i <= 4; i++) {
+        const v = topo * i / 4;
+        el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grade" }, s);
+        el("text", { x: L - 8, y: y(v) + 3.5, class: "gy", "text-anchor": "end" }, s).textContent = moedaCurta(v);
+      }
+      d.forEach((r, i) => {
+        const cx = L + passo * i + passo / 2, x = cx - lw / 2;
+        const yFinal = y(r.final), yProd = y(r.prod);
+        const hFinal = Math.max(0, T + ih - yFinal), hCusto = Math.max(0, yFinal - yProd);
+        if (hCusto > 2.5) el("rect", { x: x, y: yProd, width: lw, height: hCusto - 2, fill: COR.custo, rx: 3 }, s);
+        if (hFinal > 0) el("rect", { x: x, y: yFinal, width: lw, height: hFinal, fill: COR.final, rx: 3 }, s);
+        if (i % salto === 0 || d.length <= 14)
+          el("text", { x: cx, y: H - B + 16, class: "gx", "text-anchor": "middle" }, s).textContent = r.rot;
+      });
+      // meta por mês (segmento tracejado em cima de cada barra) — funciona se um dia a meta variar
+      d.forEach((r, i) => {
+        const cx = L + passo * i + passo / 2;
+        el("line", { x1: cx - passo / 2 + 1, x2: cx + passo / 2 - 1, y1: y(r.meta), y2: y(r.meta),
+                     stroke: COR.meta, "stroke-width": 2, "stroke-dasharray": "6 4" }, s);
+      });
+      el("line", { x1: L, x2: W - R, y1: T + ih, y2: T + ih, class: "eixo" }, s);
+      d.forEach((r, i) => {
+        const a = el("rect", { x: L + passo * i, y: T, width: passo, height: ih, class: "alvo" }, s);
+        ligarDica(a, "<b>" + r.rot + (r.parcial ? " — em andamento" : "") + "</b>" +
+          ld(null, "Produzido", fmtMoeda(r.prod)) +
+          (r.temCusto ? ld(COR.custo, "Custos fornecedores", "− " + fmtMoeda(r.custo))
+                      : '<div class="l"><span>Custos fornecedores</span><span>sem registro</span></div>') +
+          ld(COR.final, "Final", fmtMoeda(r.final)) +
+          ld(null, "Meta", fmtMoeda(r.meta)) +
+          ld(null, "% da meta", pct1(r.pct)) +
+          ld(null, "Pedidos", r.ped));
+      });
+    }
+
+    function gPct(d) {
+      const s = limpa("hist-g-pct");
+      const W = 980, H = 230, L = 50, R = 14, T = 16, B = 36;
+      const iw = W - L - R, ih = H - T - B;
+      const topo = Math.max(130, Math.ceil(Math.max(...d.map((x) => x.pct)) / 10) * 10 + 10);
+      const y = (v) => T + ih - (Math.min(Math.max(v, 0), topo) / topo) * ih;
+      const passo = iw / d.length, px = (i) => L + passo * i + passo / 2;
+      const salto = Math.ceil(d.length / 14);
+
+      for (let v = 0; v <= topo; v += 25) {
+        el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grade" }, s);
+        el("text", { x: L - 8, y: y(v) + 3.5, class: "gy", "text-anchor": "end" }, s).textContent = v + "%";
+      }
+      el("rect", { x: L, y: T, width: iw, height: Math.max(0, y(100) - T), fill: COR.pct, opacity: 0.07 }, s);
+      el("line", { x1: L, x2: W - R, y1: y(100), y2: y(100), stroke: COR.pct, "stroke-width": 2, "stroke-dasharray": "6 4" }, s);
+      el("polyline", { points: d.map((r, i) => px(i) + "," + y(r.pct)).join(" "), fill: "none",
+                       stroke: COR.pct, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, s);
+      d.forEach((r, i) => {
+        el("circle", { cx: px(i), cy: y(r.pct), r: 4.5, fill: r.pct >= 100 ? COR.pct : "#fff", stroke: COR.pct, "stroke-width": 2 }, s);
+        if (i % salto === 0 || d.length <= 14)
+          el("text", { x: px(i), y: H - B + 16, class: "gx", "text-anchor": "middle" }, s).textContent = r.rot;
+      });
+      const u = d[d.length - 1];
+      el("text", { x: px(d.length - 1), y: y(u.pct) - 12, class: "rotulo", "text-anchor": "end", fill: COR.pct }, s)
+        .textContent = pct1(u.pct);
+      el("line", { x1: L, x2: W - R, y1: T + ih, y2: T + ih, class: "eixo" }, s);
+      d.forEach((r, i) => {
+        const a = el("rect", { x: L + passo * i, y: T, width: passo, height: ih, class: "alvo" }, s);
+        ligarDica(a, "<b>" + r.rot + "</b>" + ld(COR.pct, "% da meta", pct1(r.pct)) +
+          ld(null, "Final", fmtMoeda(r.final)) +
+          ld(null, r.pct >= 100 ? "Passou da meta em" : "Faltou", fmtMoeda(Math.abs(r.final - r.meta))));
+      });
+    }
+
+    function gBarras(id, d, valor, cor, fmt, nomeSerie) {
+      const s = limpa(id);
+      const W = 470, H = 220, L = 50, R = 10, T = 14, B = 34;
+      const iw = W - L - R, ih = H - T - B;
+      const topo = topoEscala(Math.max(...d.map(valor)) * 1.1);
+      const y = (v) => T + ih - (v / topo) * ih;
+      const passo = iw / d.length, lw = Math.min(24, passo * 0.6), salto = Math.ceil(d.length / 7);
+      for (let i = 0; i <= 3; i++) {
+        const v = topo * i / 3;
+        el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grade" }, s);
+        el("text", { x: L - 7, y: y(v) + 3.5, class: "gy", "text-anchor": "end" }, s).textContent = fmt(v, true);
+      }
+      d.forEach((r, i) => {
+        const cx = L + passo * i + passo / 2, v = valor(r);
+        el("rect", { x: cx - lw / 2, y: y(v), width: lw, height: Math.max(0, T + ih - y(v)), fill: cor, rx: 3 }, s);
+        if (i % salto === 0 || d.length <= 8)
+          el("text", { x: cx, y: H - B + 15, class: "gx", "text-anchor": "middle" }, s).textContent = r.rot;
+      });
+      el("line", { x1: L, x2: W - R, y1: T + ih, y2: T + ih, class: "eixo" }, s);
+      d.forEach((r, i) => {
+        const a = el("rect", { x: L + passo * i, y: T, width: passo, height: ih, class: "alvo" }, s);
+        ligarDica(a, "<b>" + r.rot + "</b>" + ld(cor, nomeSerie, fmt(valor(r), false)) + ld(null, "Produzido", fmtMoeda(r.prod)));
+      });
+    }
+
+    function gLinha(id, d, valor, cor, fmt, nomeSerie) {
+      const s = limpa(id);
+      const W = 470, H = 220, L = 56, R = 14, T = 14, B = 34;
+      const iw = W - L - R, ih = H - T - B;
+      const vals = d.map(valor);
+      let lo = Math.min(...vals) * 0.88, hi = Math.max(...vals) * 1.08;
+      if (hi - lo < 1) { lo = Math.max(0, lo - 1); hi = hi + 1; }
+      const y = (v) => T + ih - ((v - lo) / (hi - lo)) * ih;
+      const passo = iw / d.length, px = (i) => L + passo * i + passo / 2, salto = Math.ceil(d.length / 7);
+      for (let i = 0; i <= 3; i++) {
+        const v = lo + (hi - lo) * i / 3;
+        el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grade" }, s);
+        el("text", { x: L - 7, y: y(v) + 3.5, class: "gy", "text-anchor": "end" }, s).textContent = fmt(v, true);
+      }
+      el("polyline", { points: d.map((r, i) => px(i) + "," + y(valor(r))).join(" "), fill: "none",
+                       stroke: cor, "stroke-width": 2, "stroke-linejoin": "round" }, s);
+      d.forEach((r, i) => {
+        el("circle", { cx: px(i), cy: y(valor(r)), r: 4, fill: "#fff", stroke: cor, "stroke-width": 2 }, s);
+        if (i % salto === 0 || d.length <= 8)
+          el("text", { x: px(i), y: H - B + 15, class: "gx", "text-anchor": "middle" }, s).textContent = r.rot;
+      });
+      const u = d[d.length - 1];
+      el("text", { x: px(d.length - 1), y: y(valor(u)) - 11, class: "rotulo", "text-anchor": "end", fill: cor }, s)
+        .textContent = fmt(valor(u), true);
+      el("line", { x1: L, x2: W - R, y1: T + ih, y2: T + ih, class: "eixo" }, s);
+      d.forEach((r, i) => {
+        const a = el("rect", { x: L + passo * i, y: T, width: passo, height: ih, class: "alvo" }, s);
+        ligarDica(a, "<b>" + r.rot + "</b>" + ld(cor, nomeSerie, fmt(valor(r), false)) + ld(null, "Pedidos", r.ped));
+      });
+    }
+
+    function gYoy(d) {
+      const s = limpa("hist-g-yoy");
+      const comp = d.filter((r) => r.yoy !== null);
+      if (!comp.length) {
+        el("text", { x: 490, y: 110, class: "gx", "text-anchor": "middle" }, s).textContent =
+          "Nenhum mês do período tem o mesmo mês do ano anterior para comparar.";
+        return;
+      }
+      const W = 980, H = 230, L = 50, R = 14, T = 18, B = 40;
+      const iw = W - L - R, ih = H - T - B;
+      const m = Math.max(10, Math.ceil(Math.max(...comp.map((r) => Math.abs(r.yoy))) / 10) * 10);
+      const y = (v) => T + ih / 2 - (v / m) * (ih / 2);
+      const passo = iw / comp.length, lw = Math.min(36, passo * 0.6), salto = Math.ceil(comp.length / 14);
+      [m, m / 2, 0, -m / 2, -m].forEach((v) => {
+        el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: "grade" }, s);
+        el("text", { x: L - 8, y: y(v) + 3.5, class: "gy", "text-anchor": "end" }, s)
+          .textContent = (v > 0 ? "+" : "") + v + "%";
+      });
+      comp.forEach((r, i) => {
+        const cx = L + passo * i + passo / 2, pos = r.yoy >= 0, cor = pos ? COR.pct : COR.neg;
+        const y0 = y(0), y1 = y(r.yoy);
+        el("rect", { x: cx - lw / 2, y: Math.min(y0, y1), width: lw, height: Math.max(1.5, Math.abs(y1 - y0)), fill: cor, rx: 3 }, s);
+        el("text", { x: cx, y: pos ? y1 - 7 : y1 + 14, class: "rotulo", "text-anchor": "middle", fill: cor }, s)
+          .textContent = (pos ? "+" : "−") + Math.abs(r.yoy).toFixed(0) + "%";
+        if (i % salto === 0 || comp.length <= 14)
+          el("text", { x: cx, y: H - B + 22, class: "gx", "text-anchor": "middle" }, s).textContent = r.rot;
+      });
+      el("line", { x1: L, x2: W - R, y1: y(0), y2: y(0), class: "eixo", "stroke-width": 1.5 }, s);
+      comp.forEach((r, i) => {
+        const a = el("rect", { x: L + passo * i, y: T, width: passo, height: ih, class: "alvo" }, s);
+        ligarDica(a, "<b>" + r.rot + "</b>" +
+          ld(null, "Produzido agora", fmtMoeda(r.prod)) +
+          ld(null, "Mesmo mês ano ant.", fmtMoeda(r.prodAnt)) +
+          ld(r.yoy >= 0 ? COR.pct : COR.neg, "Variação", (r.yoy >= 0 ? "+" : "−") + pct1(Math.abs(r.yoy))));
+      });
+    }
+
+    function kpis(d) {
+      const box = document.getElementById("hist-kpis");
+      // mês em andamento fica fora da média e da contagem — ainda não fechou
+      const fechados = d.filter((r) => !r.parcial);
+      const baseMedia = fechados.length ? fechados : d;
+      const somaFinal = baseMedia.reduce((a, r) => a + r.final, 0);
+      const bateram = baseMedia.filter((r) => r.pct >= 100);
+      const melhor = baseMedia.reduce((a, r) => r.final > a.final ? r : a);
+      const ult = d[d.length - 1], pen = d[d.length - 2];
+      const varUlt = (pen && pen.final > 0) ? (ult.final - pen.final) / pen.final * 100 : null;
+      const comCusto = d.filter((r) => r.temCusto);
+      const totCusto = comCusto.reduce((a, r) => a + r.custo, 0);
+      const cartoes = [
+        { rot: "Média mensal (final)", val: fmtMoeda(somaFinal / baseMedia.length),
+          nota: baseMedia.length + " meses fechados · total " + fmtMoeda(somaFinal) },
+        { rot: "Meses que bateram a meta", val: bateram.length + " de " + baseMedia.length,
+          nota: bateram.length ? "último: " + bateram[bateram.length - 1].rot : "nenhum no período" },
+        { rot: "Melhor mês", val: fmtMoeda(melhor.final), nota: melhor.rot + " · " + pct1(melhor.pct) + " da meta" },
+        { rot: ult.parcial ? "Mês em andamento" : "Último mês", val: fmtMoeda(ult.final),
+          nota: varUlt === null ? ult.rot
+              : ult.rot + " · " + (varUlt >= 0 ? "+" : "−") + pct1(Math.abs(varUlt)) + " vs " + pen.rot,
+          cor: varUlt === null ? null : (varUlt >= 0 ? COR.pct : COR.neg) },
+        { rot: "Pago a fornecedores", val: fmtMoeda(totCusto),
+          nota: comCusto.length ? comCusto.length + (comCusto.length === 1 ? " mês com lançamento" : " meses com lançamento") : "sem lançamento no período" }
+      ];
+      box.innerHTML = cartoes.map((c) =>
+        '<div class="kpi"><div class="rotulo">' + c.rot + '</div><div class="valor">' + c.val + '</div>' +
+        '<div class="nota"' + (c.cor ? ' style="color:' + c.cor + ';font-weight:600"' : "") + ">" + c.nota + "</div></div>").join("");
+    }
+
+    function tabela(d) {
+      const chave = { mes: (r) => r.comp, meta: (r) => r.meta, prod: (r) => r.prod, custo: (r) => r.custo,
+                      final: (r) => r.final, pct: (r) => r.pct, ped: (r) => r.ped, tkt: (r) => r.tkt,
+                      yoy: (r) => r.yoy === null ? -1e9 : r.yoy };
+      const linhas = d.slice().sort((a, b) => {
+        const x = chave[ordem.col](a), y = chave[ordem.col](b);
+        return (x > y ? 1 : x < y ? -1 : 0) * ordem.dir;
+      });
+      document.querySelector("#hist-tabela tbody").innerHTML = linhas.map((r) =>
+        "<tr>" +
+        '<td class="hist-mes">' + r.rot + (r.parcial ? ' <span class="hist-vazio" title="Mês ainda em andamento">(parcial)</span>' : "") + "</td>" +
+        "<td>" + fmtMoeda(r.meta) + "</td>" +
+        "<td>" + fmtMoeda(r.prod) + "</td>" +
+        "<td>" + (r.temCusto ? fmtMoeda(r.custo) : '<span class="hist-vazio">—</span>') + "</td>" +
+        "<td>" + fmtMoeda(r.final) + "</td>" +
+        '<td><span class="pct-pill ' + classePct(r.pct / 100) + '">' + pct1(r.pct) + "</span></td>" +
+        "<td>" + r.ped + "</td>" +
+        "<td>" + fmtMoeda(r.tkt) + "</td>" +
+        "<td>" + (r.yoy === null ? '<span class="hist-vazio">—</span>'
+             : '<span style="color:' + (r.yoy >= 0 ? COR.pct : COR.neg) + ';font-weight:600">' +
+               (r.yoy >= 0 ? "+" : "−") + pct1(Math.abs(r.yoy)) + "</span>") + "</td>" +
+        "</tr>").join("");
+
+      const sm = d.reduce((a, r) => a + r.meta, 0), sp = d.reduce((a, r) => a + r.prod, 0),
+            sc = d.reduce((a, r) => a + r.custo, 0), sf = d.reduce((a, r) => a + r.final, 0),
+            sped = d.reduce((a, r) => a + r.ped, 0);
+      document.querySelector("#hist-tabela tfoot").innerHTML =
+        "<tr><td>Total (" + d.length + " meses)</td><td>" + fmtMoeda(sm) + "</td><td>" + fmtMoeda(sp) +
+        "</td><td>" + fmtMoeda(sc) + "</td><td>" + fmtMoeda(sf) + "</td><td>" + (sm ? pct1(sf / sm * 100) : "—") +
+        "</td><td>" + sped + "</td><td>" + fmtMoeda(sped ? sp / sped : 0) + "</td><td>—</td></tr>";
+
+      document.querySelectorAll("#hist-tabela thead th").forEach((th) => {
+        const base = th.textContent.replace(/[ ▲▼]+$/, "");
+        const ativa = th.dataset.col === ordem.col;
+        th.textContent = ativa ? base + (ordem.dir > 0 ? " ▲" : " ▼") : base;
+        th.style.color = ativa ? "var(--azul)" : "";
+      });
+    }
+
+    function ligarControles() {
+      if (ligado) return;
+      ligado = true;
+      document.getElementById("hist-periodo").addEventListener("click", (ev) => {
+        const b = ev.target.closest("button[data-per]"); if (!b) return;
+        periodo = Number(b.dataset.per);
+        b.parentNode.querySelectorAll("button").forEach((x) => x.classList.toggle("ativa", x === b));
+        render();
+      });
+      document.getElementById("hist-blocos").addEventListener("click", (ev) => {
+        const b = ev.target.closest("button[data-bloco]"); if (!b) return;
+        const k = b.dataset.bloco;
+        blocos[k] = !blocos[k];
+        b.classList.toggle("ativa", blocos[k]);
+        render();
+      });
+      document.querySelectorAll("#hist-tabela thead th").forEach((th) => {
+        th.addEventListener("click", () => {
+          if (ordem.col === th.dataset.col) ordem.dir *= -1;
+          else ordem = { col: th.dataset.col, dir: th.dataset.col === "mes" ? 1 : -1 };
+          tabela(janela(series()));
+        });
+      });
+    }
+
+    function render() {
+      ligarControles();
+      const todas = series();
+      if (!todas.length) {
+        document.querySelector("#hist-tabela tbody").innerHTML =
+          '<tr><td colspan="9" class="estado-vazio">Sem dados de assistência.</td></tr>';
+        document.querySelector("#hist-tabela tfoot").innerHTML = "";
+        document.getElementById("hist-kpis").innerHTML = "";
+        document.getElementById("hist-nota").textContent = "";
+        ["hist-g-result", "hist-g-pct", "hist-g-qtd", "hist-g-tkt", "hist-g-yoy"].forEach(limpa);
+        return;
+      }
+      const d = janela(todas);
+      kpis(d);
+      if (blocos.result) gResult(d);
+      if (blocos.pct) gPct(d);
+      if (blocos.vol) {
+        gBarras("hist-g-qtd", d, (r) => r.ped, COR.azul,
+                (v, curto) => curto ? String(Math.round(v)) : Math.round(v) + " pedidos", "Pedidos");
+        gLinha("hist-g-tkt", d, (r) => r.tkt, COR.custo,
+               (v, curto) => curto ? "R$ " + Math.round(v).toLocaleString("pt-BR") : fmtMoeda(v), "Ticket médio");
+      }
+      if (blocos.yoy) gYoy(d);
+      if (blocos.tab) tabela(d);
+      ["result", "pct", "vol", "yoy", "tab"].forEach((k) => {
+        document.getElementById("hist-bloco-" + k).classList.toggle("oculto", !blocos[k]);
+      });
+
+      const metas = [...new Set(d.map((r) => r.meta))];
+      document.getElementById("hist-leg-meta").textContent =
+        metas.length === 1 ? "Meta " + fmtMoeda(metas[0]) : "Meta do mês";
+
+      const semCusto = d.filter((r) => !r.temCusto);
+      const notas = [];
+      if (semCusto.length)
+        notas.push("Em " + semCusto.length + (semCusto.length === 1 ? " mês" : " meses") +
+          " do período não há gasto de fornecedor lançado (" + semCusto[0].rot +
+          (semCusto.length > 1 ? " a " + semCusto[semCusto.length - 1].rot : "") +
+          "): nesses meses o Final é igual ao Produzido.");
+      if (metas.length === 1 && metas[0] === 25000)
+        notas.push("A meta de " + fmtMoeda(metas[0]) + " é o valor padrão — cadastre metas por mês para a linha deixar de ser reta.");
+      if (d.some((r) => r.parcial))
+        notas.push("O mês em andamento aparece como parcial e fica fora da média e da contagem de meses que bateram a meta.");
+      document.getElementById("hist-nota").textContent = notas.join(" ");
+    }
+
+    return { render };
+  })();
 
   function margemGasto(l) {
     const os = n(l.valor_os), t = n(l.valor_terceiro);
