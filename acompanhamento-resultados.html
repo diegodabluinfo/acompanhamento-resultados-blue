@@ -299,6 +299,7 @@
   #assist-historico tfoot td { font-weight: 700; background: #f7fafd; border-top: 1px solid var(--borda); }
   #assist-historico thead th { cursor: pointer; user-select: none; }
   /* --- Resultados > Histórico (mesmo visual do Histórico da Assistência) --- */
+  .nota-meta-equipe { display: block; font-size: 0.68rem; font-weight: 600; color: var(--texto-suave); white-space: nowrap; }
   #res-historico .hist-controles { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-end; background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,40,70,0.06); margin-bottom: 16px; }
   #res-historico .hist-ctl { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin: 0; }
   #res-historico .hist-ctl > span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); font-weight: 700; }
@@ -2909,6 +2910,21 @@
           </div>
 
           <div class="form-card">
+            <h2>Meta da equipe</h2>
+            <p class="sub">Meta do mês para a equipe toda, separada das metas de cada vendedor. A equipe bate a meta quando o final de todos somado chega nela.
+              Em branco = usa a soma das metas individuais.</p>
+            <div id="aviso-meta-equipe" class="aviso"></div>
+            <form id="form-meta-equipe" autocomplete="off">
+              <div class="campo">
+                <label for="meta-equipe-valor">Meta da equipe (R$)</label>
+                <input type="number" id="meta-equipe-valor" inputmode="decimal" step="0.01" min="0" placeholder="soma das individuais">
+              </div>
+              <p class="sub" id="meta-equipe-soma" style="margin-top:-6px;"></p>
+              <button type="submit" id="btn-salvar-meta-equipe" class="btn-full">Salvar meta da equipe</button>
+            </form>
+          </div>
+
+          <div class="form-card">
             <h2>Cadastrar / editar meta</h2>
             <p class="sub" id="metas-form-sub">Selecione o vendedor pra carregar (ou criar) a meta deste mês.</p>
             <div id="aviso-metas" class="aviso"></div>
@@ -3626,6 +3642,18 @@
     } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null }; }
   }
 
+  // { "2026-07-01": 1100000, ... } — meta da equipe por mês (tabela metas_equipe)
+  let metasEquipe = {};
+  async function buscarMetasEquipe() {
+    try {
+      const res = await leitura(`${SUPABASE_URL}/rest/v1/metas_equipe?select=competencia,objetivo`);
+      if (!res.ok) return {};
+      const m = {};
+      (await res.json()).forEach((l) => { m[l.competencia] = Number(l.objetivo); });
+      return m;
+    } catch (e) { return {}; }
+  }
+
   async function buscarResultados() {
     const res = await leitura(
       `${SUPABASE_URL}/rest/v1/v_metas_mensais_completo?select=*&order=competencia.desc,nome_completo.asc`
@@ -3699,11 +3727,14 @@
       </tr>`;
     }).join("");
 
-    const faltaTotal = Math.max(somaObjetivo - somaFinal, 0);
-    const pctTotal = somaObjetivo > 0 ? somaFinal / somaObjetivo : 0;
+    // meta da equipe (metas_equipe) é separada da soma das individuais; sem ela no mês, vale a soma
+    const metaEquipe = metasEquipe[competencia];
+    const objetivoTotal = metaEquipe != null ? metaEquipe : somaObjetivo;
+    const faltaTotal = Math.max(objetivoTotal - somaFinal, 0);
+    const pctTotal = objetivoTotal > 0 ? somaFinal / objetivoTotal : 0;
     corpoTabela.innerHTML += `<tr class="total">
-        <td>TOTAL</td>
-        <td>${fmtMoeda(somaObjetivo)}</td>
+        <td>TOTAL${metaEquipe != null ? '<small class="nota-meta-equipe">meta da equipe</small>' : ""}</td>
+        <td>${fmtMoeda(objetivoTotal)}${metaEquipe != null && metaEquipe !== somaObjetivo ? `<small class="nota-meta-equipe">soma das individuais: ${fmtMoeda(somaObjetivo)}</small>` : ""}</td>
         <td>${fmtMoeda(somaProduzido)}</td>
         <td class="${classeDesconto(somaCreditos)}">${fmtMoeda(somaCreditos)}</td>
         <td class="${classeDesconto(somaDevolucoes)}">${fmtMoeda(somaDevolucoes)}</td>
@@ -3723,12 +3754,14 @@
     appIniciado = true;
     corpoTabela.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>';
     try {
-      const [linhas, cutoff, sincronizacao] = await Promise.all([
+      const [linhas, cutoff, sincronizacao, equipe] = await Promise.all([
         buscarResultados(),
         buscarConfigAutomacao(),
-        buscarUltimaSincronizacao()
+        buscarUltimaSincronizacao(),
+        buscarMetasEquipe()
       ]);
       todasAsLinhas = linhas;
+      metasEquipe = equipe;
       mesCorteAutomatico = cutoff;
       preencherSeletorMes(linhas);
       if (seletorMes.value) renderizarTabela(seletorMes.value);
@@ -4385,10 +4418,59 @@
       );
       metasLinhasDoMes = res.ok ? await res.json() : [];
       renderizarTabelaMetas();
+      carregarMetaEquipe(competencia);
     } catch (err) {
       corpoMetas.innerHTML = '<tr><td colspan="6" class="estado-vazio">Não foi possível carregar as metas deste mês.</td></tr>';
     }
   }
+
+  // --- meta da equipe do mês (metas_equipe); em branco = soma das individuais ---
+  const avisoMetaEquipe = document.getElementById("aviso-meta-equipe");
+  const metaEquipeInput = document.getElementById("meta-equipe-valor");
+  const btnSalvarMetaEquipe = document.getElementById("btn-salvar-meta-equipe");
+  function avisoEquipe(tipo, texto) {
+    avisoMetaEquipe.className = tipo ? "aviso mostrar " + tipo : "aviso";
+    avisoMetaEquipe.textContent = texto || "";
+  }
+  async function carregarMetaEquipe(competencia) {
+    avisoEquipe();
+    const soma = metasLinhasDoMes.reduce((t, l) => t + Number(l.objetivo || 0), 0);
+    document.getElementById("meta-equipe-soma").textContent = "Soma das metas individuais deste mês: " + fmtMoeda(soma) + ".";
+    metaEquipeInput.value = "";
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/metas_equipe?competencia=eq.${competencia}&select=objetivo`, { headers: headersEscrita() });
+      const l = res.ok ? await res.json() : [];
+      if (competencia === metasMesAtual && l[0]) metaEquipeInput.value = Number(l[0].objetivo);
+    } catch (e) { /* sem meta da equipe: fica em branco */ }
+  }
+  document.getElementById("form-meta-equipe").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    avisoEquipe();
+    if (!metasMesAtual) { avisoEquipe("erro", "Selecione um mês."); return; }
+    const valor = numOrNull(metaEquipeInput.value);
+    btnSalvarMetaEquipe.disabled = true;
+    try {
+      // em branco apaga a meta da equipe do mês (volta a valer a soma das individuais)
+      const res = valor == null
+        ? await fetch(`${SUPABASE_URL}/rest/v1/metas_equipe?competencia=eq.${metasMesAtual}`, { method: "DELETE", headers: headersEscrita() })
+        : await fetch(`${SUPABASE_URL}/rest/v1/metas_equipe?on_conflict=competencia`, {
+            method: "POST",
+            headers: { ...headersEscrita(), "Prefer": "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify({ competencia: metasMesAtual, objetivo: Math.max(0, valor), updated_at: new Date().toISOString() })
+          });
+      if (!res.ok) {
+        const detalhe = await res.text();
+        if (res.status === 401 || res.status === 403 || detalhe.toLowerCase().includes("row-level security")) throw new Error("Sua conta não tem permissão para cadastrar metas.");
+        throw new Error(detalhe || ("HTTP " + res.status));
+      }
+      avisoEquipe("sucesso", valor == null ? "Meta da equipe removida: vale a soma das individuais." : "Meta da equipe salva.");
+      iniciarApp(); // a aba Resultados também deve refletir a meta da equipe
+    } catch (err) {
+      avisoEquipe("erro", (err && err.message) ? err.message : "Não foi possível salvar. Tente novamente.");
+    } finally {
+      btnSalvarMetaEquipe.disabled = false;
+    }
+  });
 
   metasMesInput.addEventListener("change", () => {
     if (!metasMesInput.value) return;
@@ -5926,6 +6008,7 @@
     const COR = { prod: "#2a78d6", ant: "#eb6834", meta: "#64748b" };
     const MES3 = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
     let linhas = null, carregando = false, ligado = false;
+    const metaEquipe = {};   // "2026-07" -> meta da equipe do mês
     let periodo = 12, vendedor = "";
     const blocos = { serie: true, yoy: true, tab: true };
     let ordem = { col: "total", dir: -1 };
@@ -5985,8 +6068,13 @@
         const k = comp(l.competencia);
         const a = m.get(k) || { comp: k, prod: 0, meta: 0, final: 0, temMeta: false };
         a.prod += Number(l.produzido || 0);
-        if (l.tem_meta && l.objetivo != null) { a.meta += Number(l.objetivo); a.final += Number(l.final || 0); a.temMeta = true; }
+        if (l.final != null) a.final += Number(l.final);   // final de todos (igual ao TOTAL da tela Mês)
+        if (l.tem_meta && l.objetivo != null) { a.meta += Number(l.objetivo); a.temMeta = true; }
         m.set(k, a);
+      }
+      // equipe toda: a meta é a da equipe (quando cadastrada), não a soma das individuais
+      if (!vendedor) for (const a of m.values()) {
+        if (metaEquipe[a.comp] != null) { a.meta = metaEquipe[a.comp]; a.temMeta = true; }
       }
       return m;
     }
@@ -6027,6 +6115,12 @@
       el("rh-kpis").innerHTML = '<div class="estado-vazio" style="grid-column:1/-1">Carregando o histórico…</div>';
       try {
         linhas = await rpc("resultados_historico");
+        // meta da equipe (separada das individuais) vale para a visão "Equipe toda"
+        try {
+          const r = await fetch(SUPABASE_URL + "/rest/v1/metas_equipe?select=competencia,objetivo",
+            { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token } });
+          if (r.ok) (await r.json()).forEach((l) => { metaEquipe[comp(l.competencia)] = Number(l.objetivo); });
+        } catch (e) { /* sem meta da equipe: usa a soma das individuais */ }
         const nomes = new Map();
         linhas.forEach((l) => nomes.set(String(l.vendedor_id), l.nome_curto || l.nome_completo));
         el("rh-vendedor").innerHTML = '<option value="">Equipe toda</option>' + [...nomes].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
