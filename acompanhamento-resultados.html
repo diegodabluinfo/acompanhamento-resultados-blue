@@ -914,6 +914,13 @@
   #view-orcamento .sit-aprovado { background: var(--verde-fundo); color: var(--verde); }
   #view-orcamento .sit-perdido { background: var(--vermelho-fundo); color: var(--vermelho); }
   #view-orcamento .ret-atrasado { color: var(--vermelho); font-weight: 700; }
+  #view-orcamento .ret-feito { color: var(--verde); }
+  #view-orcamento .ped-vendido { color: var(--verde); font-weight: 700; white-space: nowrap; }
+  #view-orcamento .ped-aberto { color: #8a5a00; font-weight: 700; white-space: nowrap; }
+  #view-orcamento .orc-salvos-tabela td small, #view-orcamento .dt-pedidos small { display: block; }
+  #view-orcamento .dt-conversa, #view-orcamento .dt-pedidos { font-size: 0.8rem; line-height: 1.5; }
+  #view-orcamento .dt-virou { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--verde-fundo); font-size: 0.8rem; line-height: 1.6; }
+  #view-orcamento .dt-virou .orc-btn { margin-top: 6px; }
   #view-orcamento .ret-hoje { color: var(--amarelo); font-weight: 700; }
   #view-orcamento .orc-detalhe-caixa { width: min(900px, 100%); }
   #view-orcamento .dt-topo { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding-right: 40px; margin-bottom: 14px; }
@@ -1886,7 +1893,7 @@
             <div id="orc-salvos-resumo" class="orc-salvos-resumo"></div>
             <div class="tabela-scroll">
               <table class="orc-salvos-tabela">
-                <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Quem fez</th><th class="num">Total</th><th>Situação</th><th>Retorno</th></tr></thead>
+                <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Quem fez</th><th class="num">Total</th><th>Situação</th><th>Retorno</th><th>Última conversa</th><th>Pedido no ERP</th></tr></thead>
                 <tbody id="orc-salvos-corpo"></tbody>
               </table>
             </div>
@@ -8186,18 +8193,71 @@
     }
     async function listarSalvos() {
       const corpo = el("orc-salvos-corpo");
-      corpo.innerHTML = '<tr><td colspan="7" class="estado-vazio">Carregando…</td></tr>';
+      corpo.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando…</td></tr>';
       try {
         salvosLista = await rpc("orcamento_listar", { p_meus: salvosMeus, p_situacao: el("orc-salvos-situacao").value || null,
           p_busca: el("orc-salvos-busca").value.trim() || null });
         renderSalvos();
+        carregarExtrasSalvos(salvosLista);
       } catch (e) {
-        corpo.innerHTML = '<tr><td colspan="7" class="estado-vazio">Não foi possível carregar: ' + esc(e.message) + "</td></tr>";
+        corpo.innerHTML = '<tr><td colspan="9" class="estado-vazio">Não foi possível carregar: ' + esc(e.message) + "</td></tr>";
       }
     }
+    // conversas da Sonax (HistCliente) e pedidos do ERP feitos depois do orçamento (orcamento_pedidos_erp)
+    let pedidosOrc = new Map();
+    const STATUS_VENDIDO = ["20", "21", "22", "25", "30", "99"];
+    async function carregarExtrasSalvos(lista) {
+      const cods = lista.map((o) => o.cliente_codigo_erp).filter(Boolean);
+      const [, peds] = await Promise.all([
+        HistCliente.buscarResumos(cods, true).catch(() => null),
+        rpc("orcamento_pedidos_erp", { p_ids: lista.map((o) => o.id) }).catch(() => null)]);
+      if (peds) {
+        pedidosOrc = new Map();
+        for (const p of peds) (pedidosOrc.get(p.orcamento_id) || pedidosOrc.set(p.orcamento_id, []).get(p.orcamento_id)).push(p);
+      }
+      if (lista === salvosLista) renderSalvos();
+      atualizarExtrasDetalhe();
+    }
+    function diaSP(iso) { return iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) : null; }
+    // retorno vencido e ninguém conversou com o cliente desde a data do retorno = atrasado (vermelho)
+    function retornoSalvo(o) {
+      const base = classeRetorno(o);
+      if (!base || !o.cliente_codigo_erp) return { cls: base, txt: "" };
+      const ult = diaSP(HistCliente.ultimoEm(o.cliente_codigo_erp));
+      if (ult && ult >= o.retorno_em) return { cls: "ret-feito", txt: "conversou " + dataBR(ult) };
+      return { cls: base, txt: base === "ret-atrasado" ? (ult ? "sem conversa desde " + dataBR(ult) : "sem conversa") : "" };
+    }
+    const pedidoVendido = (p) => STATUS_VENDIDO.includes(p.status);
+    const mesmoValor = (p, o) => Math.abs(Number(p.valor_total) - Number(o.total)) < 0.05;
+    function celulaPedido(o) {
+      if (!o.cliente_codigo_erp) return '<span class="orc-muted">cliente novo</span>';
+      const ps = pedidosOrc.get(o.id) || [];
+      if (!ps.length) return '<span class="orc-muted">nenhum</span>';
+      return ps.map((p) => {
+        const vendido = pedidoVendido(p);
+        return '<span class="' + (vendido ? "ped-vendido" : "ped-aberto") + '">' + (vendido ? "✔ " : "⏳ ") + "Pedido " + p.pedido + "</span>" +
+          "<small>" + money(p.valor_total) + " · " + dataBR(p.dt_fatura) + (mesmoValor(p, o) ? " · mesmo valor" : "") + (vendido ? "" : " · não faturado") +
+          (p.vendedor ? " · " + esc(primeiroNomeVend(p.vendedor)) : "") + "</small>";
+      }).join("");
+    }
+    function primeiroNomeVend(n) { const p = String(n).trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[1][0] + "." : p[0]; }
+    // na ficha: conversas e pedidos; se um pedido vendido tem o mesmo valor, sugere marcar como Aprovado (o vendedor confirma)
+    function extrasDetalhe(o) {
+      if (!o.cliente_codigo_erp) return '<h3>Conversas e pedidos</h3><div class="dt-conversa orc-muted">Cliente novo: ainda não tem conversas nem pedidos ligados ao ERP.</div>';
+      const virou = ["aberto", "enviado"].includes(o.situacao) && (pedidosOrc.get(o.id) || []).find((p) => pedidoVendido(p) && mesmoValor(p, o));
+      return "<h3>Conversas com o cliente</h3><div class=\"dt-conversa\">" + HistCliente.blocoResumo(o.cliente_codigo_erp) +
+          '<div style="margin-top:8px"><button type="button" class="orc-btn orc-btn-claro" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">Ver conversas e ligações</button></div></div>" +
+        "<h3>Pedidos no ERP depois do orçamento</h3><div class=\"dt-pedidos\">" + celulaPedido(o) + "</div>" +
+        (virou ? '<div class="dt-virou">Parece que este orçamento virou o <b>pedido ' + virou.pedido + "</b> (mesmo valor). " +
+          '<button type="button" class="orc-btn orc-btn-claro" data-dt="aprovar">Marcar como Aprovado</button></div>' : "");
+    }
+    function atualizarExtrasDetalhe() {
+      const box = detalhe && document.getElementById("dt-extras");
+      if (box) box.innerHTML = extrasDetalhe(detalhe);
+    }
     function renderSalvos() {
-      const atrasados = salvosLista.filter((o) => classeRetorno(o) === "ret-atrasado").length;
-      const hoje = salvosLista.filter((o) => classeRetorno(o) === "ret-hoje").length;
+      const atrasados = salvosLista.filter((o) => retornoSalvo(o).cls === "ret-atrasado").length;
+      const hoje = salvosLista.filter((o) => retornoSalvo(o).cls === "ret-hoje").length;
       el("orc-salvos-resumo").innerHTML = salvosLista.length + (salvosLista.length === 1 ? " orçamento" : " orçamentos") +
         (atrasados ? ' · <span class="ret-atrasado">' + atrasados + (atrasados === 1 ? " retorno atrasado" : " retornos atrasados") + "</span>" : "") +
         (hoje ? ' · <span class="ret-hoje">' + hoje + (hoje === 1 ? " retorno para hoje" : " retornos para hoje") + "</span>" : "");
@@ -8205,21 +8265,26 @@
         '<tr data-orc="' + o.id + '">' +
           "<td>" + numeroTexto(o.numero) + (o.versao > 1 ? "<small>versão " + o.versao + "</small>" : "") + "</td>" +
           "<td>" + dataBR(o.criado_em) + "</td>" +
-          "<td>" + esc(o.cliente_nome) + "<small>" + (o.cliente_codigo_erp ? "ERP " + esc(o.cliente_codigo_erp) : "cliente novo") +
+          "<td>" + (o.cliente_codigo_erp ? '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">" + esc(o.cliente_nome) + "</span>" : esc(o.cliente_nome)) +
+            "<small>" + (o.cliente_codigo_erp ? "ERP " + esc(o.cliente_codigo_erp) : "cliente novo") +
             (o.cliente_documento ? " · " + formatarDocumento(o.cliente_documento) : "") + "</small></td>" +
           "<td>" + esc(o.criado_por_nome || "") + "</td>" +
           '<td class="num">' + money(o.total) + "</td>" +
           '<td><span class="orc-sit sit-' + o.situacao + '">' + SITUACOES[o.situacao] + "</span>" +
             (o.situacao === "perdido" && o.motivo_perda ? "<small>" + esc(o.motivo_perda) + "</small>" : "") + "</td>" +
-          '<td class="' + classeRetorno(o) + '">' + dataBR(o.retorno_em) + "</td>" +
+          (() => { const r = retornoSalvo(o); return '<td class="' + r.cls + '">' + dataBR(o.retorno_em) + (r.txt ? "<small>" + r.txt + "</small>" : "") + "</td>"; })() +
+          "<td>" + (o.cliente_codigo_erp ? '<span class="link-hist" style="text-decoration:none" title="Abrir conversas e ligações" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">" + HistCliente.celulaUltimo(o.cliente_codigo_erp) + "</span>" : '<span class="orc-muted">—</span>') + "</td>" +
+          "<td>" + celulaPedido(o) + "</td>" +
         "</tr>").join("")
-        : '<tr><td colspan="7" class="estado-vazio">' + (salvosMeus ? "Você ainda não salvou orçamentos com esse filtro. Use “Ver todos” para ver os da equipe." : "Nenhum orçamento com esse filtro.") + "</td></tr>";
+        : '<tr><td colspan="9" class="estado-vazio">' + (salvosMeus ? "Você ainda não salvou orçamentos com esse filtro. Use “Ver todos” para ver os da equipe." : "Nenhum orçamento com esse filtro.") + "</td></tr>";
     }
 
     async function abrirDetalhe(id) {
       try {
         detalhe = await rpc("orcamento_abrir", { p_id: id });
         renderDetalhe();
+        if (detalhe.cliente_codigo_erp && HistCliente.resumo(detalhe.cliente_codigo_erp) === undefined)
+          HistCliente.buscarResumos([detalhe.cliente_codigo_erp]).then(atualizarExtrasDetalhe).catch(() => {});
         el("orc-detalhe").classList.remove("oculto");
       } catch (e) {
         alert("Não foi possível abrir o orçamento: " + e.message);
@@ -8252,6 +8317,7 @@
               '<button type="button" class="orc-btn orc-btn-claro" data-dt="montador">Abrir no montador</button></div>' +
             "<h3>Histórico</h3><ul class=\"dt-hist\">" + o.historico.map((h) =>
               "<li>" + esc(h.texto || "") + "<small>" + new Date(h.quando).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) + " · " + esc(h.quem_nome || "") + "</small></li>").join("") + "</ul>" +
+            '<div id="dt-extras">' + extrasDetalhe(o) + "</div>" +
           "</div></div>";
     }
     // manda só o que mudou; o motivo vai junto com a mudança para Perdido
@@ -8949,6 +9015,12 @@
         if (!b) return;
         if (b.dataset.dt === "salvar") salvarAcompanhamento();
         if (b.dataset.dt === "montador") abrirNoMontador();
+        if (b.dataset.dt === "aprovar") {
+          el("dt-situacao").value = "aprovado";
+          el("dt-motivo-box").classList.add("oculto");
+          renderDetalheAviso("Situação mudada para Aprovado. Clique em “Salvar acompanhamento” para gravar.");
+          el("dt-situacao").focus();
+        }
       });
       el("orc-detalhe-corpo").addEventListener("change", (ev) => {
         if (ev.target.id === "dt-situacao") el("dt-motivo-box").classList.toggle("oculto", ev.target.value !== "perdido");
