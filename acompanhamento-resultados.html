@@ -5894,18 +5894,18 @@
         "<h3>Financeiro</h3>" +
         (!f.pode_financeiro ? '<div class="ficha-aviso">Sem permissão para ver o financeiro (precisa da aba Em Aberto).</div>'
           : !fin.titulos.length ? '<div class="ficha-aviso">Nenhum título no contas a receber.</div>'
-          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Pedido</th></tr></thead><tbody>' +
-            fin.titulos.map((t) => "<tr><td>" + esc(t.titulo) + "</td><td>" + esc(t.nfiscal || "—") + "</td><td>" + dataBR(t.emissao) + "</td><td>" + dataBR(t.vencimento) +
+          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Filial</th><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Pedido</th></tr></thead><tbody>' +
+            fin.titulos.map((t) => "<tr><td class=\"cod-cliente\">" + esc(t.filial || "") + "</td><td>" + esc(t.titulo) + "</td><td>" + esc(t.nfiscal || "—") + "</td><td>" + dataBR(t.emissao) + "</td><td>" + dataBR(t.vencimento) +
               "</td><td>" + fmtMoeda(t.quitado === "N" ? t.saldo : t.valor) + "</td><td>" + tituloSit(t) + "</td><td>" + (t.pedido ? PedidoDet.link(t.pedido) : "—") + "</td></tr>").join("") +
             "</tbody></table></div>") +
         "<h3>Últimos pedidos</h3>" +
         (!f.pedidos.length ? '<div class="ficha-aviso">Nenhum pedido desde 2024.</div>'
-          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Pedido</th><th>Data</th><th>Status</th><th>Valor</th><th>Vendedor</th><th>Pagamento</th></tr></thead><tbody>' +
-            f.pedidos.map((p) => "<tr><td>" + PedidoDet.link(p.pedido) + "</td><td>" + dataBR(p.dt_fatura) + '</td><td><span class="pill-st st' + esc(p.status) + '">' + esc(p.status) + "</span>" +
+          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Pedido</th><th>Filial</th><th>Data</th><th>Status</th><th>Valor</th><th>Vendedor</th><th>Pagamento</th></tr></thead><tbody>' +
+            f.pedidos.map((p) => "<tr><td>" + PedidoDet.link(p.pedido) + "</td><td class=\"cod-cliente\">" + esc(p.filial || "") + "</td><td>" + dataBR(p.dt_fatura) + '</td><td><span class="pill-st st' + esc(p.status) + '">' + esc(p.status) + "</span>" +
               (STATUS_VENDIDO.includes(p.status) ? "" : ' <span class="cod-cliente">não faturado</span>') + "</td><td>" + fmtMoeda(p.valor_total) + "</td><td>" + esc(p.vendedor || "—") +
               "</td><td>" + esc(p.forma_pagamento || "—") + "</td></tr>").join("") +
             "</tbody></table></div>") +
-        "<h3>Últimos itens comprados</h3>" +
+        "<h3>Últimos itens comprados</h3><div class=\"ficha-aviso\" style=\"padding-top:0\">Só pedidos da filial BLUE (os itens das outras filiais não são copiados do ERP).</div>" +
         (!f.itens.length ? '<div class="ficha-aviso">Nenhum item comprado desde 2024.</div>'
           : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Cód.</th><th>Produto</th><th>Qtd</th><th>Unit.</th><th>Total</th><th>Data</th><th>Pedido</th></tr></thead><tbody>' +
             f.itens.map((i) => '<tr><td class="cod-cliente">' + esc(i.codigo) + "</td><td>" + esc(i.descricao || "—") + "</td><td>" + fmtInt(i.qtd) + "</td><td>" + fmtMoeda(i.valunit) +
