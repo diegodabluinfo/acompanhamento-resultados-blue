@@ -298,6 +298,23 @@
   #assist-historico .hist-vazio { color: var(--texto-suave); }
   #assist-historico tfoot td { font-weight: 700; background: #f7fafd; border-top: 1px solid var(--borda); }
   #assist-historico thead th { cursor: pointer; user-select: none; }
+  /* --- Resultados > Histórico (mesmo visual do Histórico da Assistência) --- */
+  #res-historico .hist-controles { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-end; background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,40,70,0.06); margin-bottom: 16px; }
+  #res-historico .hist-ctl { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin: 0; }
+  #res-historico .hist-ctl > span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); font-weight: 700; }
+  #res-historico .hist-ctl select { width: auto; min-width: 200px; padding: 8px 10px; font-size: 0.86rem; }
+  #res-historico .hist-pt { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  #res-historico .rh-tabela { font-size: 0.78rem; }
+  #res-historico .rh-tabela th, #res-historico .rh-tabela td { padding: 7px 8px; white-space: nowrap; }
+  #res-historico .rh-tabela thead th { cursor: pointer; user-select: none; }
+  #res-historico .rh-tabela thead th.ord-ativa { color: var(--azul); }
+  #res-historico .rh-tabela .seta-ord { font-size: 0.65rem; margin-left: 2px; }
+  #res-historico .rh-tabela td.sobe { color: var(--verde); }
+  #res-historico .rh-tabela td.desce { color: var(--vermelho); }
+  #res-historico .rh-tabela td.vazio { color: #b6c0cd; }
+  #res-historico .rh-tabela tr.sel td { background: #eef4fd; }
+  #res-historico .rh-tabela tfoot td { font-weight: 700; background: #f7fafd; border-top: 1px solid var(--borda); }
+  #res-historico .rh-tabela td.tot { font-weight: 700; }
   #hist-dica { position: fixed; pointer-events: none; opacity: 0; transition: opacity .09s; z-index: 60; background: #182433; color: #fff; border-radius: 7px; padding: 8px 11px; font-size: 0.76rem; line-height: 1.5; box-shadow: 0 6px 20px rgba(14,25,40,.28); max-width: 260px; }
   #hist-dica b { display: block; margin-bottom: 3px; }
   #hist-dica .l { display: flex; justify-content: space-between; gap: 14px; }
@@ -1268,6 +1285,12 @@
 
       <!-- ===== ABA: Resultados por Vendedor ===== -->
       <div id="view-resultados">
+        <!-- Mês | Histórico: o botão Histórico só aparece com a permissão resultados_historico -->
+        <div class="filtro-periodo oculto" id="res-subabas" style="margin-bottom:14px;">
+          <button type="button" data-res="mes" class="ativa">Mês</button>
+          <button type="button" data-res="historico">Histórico</button>
+        </div>
+        <div id="res-mes">
         <div class="painel-controles">
           <div>
             <label for="seletor-mes">Mês</label>
@@ -1301,6 +1324,63 @@
         </div>
 
         <div class="rodape-nota" id="nota-rodape"></div>
+        </div>
+
+        <!-- Histórico de resultados (resultados_historico) -->
+        <div id="res-historico" class="oculto">
+          <div class="hist-controles">
+            <div class="hist-ctl">
+              <span>Período</span>
+              <div class="filtro-periodo" id="rh-periodo">
+                <button type="button" data-per="12" class="ativa">Últimos 12 meses</button>
+                <button type="button" data-per="24">24 meses</button>
+                <button type="button" data-per="0">Tudo (desde 2024)</button>
+              </div>
+            </div>
+            <div class="hist-ctl">
+              <span>Vendedor</span>
+              <select id="rh-vendedor" aria-label="Vendedor"><option value="">Equipe toda</option></select>
+            </div>
+            <div class="hist-ctl" style="flex:1 1 300px;">
+              <span>Mostrar</span>
+              <div class="filtro-periodo" id="rh-blocos">
+                <button type="button" data-bloco="serie" class="ativa"><i class="hist-pt" style="background:#2a78d6"></i>Produzido × meta</button>
+                <button type="button" data-bloco="yoy" class="ativa"><i class="hist-pt" style="background:#eb6834"></i>vs. ano anterior</button>
+                <button type="button" data-bloco="tab" class="ativa">Tabela por vendedor</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="rh-kpis"></div>
+
+          <div class="hist-cartao" id="rh-bloco-serie">
+            <h3>Produzido por mês</h3>
+            <p class="hist-sub" id="rh-sub-serie"></p>
+            <div class="hist-legenda">
+              <span><i style="background:#2a78d6"></i>Produzido</span>
+              <span><span class="hist-tracejado"></span>Meta (desde ago/2026)</span>
+            </div>
+            <svg id="rh-g-serie" viewBox="0 0 980 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Barras do produzido por mês com a linha da meta"></svg>
+          </div>
+
+          <div class="hist-cartao" id="rh-bloco-yoy">
+            <h3>Comparado com o mesmo mês do ano anterior</h3>
+            <p class="hist-sub">Barra azul = este ano; laranja = mesmo mês do ano anterior. Em cima, a variação.</p>
+            <div class="hist-legenda">
+              <span><i style="background:#2a78d6"></i>Este ano</span>
+              <span><i style="background:#eb6834"></i>Ano anterior</span>
+            </div>
+            <svg id="rh-g-yoy" viewBox="0 0 980 280" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Barras do produzido comparado com o mesmo mês do ano anterior"></svg>
+          </div>
+
+          <div class="hist-cartao" id="rh-bloco-tab">
+            <h3>Produzido por vendedor, mês a mês</h3>
+            <p class="hist-sub">Verde: subiu em relação ao mês anterior; vermelho: caiu. Clique no título da coluna para ordenar.</p>
+            <div class="tabela-scroll"><table class="rh-tabela"><thead id="rh-cab"></thead><tbody id="rh-corpo"></tbody><tfoot id="rh-pe"></tfoot></table></div>
+          </div>
+          <div class="rodape-nota">Produzido = pedidos faturados no ERP, mesma regra dos meses automáticos (desde jan/2024).
+            Meta, final e % atingido existem só nos meses lançados no Cadastro de Metas (desde ago/2026). O mês atual ainda está em andamento.</div>
+        </div>
       </div>
 
       <!-- ===== ABA: Vendas do Dia ===== -->
@@ -4474,6 +4554,8 @@
     menuCadastros.classList.toggle("oculto", !temCadastro);
     if (!temCadastro) fecharMenuCadastros();
     menuClientes.classList.toggle("oculto", !podeVerAba("clientes"));
+    document.getElementById("res-subabas").classList.toggle("oculto", !podeVerAba("resultados_historico"));
+    if (!podeVerAba("resultados_historico")) mostrarSubResultados("mes");
     if (!podeVerAba("clientes")) fecharMenuClientes();
     semAcesso.classList.toggle("oculto", liberadas.length > 0);
     if (!abaAtual || abaAtual === "nenhuma" || !podeVerAba(abaAtual)) {
@@ -5834,6 +5916,272 @@
     return { iniciar, abrirFicha };
   })();
 
+
+  // --- Resultados por Vendedor > Histórico ---
+  // resultados_historico(): produzido por vendedor e mês desde jan/2024; meta, final e % só nos meses lançados.
+  // O botão "Histórico" só aparece com a permissão resultados_historico (Cadastros > Usuários).
+  const ResHist = (() => {
+    const el = (id) => document.getElementById(id);
+    const NS = "http://www.w3.org/2000/svg";
+    const COR = { prod: "#2a78d6", ant: "#eb6834", meta: "#64748b" };
+    const MES3 = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    let linhas = null, carregando = false, ligado = false;
+    let periodo = 12, vendedor = "";
+    const blocos = { serie: true, yoy: true, tab: true };
+    let ordem = { col: "total", dir: -1 };
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo || {})
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(String(m).slice(0, 200)); }
+      return res.json();
+    }
+
+    // dica ao passar o mouse (mesmo elemento #hist-dica do Histórico da Assistência)
+    const dica = (() => {
+      let d = document.getElementById("hist-dica");
+      if (!d) { d = document.createElement("div"); d.id = "hist-dica"; document.body.appendChild(d); }
+      return d;
+    })();
+    function mover(ev) {
+      const r = dica.getBoundingClientRect();
+      let x = ev.clientX + 14, y = ev.clientY - r.height - 12;
+      if (x + r.width > window.innerWidth - 8) x = ev.clientX - r.width - 14;
+      if (y < 8) y = ev.clientY + 18;
+      dica.style.left = x + "px"; dica.style.top = y + "px";
+    }
+    function ligarDica(alvo, html) {
+      alvo.addEventListener("pointerenter", (ev) => { dica.innerHTML = html; dica.style.opacity = 1; mover(ev); });
+      alvo.addEventListener("pointermove", mover);
+      alvo.addEventListener("pointerleave", () => { dica.style.opacity = 0; });
+    }
+    const ld = (cor, nome, valor) => '<div class="l"><span>' + (cor ? '<i style="background:' + cor + '"></i>' : "") + nome + "</span><span>" + valor + "</span></div>";
+    function svgEl(tag, at, pai) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (pai) pai.appendChild(e); return e; }
+    function texto(pai, x, y, t, at) { const e = svgEl("text", Object.assign({ x, y }, at || {}), pai); e.textContent = t; return e; }
+
+    const comp = (c) => String(c).slice(0, 7);   // "2026-10"
+    function rotMes(c) { const p = comp(c).split("-"); return MES3[parseInt(p[1], 10) - 1] + "/" + p[0].slice(2); }
+    function nomeMesLongo(c) { const p = comp(c).split("-"); return MES3[parseInt(p[1], 10) - 1] + " de " + p[0]; }
+    function anoAntes(c) { const p = comp(c).split("-"); return (Number(p[0]) - 1) + "-" + p[1]; }
+    const moedaCurta = (v) => "R$ " + Math.round(v / 1000).toLocaleString("pt-BR") + "k";
+    const pct1 = (v) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+    function escala(max) {
+      if (max <= 0) return { topo: 1, passo: 1 };
+      const bruto = max / 4, pot = Math.pow(10, Math.floor(Math.log10(bruto)));
+      const passo = [1, 2, 2.5, 5, 10].map((m) => m * pot).find((p) => p >= bruto);
+      return { topo: Math.ceil(max / passo) * passo, passo };
+    }
+
+    // por mês, somando a equipe ou só o vendedor escolhido
+    function porMes() {
+      const m = new Map();
+      for (const l of linhas) {
+        if (vendedor && String(l.vendedor_id) !== vendedor) continue;
+        const k = comp(l.competencia);
+        const a = m.get(k) || { comp: k, prod: 0, meta: 0, final: 0, temMeta: false };
+        a.prod += Number(l.produzido || 0);
+        if (l.tem_meta && l.objetivo != null) { a.meta += Number(l.objetivo); a.final += Number(l.final || 0); a.temMeta = true; }
+        m.set(k, a);
+      }
+      return m;
+    }
+    function mesesTodos() { return [...new Set(linhas.map((l) => comp(l.competencia)))].sort(); }
+    function mesesDoPeriodo() { const t = mesesTodos(); return periodo ? t.slice(-periodo) : t; }
+
+    async function iniciar() {
+      if (!ligado) {
+        ligado = true;
+        el("rh-periodo").addEventListener("click", (ev) => {
+          const b = ev.target.closest("[data-per]"); if (!b) return;
+          periodo = Number(b.dataset.per);
+          el("rh-periodo").querySelectorAll("button").forEach((x) => x.classList.toggle("ativa", x === b));
+          render();
+        });
+        el("rh-blocos").addEventListener("click", (ev) => {
+          const b = ev.target.closest("[data-bloco]"); if (!b) return;
+          blocos[b.dataset.bloco] = !blocos[b.dataset.bloco];
+          b.classList.toggle("ativa", blocos[b.dataset.bloco]);
+          render();
+        });
+        el("rh-vendedor").addEventListener("change", () => { vendedor = el("rh-vendedor").value; render(); });
+        el("rh-cab").addEventListener("click", (ev) => {
+          const th = ev.target.closest("th[data-col]"); if (!th) return;
+          const col = th.dataset.col;
+          ordem = ordem.col === col ? { col, dir: -ordem.dir } : { col, dir: col === "nome" ? 1 : -1 };
+          renderTabela();
+        });
+        el("rh-corpo").addEventListener("click", (ev) => {
+          const tr = ev.target.closest("tr[data-vend]"); if (!tr) return;
+          vendedor = vendedor === tr.dataset.vend ? "" : tr.dataset.vend;
+          el("rh-vendedor").value = vendedor;
+          render();
+        });
+      }
+      if (linhas || carregando) return;
+      carregando = true;
+      el("rh-kpis").innerHTML = '<div class="estado-vazio" style="grid-column:1/-1">Carregando o histórico…</div>';
+      try {
+        linhas = await rpc("resultados_historico");
+        const nomes = new Map();
+        linhas.forEach((l) => nomes.set(String(l.vendedor_id), l.nome_curto || l.nome_completo));
+        el("rh-vendedor").innerHTML = '<option value="">Equipe toda</option>' + [...nomes].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
+          .map(([id, n]) => '<option value="' + esc(id) + '">' + esc(n) + "</option>").join("");
+        render();
+      } catch (e) {
+        el("rh-kpis").innerHTML = '<div class="estado-vazio" style="grid-column:1/-1">Não foi possível carregar o histórico: ' + esc(e.message) + "</div>";
+      } finally {
+        carregando = false;
+      }
+    }
+
+    function render() {
+      if (!linhas) return;
+      el("rh-bloco-serie").classList.toggle("oculto", !blocos.serie);
+      el("rh-bloco-yoy").classList.toggle("oculto", !blocos.yoy);
+      el("rh-bloco-tab").classList.toggle("oculto", !blocos.tab);
+      renderKpis();
+      if (blocos.serie) renderSerie();
+      if (blocos.yoy) renderYoy();
+      if (blocos.tab) renderTabela();
+    }
+
+    function renderKpis() {
+      const m = porMes(), todos = mesesTodos(), meses = mesesDoPeriodo();
+      const soma = (lista) => lista.reduce((t, k) => t + ((m.get(k) || {}).prod || 0), 0);
+      const total = soma(meses);
+      const ini = todos.indexOf(meses[0]);
+      const anteriores = ini >= meses.length ? todos.slice(ini - meses.length, ini) : null;
+      const totalAnt = anteriores ? soma(anteriores) : null;
+      const varPct = totalAnt ? (total - totalAnt) / totalAnt * 100 : null;
+      let melhor = null;
+      meses.forEach((k) => { const v = (m.get(k) || {}).prod || 0; if (!melhor || v > melhor.v) melhor = { k, v }; });
+      const comMeta = meses.map((k) => m.get(k)).filter((a) => a && a.temMeta && a.meta > 0);
+      const pctMedio = comMeta.length ? comMeta.reduce((t, a) => t + a.final, 0) / comMeta.reduce((t, a) => t + a.meta, 0) * 100 : null;
+      const kpi = (rot, val, nota) => '<div class="kpi"><div class="rotulo">' + rot + '</div><div class="valor">' + val + "</div>" + (nota ? '<div class="nota">' + nota + "</div>" : "") + "</div>";
+      const quemTxt = vendedor ? el("rh-vendedor").selectedOptions[0].textContent : "equipe toda", quem = esc(quemTxt);
+      el("rh-kpis").innerHTML =
+        kpi("Produzido no período", fmtMoeda(total), meses.length + (meses.length === 1 ? " mês · " : " meses · ") + quem) +
+        kpi("Comparado ao período anterior", varPct == null ? "—" : '<span style="color:' + (varPct >= 0 ? "var(--verde)" : "var(--vermelho)") + '">' + (varPct >= 0 ? "+" : "") + pct1(varPct) + "</span>",
+            totalAnt ? "antes: " + fmtMoeda(totalAnt) : "sem dados do período anterior") +
+        kpi("Média por mês", fmtMoeda(meses.length ? total / meses.length : 0), "") +
+        kpi("Melhor mês", melhor ? nomeMesLongo(melhor.k) : "—", melhor ? fmtMoeda(melhor.v) : "") +
+        kpi("% da meta (média)", pctMedio == null ? "—" : pct1(pctMedio), comMeta.length ? comMeta.length + (comMeta.length === 1 ? " mês com meta" : " meses com meta") : "meta só desde ago/2026");
+      el("rh-sub-serie").textContent = (vendedor ? quemTxt : "Equipe toda") + " · " + (meses.length ? rotMes(meses[0]) + " a " + rotMes(meses[meses.length - 1]) : "") +
+        ". O último mês ainda está em andamento.";
+    }
+
+    function renderSerie() {
+      const svg = el("rh-g-serie"); svg.innerHTML = "";
+      const m = porMes(), meses = mesesDoPeriodo();
+      const W = 980, H = 300, E = 62, D = 14, T = 16, B = 34, aw = W - E - D, ah = H - T - B;
+      const max = Math.max(1, ...meses.map((k) => Math.max((m.get(k) || {}).prod || 0, (m.get(k) || {}).meta || 0)));
+      const { topo, passo } = escala(max);
+      const y = (v) => T + ah - v / topo * ah;
+      for (let v = 0; v <= topo + 1e-9; v += passo) {
+        svgEl("line", { x1: E, x2: W - D, y1: y(v), y2: y(v), class: v ? "grade" : "eixo" }, svg);
+        texto(svg, E - 8, y(v) + 4, moedaCurta(v), { class: "gy", "text-anchor": "end" });
+      }
+      const slot = aw / Math.max(1, meses.length), bw = Math.min(46, slot * 0.68);
+      const pontosMeta = [];
+      meses.forEach((k, i) => {
+        const a = m.get(k) || { prod: 0, meta: 0, temMeta: false, final: 0 };
+        const cx = E + slot * i + slot / 2;
+        svgEl("rect", { x: cx - bw / 2, y: y(a.prod), width: bw, height: Math.max(0, T + ah - y(a.prod)), rx: 3, fill: COR.prod }, svg);
+        if (meses.length <= 24 || i % 2 === 0) texto(svg, cx, H - B + 16, rotMes(k), { class: "gx", "text-anchor": "middle" });
+        if (meses.length <= 14) texto(svg, cx, y(a.prod) - 6, moedaCurta(a.prod), { class: "rotulo", "text-anchor": "middle", fill: COR.prod });
+        if (a.temMeta && a.meta > 0) pontosMeta.push([cx, y(a.meta)]);
+        const alvo = svgEl("rect", { x: E + slot * i, y: T, width: slot, height: ah, class: "alvo" }, svg);
+        ligarDica(alvo, "<b>" + nomeMesLongo(k) + "</b>" + ld(COR.prod, "Produzido", fmtMoeda(a.prod)) +
+          (a.temMeta ? ld(COR.meta, "Meta", fmtMoeda(a.meta)) + ld("", "Final", fmtMoeda(a.final)) + ld("", "% atingido", a.meta ? pct1(a.final / a.meta * 100) : "—") : ""));
+      });
+      if (pontosMeta.length) {
+        svgEl("polyline", { points: pontosMeta.map((p) => p.join(",")).join(" "), fill: "none", stroke: COR.meta, "stroke-width": 2, "stroke-dasharray": "6 4" }, svg);
+        pontosMeta.forEach(([x, yy]) => svgEl("circle", { cx: x, cy: yy, r: 3.5, fill: "#fff", stroke: COR.meta, "stroke-width": 2 }, svg));
+      }
+    }
+
+    function renderYoy() {
+      const svg = el("rh-g-yoy"); svg.innerHTML = "";
+      const m = porMes(), todos = new Set(mesesTodos());
+      const meses = mesesDoPeriodo().filter((k) => todos.has(anoAntes(k)));
+      const W = 980, H = 280, E = 62, D = 14, T = 26, B = 34, aw = W - E - D, ah = H - T - B;
+      if (!meses.length) { texto(svg, W / 2, H / 2, "Sem o mesmo mês do ano anterior neste período.", { class: "gx", "text-anchor": "middle" }); return; }
+      const val = (k) => (m.get(k) || {}).prod || 0;
+      const max = Math.max(1, ...meses.map((k) => Math.max(val(k), val(anoAntes(k)))));
+      const { topo, passo } = escala(max);
+      const y = (v) => T + ah - v / topo * ah;
+      for (let v = 0; v <= topo + 1e-9; v += passo) {
+        svgEl("line", { x1: E, x2: W - D, y1: y(v), y2: y(v), class: v ? "grade" : "eixo" }, svg);
+        texto(svg, E - 8, y(v) + 4, moedaCurta(v), { class: "gy", "text-anchor": "end" });
+      }
+      const slot = aw / meses.length, bw = Math.min(22, slot * 0.34);
+      meses.forEach((k, i) => {
+        const atual = val(k), ant = val(anoAntes(k)), cx = E + slot * i + slot / 2;
+        svgEl("rect", { x: cx - bw - 1, y: y(ant), width: bw, height: Math.max(0, T + ah - y(ant)), rx: 2, fill: COR.ant }, svg);
+        svgEl("rect", { x: cx + 1, y: y(atual), width: bw, height: Math.max(0, T + ah - y(atual)), rx: 2, fill: COR.prod }, svg);
+        const v = ant ? (atual - ant) / ant * 100 : null;
+        if (v != null && (meses.length <= 18 || i % 2 === 0))
+          texto(svg, cx, Math.min(y(atual), y(ant)) - 6, (v >= 0 ? "+" : "") + Math.round(v) + "%", { class: "rotulo", "text-anchor": "middle", fill: v >= 0 ? "#1e8e4a" : "#c0392b" });
+        if (meses.length <= 24 || i % 2 === 0) texto(svg, cx, H - B + 16, rotMes(k), { class: "gx", "text-anchor": "middle" });
+        const alvo = svgEl("rect", { x: E + slot * i, y: T, width: slot, height: ah, class: "alvo" }, svg);
+        ligarDica(alvo, "<b>" + nomeMesLongo(k) + "</b>" + ld(COR.prod, rotMes(k), fmtMoeda(atual)) + ld(COR.ant, rotMes(anoAntes(k)), fmtMoeda(ant)) +
+          ld("", "Variação", v == null ? "—" : (v >= 0 ? "+" : "") + pct1(v)));
+      });
+    }
+
+    function renderTabela() {
+      const meses = mesesDoPeriodo();
+      const vend = new Map();
+      for (const l of linhas) {
+        const k = comp(l.competencia); if (!meses.includes(k)) continue;
+        const id = String(l.vendedor_id);
+        const v = vend.get(id) || { id, nome: l.nome_curto || l.nome_completo, m: {}, total: 0 };
+        v.m[k] = (v.m[k] || 0) + Number(l.produzido || 0);
+        v.total += Number(l.produzido || 0);
+        vend.set(id, v);
+      }
+      const lista = [...vend.values()].filter((v) => v.total !== 0);
+      const valor = (v) => ordem.col === "nome" ? v.nome.toLowerCase() : ordem.col === "total" ? v.total : (v.m[ordem.col] || 0);
+      lista.sort((a, b) => { const x = valor(a), z = valor(b); return x < z ? -ordem.dir : x > z ? ordem.dir : a.nome.localeCompare(b.nome, "pt-BR"); });
+      const seta = (c) => ordem.col === c ? '<span class="seta-ord">' + (ordem.dir > 0 ? "▲" : "▼") + "</span>" : "";
+      const th = (c, t) => '<th data-col="' + c + '"' + (ordem.col === c ? ' class="ord-ativa"' : "") + ">" + t + seta(c) + "</th>";
+      el("rh-cab").innerHTML = "<tr>" + th("nome", "Vendedor") + meses.map((k) => th(k, rotMes(k))).join("") + th("total", "Total") + "</tr>";
+      const cel = (v, k, i) => {
+        const x = v.m[k];
+        if (!x) return '<td class="vazio">—</td>';
+        const antes = i > 0 ? v.m[meses[i - 1]] : null;
+        const cls = antes == null || !antes ? "" : x > antes ? "sobe" : x < antes ? "desce" : "";
+        return '<td class="' + cls + '" title="' + esc(v.nome) + " · " + nomeMesLongo(k) + ": " + fmtMoeda(x) + '">' + moedaCurta(x) + "</td>";
+      };
+      el("rh-corpo").innerHTML = lista.length ? lista.map((v) =>
+        '<tr data-vend="' + esc(v.id) + '"' + (vendedor === v.id ? ' class="sel"' : "") + ' style="cursor:pointer" title="Clique para ver só este vendedor nos gráficos">' +
+          "<td>" + esc(v.nome) + "</td>" + meses.map((k, i) => cel(v, k, i)).join("") + '<td class="tot">' + moedaCurta(v.total) + "</td></tr>").join("")
+        : '<tr><td colspan="' + (meses.length + 2) + '" class="estado-vazio">Sem dados no período.</td></tr>';
+      const totMes = meses.map((k) => lista.reduce((t, v) => t + (v.m[k] || 0), 0));
+      el("rh-pe").innerHTML = "<tr><td>Equipe</td>" + totMes.map((t) => "<td>" + moedaCurta(t) + "</td>").join("") +
+        "<td>" + moedaCurta(totMes.reduce((a, b) => a + b, 0)) + "</td></tr>";
+    }
+
+    return { iniciar };
+  })();
+
+  // Mês | Histórico em Resultados por Vendedor (Histórico só com a permissão resultados_historico)
+  function mostrarSubResultados(sub) {
+    if (sub === "historico" && !podeVerAba("resultados_historico")) sub = "mes";
+    document.querySelectorAll("#res-subabas button").forEach((b) => b.classList.toggle("ativa", b.dataset.res === sub));
+    document.getElementById("res-mes").classList.toggle("oculto", sub !== "mes");
+    document.getElementById("res-historico").classList.toggle("oculto", sub !== "historico");
+    if (sub === "historico") ResHist.iniciar();
+  }
+  document.getElementById("res-subabas").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-res]");
+    if (b) mostrarSubResultados(b.dataset.res);
+  });
 
   // --- Aba Pedidos em Reserva ---
   // Fonte: v_pedidos_reserva (status 10 e 11; travada por pode_ver_aba('reserva'); anon não lê).
