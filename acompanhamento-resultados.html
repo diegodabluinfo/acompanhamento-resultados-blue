@@ -489,6 +489,25 @@
   #view-clientes-cad .btn-2via.chamar { background: #1baf7a; border-color: #1baf7a; color: #fff; }
   #view-clientes-cad .btn-2via.chamar:hover { background: #158f63; }
   #view-clientes-cad .btn-2via:disabled { border-color: var(--borda); color: var(--texto-suave); background: #fff; }
+  #view-clientes-cad .cc-filtros { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
+  #view-clientes-cad .cc-filtros select { width: auto; min-width: 0; max-width: 260px; padding: 8px 10px; font-size: 0.84rem; }
+  #view-clientes-cad .cc-filtros select.ativo { border-color: var(--azul); background: #eef4fd; }
+  .cc-limpar { font: inherit; font-size: 0.78rem; color: var(--azul); cursor: pointer; text-decoration: underline; margin-left: 6px; background: none; border: 0; padding: 0; }
+  /* Ficha do cliente */
+  .modal-ficha { max-width: 980px; width: 96vw; max-height: 92vh; overflow-y: auto; }
+  .modal-ficha .os-cab h2 small { display: block; font-size: 0.78rem; font-weight: 600; color: var(--texto-suave); margin-top: 3px; }
+  .ficha-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .ficha-acoes a.btn-2via { text-decoration: none; }
+  .ficha-acoes .btn-2via.chamar { background: #1baf7a; border-color: #1baf7a; color: #fff; }
+  .ficha-acoes .btn-2via:disabled { border-color: var(--borda); color: var(--texto-suave); }
+  .modal-ficha .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .modal-ficha .kpi { background: #f6f8fb; box-shadow: none; padding: 10px 12px; }
+  .modal-ficha .kpi .valor { font-size: 1.05rem; }
+  .modal-ficha h3 { font-size: 0.9rem; color: var(--azul-escuro); margin: 16px 0 8px; }
+  .modal-ficha .ficha-aviso { font-size: 0.8rem; color: var(--texto-suave); padding: 8px 0; }
+  .modal-ficha .tit-vencido { color: var(--vermelho); font-weight: 700; }
+  .modal-ficha .tit-avencer { color: var(--amarelo); font-weight: 700; }
+  .modal-ficha .tit-pago { color: var(--verde); }
   .menu-lista {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
     background: #fff; border: 1px solid var(--borda); border-radius: 10px;
@@ -1526,11 +1545,28 @@
         </div>
       </div>
 
-      <!-- ===== ABA: Clientes > Cadastro de clientes (busca no cadastro do ERP; clientes_buscar, trava pode_ver_aba('clientes')) ===== -->
+      <!-- ===== ABA: Clientes > Cadastro de clientes (busca no cadastro do ERP; clientes_pesquisar, trava pode_ver_aba('clientes')) ===== -->
       <div id="view-clientes-cad" class="oculto">
         <div class="painel-controles">
           <input type="search" id="cc-busca" placeholder="Nome, fantasia, código, CNPJ/CPF, cidade ou telefone" autocomplete="off" aria-label="Buscar cliente">
-          <span id="cc-resumo" class="freshness">Digite pelo menos 2 letras para buscar.</span>
+          <div class="cc-filtros">
+            <select id="cc-uf" aria-label="UF"><option value="">Todas as UFs</option></select>
+            <select id="cc-cidade" aria-label="Cidade"><option value="">Todas as cidades</option></select>
+            <select id="cc-vend" aria-label="Vendedor"><option value="">Todos os vendedores</option></select>
+            <select id="cc-compra" aria-label="Última compra">
+              <option value="">Qualquer última compra</option>
+              <option value="90">Comprou nos últimos 90 dias</option>
+              <option value="365">Última compra entre 91 dias e 1 ano</option>
+              <option value="mais">Última compra há mais de 1 ano</option>
+              <option value="nunca">Sem compra desde 2024</option>
+            </select>
+            <select id="cc-sonax" aria-label="Contato na Sonax">
+              <option value="">Com ou sem contato na Sonax</option>
+              <option value="com">Com contato na Sonax</option>
+              <option value="sem">Sem contato na Sonax</option>
+            </select>
+          </div>
+          <span id="cc-resumo" class="freshness">Digite pelo menos 2 letras ou escolha um filtro.</span>
         </div>
         <div class="card-tabela">
           <div class="tabela-scroll">
@@ -3018,6 +3054,17 @@
         <button type="button" class="btn-secundario" id="btn-fechar-pedido">Fechar</button>
       </div>
       <div id="pedido-corpo"></div>
+    </div>
+  </div>
+
+  <!-- ===== Ficha do cliente (Clientes > Cadastro de clientes; cliente_ficha) ===== -->
+  <div id="overlay-ficha" class="overlay oculto">
+    <div class="modal-gasto modal-os modal-ficha" role="dialog" aria-modal="true" aria-labelledby="ficha-titulo">
+      <div class="os-cab">
+        <h2 id="ficha-titulo">Ficha do cliente</h2>
+        <button type="button" class="btn-secundario" id="btn-fechar-ficha">Fechar</button>
+      </div>
+      <div id="ficha-corpo"></div>
     </div>
   </div>
 
@@ -5526,15 +5573,20 @@
   })();
 
   // --- Clientes > Cadastro de clientes ---
-  // Busca no cadastro do ERP (clientes_buscar, até 200 resultados). Última conversa e contatos da Sonax vêm do
+  // Busca no cadastro do ERP (clientes_pesquisar, até 200 resultados). Última conversa e contatos da Sonax vêm do
   // HistCliente; "Chamar" abre o contato na Sonax (a conversa fica registrada lá e volta para o histórico).
   const ClientesCad = (() => {
     const el = (id) => document.getElementById(id);
     const SONAX_CONTATO = "https://chat.sonax.net.br/omnichannel-chat/contacts/view/";
     const LIMITE = 200;
     const DESC_PRIMEIRO = ["compra", "conversa"];   // o primeiro clique já mostra o mais recente
-    const vista = { ordem: null, desc: false };
-    let lista = [], seq = 0, timer = null, iniciado = false;
+    const CHAVE = "cc-vista-v1";
+    const FILTROS = [["cc-uf", "uf"], ["cc-cidade", "cidade"], ["cc-vend", "vendedor"], ["cc-compra", "compra"], ["cc-sonax", "sonax"]];
+    const STATUS_VENDIDO = ["20", "21", "22", "25", "30", "99"];
+    // ordem e filtros ficam guardados neste navegador
+    const vista = Object.assign({ ordem: null, desc: false, uf: "", cidade: "", vendedor: "", compra: "", sonax: "" },
+      (() => { try { return JSON.parse(localStorage.getItem(CHAVE)) || {}; } catch (e) { return {}; } })());
+    let lista = [], seq = 0, timer = null, iniciado = false, opcoes = null, fichaCod = null;
 
     async function rpc(nome, corpo) {
       sessao = await garantirSessaoValida();
@@ -5547,8 +5599,12 @@
       if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(String(m).slice(0, 200)); }
       return res.json();
     }
+    function guardar() { try { localStorage.setItem(CHAVE, JSON.stringify(vista)); } catch (e) {} }
     function dataBR(iso) { if (!iso) return ""; const [a, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m + "/" + a; }
     function primeiroNome(n) { return String(n || "").trim().split(/\s+/)[0] || ""; }
+    function hojeISO() { return hojeSP(); }
+    function diasEntre(a, b) { return Math.round((Date.UTC(...b.split("-").map((x, i) => i === 1 ? x - 1 : +x)) - Date.UTC(...a.split("-").map((x, i) => i === 1 ? x - 1 : +x))) / 86400000); }
+    const temFiltro = () => FILTROS.some(([, k]) => vista[k]);
 
     function iniciar() {
       if (!iniciado) {
@@ -5559,24 +5615,75 @@
           if (!th) return;
           if (vista.ordem === th.dataset.ord) vista.desc = !vista.desc;
           else { vista.ordem = th.dataset.ord; vista.desc = DESC_PRIMEIRO.includes(th.dataset.ord); }
+          guardar();
           render();
         });
+        FILTROS.forEach(([id, k]) => el(id).addEventListener("change", () => {
+          vista[k] = el(id).value;
+          if (k === "uf") { vista.cidade = ""; montarCidades(); }
+          guardar();
+          marcarFiltros();
+          buscar();
+        }));
+        el("cc-resumo").addEventListener("click", (ev) => {
+          if (ev.target.id !== "cc-limpar") return;
+          FILTROS.forEach(([, k]) => { vista[k] = ""; });
+          vista.ordem = null; vista.desc = false;
+          guardar();
+          montarSelects();
+          buscar();
+        });
+        el("cc-corpo").addEventListener("click", (ev) => {
+          const n = ev.target.closest("[data-ficha]");
+          if (n) abrirFicha(Number(n.dataset.ficha));
+        });
+        el("btn-fechar-ficha").addEventListener("click", fecharFicha);
+        el("overlay-ficha").addEventListener("click", (ev) => { if (ev.target.id === "overlay-ficha") fecharFicha(); });
+        // Esc fecha a ficha só quando o pedido e as conversas (que abrem por cima dela) já estão fechados
+        document.addEventListener("keydown", (ev) => {
+          if (ev.key === "Escape" && !el("overlay-ficha").classList.contains("oculto") &&
+              el("overlay-pedido").classList.contains("oculto") && el("overlay-hist").classList.contains("oculto")) fecharFicha();
+        });
+        rpc("clientes_filtros", {}).then((d) => { opcoes = d; montarSelects(); }).catch(() => {});
+        if (temFiltro()) buscar();
       }
       setTimeout(() => el("cc-busca").focus(), 0);
     }
 
+    // --- filtros ---
+    function opcao(v, txt, sel) { return '<option value="' + esc(v) + '"' + (sel ? " selected" : "") + ">" + esc(txt) + "</option>"; }
+    function montarCidades() {
+      const cid = ((opcoes && opcoes.cidades) || []).filter((c) => !vista.uf || c.uf === vista.uf);
+      el("cc-cidade").innerHTML = opcao("", "Todas as cidades", !vista.cidade) +
+        cid.map((c) => opcao(c.cidade, c.cidade + (vista.uf ? "" : " / " + c.uf) + " (" + c.n + ")", c.cidade === vista.cidade)).join("");
+    }
+    function montarSelects() {
+      if (opcoes) {
+        el("cc-uf").innerHTML = opcao("", "Todas as UFs", !vista.uf) + opcoes.ufs.map((u) => opcao(u.uf, u.uf + " (" + u.n + ")", u.uf === vista.uf)).join("");
+        montarCidades();
+        el("cc-vend").innerHTML = opcao("", "Todos os vendedores", !vista.vendedor) +
+          opcoes.vendedores.map((v) => opcao(String(v.codigo), v.nome + " (" + v.n + ")", String(v.codigo) === String(vista.vendedor))).join("");
+      }
+      el("cc-compra").value = vista.compra;
+      el("cc-sonax").value = vista.sonax;
+      marcarFiltros();
+    }
+    function marcarFiltros() { FILTROS.forEach(([id, k]) => el(id).classList.toggle("ativo", !!vista[k])); }
+
     async function buscar() {
       const termo = el("cc-busca").value.trim();
       const meu = ++seq;
-      if (termo.length < 2) {
+      if (termo.length < 2 && !temFiltro()) {
         lista = [];
-        el("cc-resumo").textContent = "Digite pelo menos 2 letras para buscar.";
-        el("cc-corpo").innerHTML = '<tr><td colspan="7" class="estado-vazio">Busque um cliente pelo nome, código, CNPJ/CPF, cidade ou telefone.</td></tr>';
+        el("cc-resumo").textContent = "Digite pelo menos 2 letras ou escolha um filtro.";
+        el("cc-corpo").innerHTML = '<tr><td colspan="7" class="estado-vazio">Busque um cliente pelo nome, código, CNPJ/CPF, cidade ou telefone, ou use os filtros.</td></tr>';
         return;
       }
       el("cc-resumo").textContent = "Buscando…";
+      const filtros = {};
+      FILTROS.forEach(([, k]) => { if (vista[k]) filtros[k] = vista[k]; });
       try {
-        const r = await rpc("clientes_buscar", { p_busca: termo });
+        const r = await rpc("clientes_pesquisar", { p_busca: termo.length >= 2 ? termo : null, p_filtros: filtros });
         if (meu !== seq) return;   // chegou resposta de uma busca antiga
         lista = r || [];
         render();
@@ -5609,8 +5716,8 @@
     }
 
     // "Chamar" (um por contato da Sonax) + "Conversas"
-    function acoes(c) {
-      const r = HistCliente.resumo(c.codcliente);
+    function botoesContato(cod, nome, comFicha) {
+      const r = HistCliente.resumo(cod);
       const contatos = (r && r.contatos) || [];
       let chamar;
       if (r === undefined) chamar = '<button type="button" class="btn-2via" disabled>…</button>';
@@ -5618,8 +5725,8 @@
       else chamar = contatos.slice(0, 3).map((ct) =>
         '<a class="btn-2via chamar" href="' + SONAX_CONTATO + encodeURIComponent(ct.id) + '" target="_blank" rel="noopener" title="Abrir na Sonax: ' +
           esc((ct.nome || "") + (ct.celular ? " · " + ct.celular : "")) + '">Chamar' + (contatos.length > 1 && ct.nome ? " " + esc(primeiroNome(ct.nome)) : "") + "</a>").join("");
-      return '<div class="cc-acoes">' + chamar +
-        '<button type="button" class="btn-2via" ' + HistCliente.marcador(c.codcliente, c.nome, true) + ">Conversas</button></div>";
+      return chamar + '<button type="button" class="btn-2via" ' + HistCliente.marcador(cod, nome, true) + ">Conversas</button>" +
+        (comFicha ? '<button type="button" class="btn-2via" data-ficha="' + Number(cod) + '">Ficha</button>' : "");
     }
 
     function render() {
@@ -5630,25 +5737,101 @@
         th.classList.toggle("ord-ativa", ativa);
         if (ativa) th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (vista.desc ? "▼" : "▲") + "</span>");
       });
-      el("cc-resumo").textContent = lista.length > LIMITE ? "Mais de " + LIMITE + " clientes: mostrando os " + LIMITE + " primeiros. Refine a busca."
-        : lista.length + (lista.length === 1 ? " cliente encontrado" : " clientes encontrados");
+      el("cc-resumo").innerHTML = (lista.length > LIMITE ? "Mais de " + LIMITE + " clientes: mostrando os " + LIMITE + " primeiros. Refine a busca ou os filtros."
+        : lista.length + (lista.length === 1 ? " cliente encontrado" : " clientes encontrados")) +
+        (temFiltro() || vista.ordem ? ' <button type="button" class="cc-limpar" id="cc-limpar">limpar filtros e ordem</button>' : "");
       const linhas = ordenada();
       el("cc-corpo").innerHTML = linhas.length ? linhas.map((c) =>
         "<tr>" +
-          '<td><span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(c.codcliente, c.nome, true) + ">" + esc(c.nome || "—") + "</span>" +
+          '<td><span class="link-hist" title="Abrir a ficha do cliente" data-ficha="' + Number(c.codcliente) + '">' + esc(c.nome || "—") + "</span>" +
             "<small>" + [c.fantasia && c.fantasia !== c.nome ? esc(c.fantasia) : "", "Cód. " + c.codcliente, c.documento ? esc(c.documento) : ""].filter(Boolean).join(" · ") + "</small></td>" +
           "<td>" + esc([c.cidade, c.uf].filter(Boolean).join(" / ") || "—") + "</td>" +
           '<td class="cc-fones">' + ([c.fone1, c.fone2].filter(Boolean).map(esc).join("<br>") || '<span class="cod-cliente">—</span>') + "</td>" +
           "<td>" + esc(c.vendedor || "—") + "</td>" +
           "<td>" + (c.ultima_compra ? dataBR(c.ultima_compra) + (c.ultimo_pedido ? "<small>" + PedidoDet.link(c.ultimo_pedido, "pedido " + c.ultimo_pedido) + "</small>" : "")
-            : '<span class="cod-cliente">nunca comprou</span>') + "</td>" +
+            : '<span class="cod-cliente">sem compra</span>') + "</td>" +
           "<td>" + HistCliente.celulaUltimo(c.codcliente) + "</td>" +
-          "<td>" + acoes(c) + "</td>" +
+          '<td><div class="cc-acoes">' + botoesContato(c.codcliente, c.nome, false) + "</div></td>" +
         "</tr>").join("")
-        : '<tr><td colspan="7" class="estado-vazio">Nenhum cliente encontrado com “' + esc(el("cc-busca").value.trim()) + "”.</td></tr>";
+        : '<tr><td colspan="7" class="estado-vazio">Nenhum cliente encontrado com essa busca e esses filtros.</td></tr>';
     }
 
-    return { iniciar };
+    // --- Ficha do cliente ---
+    function fecharFicha() { el("overlay-ficha").classList.add("oculto"); fichaCod = null; }
+    async function abrirFicha(cod) {
+      fichaCod = cod;
+      el("ficha-titulo").textContent = "Ficha do cliente";
+      el("ficha-corpo").innerHTML = '<div class="estado-vazio">Carregando a ficha…</div>';
+      el("overlay-ficha").classList.remove("oculto");
+      try {
+        const [f] = await Promise.all([rpc("cliente_ficha", { p_cod: cod }),
+          HistCliente.resumo(cod) === undefined ? HistCliente.buscarResumos([cod]).catch(() => null) : null]);
+        if (fichaCod !== cod) return;
+        renderFicha(f);
+      } catch (e) {
+        if (fichaCod === cod) el("ficha-corpo").innerHTML = '<div class="estado-vazio">Não foi possível abrir a ficha: ' + esc(e.message) + "</div>";
+      }
+    }
+    function renderFicha(f) {
+      const c = f.cliente, r = f.resumo || {}, fin = f.financeiro;
+      const campo = (rotulo, valor, cls) => '<div class="' + (cls || "") + '"><i>' + rotulo + "</i>" + (valor || "—") + "</div>";
+      const end = [[c.endereco, c.numero].filter(Boolean).join(", "), c.complemento, c.bairro].filter(Boolean).join(" · ");
+      const hoje = hojeISO();
+      const dias = r.ultima_compra ? diasEntre(String(r.ultima_compra).slice(0, 10), hoje) : null;
+      el("ficha-titulo").innerHTML = esc(c.nome) + "<small>" + [c.fantasia ? esc(c.fantasia) : "", "Cód. " + c.codcliente, c.documento ? esc(c.documento) : "", c.ie ? "IE " + esc(c.ie) : ""].filter(Boolean).join(" · ") + "</small>";
+      const kpi = (rot, val, nota) => '<div class="kpi"><div class="rotulo">' + rot + '</div><div class="valor">' + val + "</div>" + (nota ? '<div class="nota">' + nota + "</div>" : "") + "</div>";
+      const tituloSit = (t) => {
+        if (t.quitado === "S") return '<span class="tit-pago">pago em ' + dataBR(t.dataquitacao) + "</span>";
+        const d = t.vencimento ? diasEntre(hoje, String(t.vencimento).slice(0, 10)) : null;
+        return d != null && d < 0 ? '<span class="tit-vencido">vencido há ' + -d + (d === -1 ? " dia" : " dias") + "</span>"
+          : '<span class="tit-avencer">' + (d === 0 ? "vence hoje" : "vence em " + dataBR(t.vencimento)) + "</span>";
+      };
+      el("ficha-corpo").innerHTML =
+        '<div class="ficha-acoes">' + botoesContato(c.codcliente, c.nome, false) + "</div>" +
+        '<div class="kpi-grid">' +
+          kpi("Última compra", r.ultima_compra ? dataBR(r.ultima_compra) : "—", dias == null ? "sem compra desde 2024" : dias === 0 ? "hoje" : "há " + dias + (dias === 1 ? " dia" : " dias")) +
+          kpi("Comprado em 12 meses", fmtMoeda(r.total_12m), (r.pedidos_12m || 0) + (r.pedidos_12m === 1 ? " pedido" : " pedidos")) +
+          kpi("Valor médio do pedido", r.pedidos_12m ? fmtMoeda(Number(r.total_12m) / r.pedidos_12m) : "—", "últimos 12 meses") +
+          (fin ? kpi("Em aberto", fmtMoeda(Number(fin.vencido) + Number(fin.a_vencer)),
+                     (Number(fin.vencido) > 0 ? '<span class="tit-vencido">' + fmtMoeda(fin.vencido) + " vencido</span>" : "nada vencido")) : "") +
+          (fin && fin.pagos_12m ? kpi("Pontualidade", fmtDec(Number(fin.pct_em_dia), 1) + "% em dia",
+                     "atraso médio " + fmtDec(Number(fin.atraso_medio), 1) + " dias (12 meses)") : "") +
+        "</div>" +
+        "<h3>Cadastro</h3>" +
+        '<div class="ped-cab">' +
+          campo("Endereço", esc(end), "largo") +
+          campo("Cidade", esc([c.cidade, c.uf].filter(Boolean).join(" / ")) + (c.cep ? " · CEP " + esc(c.cep) : "")) +
+          campo("Telefones", [c.fone1, c.fone2].filter(Boolean).map(esc).join("<br>")) +
+          campo("E-mail", c.email ? esc(c.email) : "") +
+          campo("Comprador", c.comprador ? esc(c.comprador) : "") +
+          campo("Vendedor", c.vendedor ? esc(c.vendedor) : "") +
+          campo("Cliente desde", c.cadastro ? dataBR(c.cadastro) : "") +
+          campo("Pagamento padrão", c.forma_pagamento ? esc(c.forma_pagamento) : "") +
+          campo("Transportadora (último pedido)", c.transportadora ? esc(c.transportadora) : "") +
+        "</div>" +
+        "<h3>Financeiro</h3>" +
+        (!f.pode_financeiro ? '<div class="ficha-aviso">Sem permissão para ver o financeiro (precisa da aba Em Aberto).</div>'
+          : !fin.titulos.length ? '<div class="ficha-aviso">Nenhum título no contas a receber.</div>'
+          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Título</th><th>NF</th><th>Emissão</th><th>Vencimento</th><th>Valor</th><th>Situação</th><th>Pedido</th></tr></thead><tbody>' +
+            fin.titulos.map((t) => "<tr><td>" + esc(t.titulo) + "</td><td>" + esc(t.nfiscal || "—") + "</td><td>" + dataBR(t.emissao) + "</td><td>" + dataBR(t.vencimento) +
+              "</td><td>" + fmtMoeda(t.quitado === "N" ? t.saldo : t.valor) + "</td><td>" + tituloSit(t) + "</td><td>" + (t.pedido ? PedidoDet.link(t.pedido) : "—") + "</td></tr>").join("") +
+            "</tbody></table></div>") +
+        "<h3>Últimos pedidos</h3>" +
+        (!f.pedidos.length ? '<div class="ficha-aviso">Nenhum pedido desde 2024.</div>'
+          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Pedido</th><th>Data</th><th>Status</th><th>Valor</th><th>Vendedor</th><th>Pagamento</th></tr></thead><tbody>' +
+            f.pedidos.map((p) => "<tr><td>" + PedidoDet.link(p.pedido) + "</td><td>" + dataBR(p.dt_fatura) + '</td><td><span class="pill-st st' + esc(p.status) + '">' + esc(p.status) + "</span>" +
+              (STATUS_VENDIDO.includes(p.status) ? "" : ' <span class="cod-cliente">não faturado</span>') + "</td><td>" + fmtMoeda(p.valor_total) + "</td><td>" + esc(p.vendedor || "—") +
+              "</td><td>" + esc(p.forma_pagamento || "—") + "</td></tr>").join("") +
+            "</tbody></table></div>") +
+        "<h3>Últimos itens comprados</h3>" +
+        (!f.itens.length ? '<div class="ficha-aviso">Nenhum item comprado desde 2024.</div>'
+          : '<div class="tabela-scroll"><table class="tabela-itens"><thead><tr><th>Cód.</th><th>Produto</th><th>Qtd</th><th>Unit.</th><th>Total</th><th>Data</th><th>Pedido</th></tr></thead><tbody>' +
+            f.itens.map((i) => '<tr><td class="cod-cliente">' + esc(i.codigo) + "</td><td>" + esc(i.descricao || "—") + "</td><td>" + fmtInt(i.qtd) + "</td><td>" + fmtMoeda(i.valunit) +
+              "</td><td>" + fmtMoeda(Number(i.qtd) * Number(i.valunit)) + "</td><td>" + dataBR(i.dt_fatura) + "</td><td>" + PedidoDet.link(i.pedido) + "</td></tr>").join("") +
+            "</tbody></table></div>");
+    }
+
+    return { iniciar, abrirFicha };
   })();
 
 
