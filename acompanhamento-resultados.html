@@ -348,8 +348,9 @@
   .ult-recente .quando { color: var(--verde); }
   .btn-hist { font: inherit; font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); cursor: pointer; }
   .btn-hist:hover { background: var(--azul); color: #fff; }
-  #overlay-hist { z-index: 60; }
-  #overlay-pedido { z-index: 55; }
+  /* acima da ficha do orçamento (.orc-zoom, 1000), que também abre conversas e pedidos */
+  #overlay-hist { z-index: 1060; }
+  #overlay-pedido { z-index: 1055; }
   .link-ped { color: var(--azul); font-weight: 700; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
   .link-ped:hover { text-decoration-style: solid; }
   .modal-hist { max-width: 860px; }
@@ -917,6 +918,7 @@
   #view-orcamento .ret-feito { color: var(--verde); }
   #view-orcamento .ped-vendido { color: var(--verde); font-weight: 700; white-space: nowrap; }
   #view-orcamento .ped-aberto { color: #8a5a00; font-weight: 700; white-space: nowrap; }
+  #view-orcamento .ped-vendido .link-ped, #view-orcamento .ped-aberto .link-ped { color: inherit; }
   #view-orcamento .orc-salvos-tabela td small, #view-orcamento .dt-pedidos small { display: block; }
   #view-orcamento .dt-conversa, #view-orcamento .dt-pedidos { font-size: 0.8rem; line-height: 1.5; }
   #view-orcamento .dt-virou { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--verde-fundo); font-size: 0.8rem; line-height: 1.6; }
@@ -8235,7 +8237,7 @@
       if (!ps.length) return '<span class="orc-muted">nenhum</span>';
       return ps.map((p) => {
         const vendido = pedidoVendido(p);
-        return '<span class="' + (vendido ? "ped-vendido" : "ped-aberto") + '">' + (vendido ? "✔ " : "⏳ ") + "Pedido " + p.pedido + "</span>" +
+        return '<span class="' + (vendido ? "ped-vendido" : "ped-aberto") + '">' + (vendido ? "✔ " : "⏳ ") + PedidoDet.link(p.pedido, "Pedido " + p.pedido) + "</span>" +
           "<small>" + money(p.valor_total) + " · " + dataBR(p.dt_fatura) + (mesmoValor(p, o) ? " · mesmo valor" : "") + (vendido ? "" : " · não faturado") +
           (p.vendedor ? " · " + esc(primeiroNomeVend(p.vendedor)) : "") + "</small>";
       }).join("");
@@ -8248,7 +8250,7 @@
       return "<h3>Conversas com o cliente</h3><div class=\"dt-conversa\">" + HistCliente.blocoResumo(o.cliente_codigo_erp) +
           '<div style="margin-top:8px"><button type="button" class="orc-btn orc-btn-claro" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">Ver conversas e ligações</button></div></div>" +
         "<h3>Pedidos no ERP depois do orçamento</h3><div class=\"dt-pedidos\">" + celulaPedido(o) + "</div>" +
-        (virou ? '<div class="dt-virou">Parece que este orçamento virou o <b>pedido ' + virou.pedido + "</b> (mesmo valor). " +
+        (virou ? '<div class="dt-virou">Parece que este orçamento virou o <b>' + PedidoDet.link(virou.pedido, "pedido " + virou.pedido) + "</b> (mesmo valor). " +
           '<button type="button" class="orc-btn orc-btn-claro" data-dt="aprovar">Marcar como Aprovado</button></div>' : "");
     }
     function atualizarExtrasDetalhe() {
