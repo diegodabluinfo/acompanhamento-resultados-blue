@@ -87,7 +87,7 @@
 
   /* ---------- App ---------- */
   #app { padding: 20px 16px 56px; }
-  .wrap { max-width: 980px; margin: 0 auto; }
+  .wrap { max-width: 1340px; margin: 0 auto; } /* mesma largura em todas as abas (28/10/2026) */
   .wrap.largo { max-width: 1340px; }
   .cabecalho {
     display: flex;
@@ -4017,7 +4017,7 @@
     viewCobranca.classList.toggle("oculto", aba !== "cobranca");
     viewUsuarios.classList.toggle("oculto", aba !== "usuarios");
     viewPerformance.classList.toggle("oculto", aba !== "performance");
-    document.querySelector(".wrap").classList.toggle("largo", aba === "resultados" || aba === "performance" || aba === "ritmo" || aba === "lista" || aba === "ranking" || aba === "orcamento" || aba === "reserva" || aba === "clientes" || aba === "cobranca" || aba === "assistencia" || aba === "usuarios");
+    document.querySelector(".wrap").classList.add("largo"); // todas as abas na mesma largura
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewLista.classList.toggle("oculto", aba !== "lista");
     viewRanking.classList.toggle("oculto", aba !== "ranking");
