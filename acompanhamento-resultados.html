@@ -473,7 +473,22 @@
   @media (max-width: 640px) { .os-ficha { grid-template-columns: 1fr; } }
   /* --- Menu Cadastros --- */
   .menu-cadastros { position: relative; display: inline-block; }
-  #btn-menu-cadastros .seta { font-size: 0.7rem; margin-left: 2px; }
+  #btn-menu-cadastros .seta, #btn-menu-clientes .seta { font-size: 0.7rem; margin-left: 2px; }
+  .menu-lista .menu-grupo { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); padding: 8px 12px 0; }
+  /* --- Clientes > Cadastro de clientes --- */
+  #view-clientes-cad #cc-busca { flex: 1; min-width: 240px; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 9px; font: inherit; font-size: 0.9rem; background: #fbfcfe; color: var(--texto); }
+  #view-clientes-cad #cc-busca:focus { outline: none; border-color: var(--azul); background: #fff; box-shadow: 0 0 0 3px rgba(30,95,191,0.12); }
+  #view-clientes-cad .cc-tabela th, #view-clientes-cad .cc-tabela td { text-align: left; white-space: normal; vertical-align: middle; }
+  #view-clientes-cad .cc-tabela th[data-ord] { cursor: pointer; user-select: none; }
+  #view-clientes-cad .cc-tabela th[data-ord]:hover, #view-clientes-cad .cc-tabela th.ord-ativa { color: var(--azul); }
+  #view-clientes-cad .cc-tabela th .seta-ord { font-size: 0.7rem; margin-left: 3px; color: var(--azul); }
+  #view-clientes-cad .cc-tabela small { display: block; color: var(--texto-suave); font-weight: 400; font-size: 0.72rem; }
+  #view-clientes-cad .cc-tabela td.cc-fones { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  #view-clientes-cad .cc-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+  #view-clientes-cad a.btn-2via { text-decoration: none; display: inline-block; }
+  #view-clientes-cad .btn-2via.chamar { background: #1baf7a; border-color: #1baf7a; color: #fff; }
+  #view-clientes-cad .btn-2via.chamar:hover { background: #158f63; }
+  #view-clientes-cad .btn-2via:disabled { border-color: var(--borda); color: var(--texto-suave); background: #fff; }
   .menu-lista {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
     background: #fff; border: 1px solid var(--borda); border-radius: 10px;
@@ -1186,7 +1201,14 @@
         <button class="tab-btn ativa" data-tab="resultados" id="tab-btn-resultados">Resultados por Vendedor</button>
         <button class="tab-btn" data-tab="vendas" id="tab-btn-vendas">Vendas do Dia</button>
         <button class="tab-btn" data-tab="reserva" id="tab-btn-reserva">Pedidos em Reserva</button>
-        <button class="tab-btn" data-tab="clientes" id="tab-btn-clientes">Clientes</button>
+        <div class="menu-cadastros" id="menu-clientes">
+          <button class="tab-btn" id="btn-menu-clientes" type="button" aria-haspopup="true" aria-expanded="false">Clientes <span class="seta">▾</span></button>
+          <div class="menu-lista oculto" id="lista-clientes">
+            <button class="tab-btn item-menu" data-tab="clientes_cad" id="tab-btn-clientes-cad">Cadastro de clientes</button>
+            <span class="menu-grupo">Relatórios</span>
+            <button class="tab-btn item-menu" data-tab="clientes" id="tab-btn-clientes">Positivação / Recuperados</button>
+          </div>
+        </div>
         <button class="tab-btn" data-tab="cobranca" id="tab-btn-cobranca">Em Aberto</button>
         <button class="tab-btn" data-tab="performance" id="tab-btn-performance">Performance</button>
         <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
@@ -1502,6 +1524,27 @@
           acima de 90 dias = reativado, o resto = ativo. Aos 90 dias sem comprar o cliente perde o vínculo com o vendedor,
           por isso a faixa de 61 a 90 dias é a janela de salvar. Comparações do mês corrente usam o mesmo dia dos meses anteriores.
         </div>
+      </div>
+
+      <!-- ===== ABA: Clientes > Cadastro de clientes (busca no cadastro do ERP; clientes_buscar, trava pode_ver_aba('clientes')) ===== -->
+      <div id="view-clientes-cad" class="oculto">
+        <div class="painel-controles">
+          <input type="search" id="cc-busca" placeholder="Nome, fantasia, código, CNPJ/CPF, cidade ou telefone" autocomplete="off" aria-label="Buscar cliente">
+          <span id="cc-resumo" class="freshness">Digite pelo menos 2 letras para buscar.</span>
+        </div>
+        <div class="card-tabela">
+          <div class="tabela-scroll">
+            <table class="cc-tabela">
+              <thead><tr id="cc-cab" title="Clique no título para ordenar; clique de novo para inverter">
+                <th data-ord="cliente">Cliente</th><th data-ord="cidade">Cidade</th><th>Telefones</th><th data-ord="vendedor">Vendedor</th>
+                <th data-ord="compra">Última compra</th><th data-ord="conversa">Última conversa</th><th>Ações</th>
+              </tr></thead>
+              <tbody id="cc-corpo"><tr><td colspan="7" class="estado-vazio">Busque um cliente pelo nome, código, CNPJ/CPF, cidade ou telefone.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="rodape-nota">Cadastro de clientes do ERP, copiado para o painel. Última compra = último pedido vendido (sem cancelados).
+          Última conversa e “Chamar” vêm da Sonax: o botão abre o contato lá, para a conversa ficar registrada.</p>
       </div>
 
       <!-- ===== ABA: Em Aberto (cobrança — exige login + claim pode_ver_cobranca) ===== -->
@@ -3101,6 +3144,11 @@
   const viewVendas = document.getElementById("view-vendas");
   const viewReserva = document.getElementById("view-reserva");
   const viewClientes = document.getElementById("view-clientes");
+  const viewClientesCad = document.getElementById("view-clientes-cad");
+  const tabBtnClientesCad = document.getElementById("tab-btn-clientes-cad");
+  const menuClientes = document.getElementById("menu-clientes");
+  const btnMenuClientes = document.getElementById("btn-menu-clientes");
+  const listaClientes = document.getElementById("lista-clientes");
   const viewCobranca = document.getElementById("view-cobranca");
   const viewUsuarios = document.getElementById("view-usuarios");
   const usuariosBloqueada = document.getElementById("usuarios-bloqueada");
@@ -4010,6 +4058,11 @@
     abaAtual = aba;
     if (typeof fecharMenuCadastros === "function") fecharMenuCadastros();
     if (btnMenuCadastros) btnMenuCadastros.classList.toggle("ativa", ABAS_CADASTRO.some(([cod]) => cod === aba));
+    if (typeof fecharMenuClientes === "function") fecharMenuClientes();
+    btnMenuClientes.classList.toggle("ativa", aba === "clientes" || aba === "clientes_cad");
+    viewClientesCad.classList.toggle("oculto", aba !== "clientes_cad");
+    tabBtnClientesCad.classList.toggle("ativa", aba === "clientes_cad");
+    if (aba === "clientes_cad") ClientesCad.iniciar();
     viewResultados.classList.toggle("oculto", aba !== "resultados");
     viewVendas.classList.toggle("oculto", aba !== "vendas");
     viewReserva.classList.toggle("oculto", aba !== "reserva");
@@ -4064,6 +4117,23 @@
   tabBtnVendas.addEventListener("click", () => mostrarAba("vendas"));
   tabBtnReserva.addEventListener("click", () => mostrarAba("reserva"));
   tabBtnClientes.addEventListener("click", () => mostrarAba("clientes"));
+  tabBtnClientesCad.addEventListener("click", () => mostrarAba("clientes_cad"));
+
+  // --- menu Clientes (Cadastro de clientes + Relatórios) ---
+  function fecharMenuClientes() {
+    listaClientes.classList.add("oculto");
+    btnMenuClientes.setAttribute("aria-expanded", "false");
+  }
+  btnMenuClientes.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    const abrindo = listaClientes.classList.contains("oculto");
+    if (abrindo && typeof fecharMenuCadastros === "function") fecharMenuCadastros();
+    listaClientes.classList.toggle("oculto", !abrindo);
+    btnMenuClientes.setAttribute("aria-expanded", abrindo ? "true" : "false");
+  });
+  document.addEventListener("click", (ev) => { if (!menuClientes.contains(ev.target)) fecharMenuClientes(); });
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharMenuClientes(); });
+  btnMenuCadastros.addEventListener("click", fecharMenuClientes);   // um menu aberto por vez
   tabBtnCobranca.addEventListener("click", () => mostrarAba("cobranca"));
   tabBtnUsuarios.addEventListener("click", () => mostrarAba("usuarios"));
   tabBtnGastos.addEventListener("click", () => mostrarAba("gastos"));
@@ -4321,7 +4391,7 @@
   // ordem das abas na tela; o código é o mesmo de painel_abas no banco
   // barra de cima: só consulta e relatório
   const ABAS_VISUALIZACAO = [
-    ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["reserva", () => tabBtnReserva], ["clientes", () => tabBtnClientes],
+    ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["reserva", () => tabBtnReserva], ["clientes", () => tabBtnClientes], ["clientes_cad", () => tabBtnClientesCad],
     ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo], ["lista", () => tabBtnLista], ["ranking", () => tabBtnRanking], ["orcamento", () => tabBtnOrcamento],
     ["assistencia", () => tabBtnAssistencia]
   ];
@@ -4334,6 +4404,7 @@
   const ABAS = ABAS_VISUALIZACAO.concat(ABAS_CADASTRO);
   function podeVerAba(codigo) {
     if (codigo === "usuarios") return meuAcesso.admin;
+    if (codigo === "clientes_cad") codigo = "clientes";   // Cadastro de clientes vem junto com a aba Clientes
     return meuAcesso.admin || meuAcesso.abas.indexOf(codigo) >= 0;
   }
 
@@ -4355,6 +4426,8 @@
     const temCadastro = ABAS_CADASTRO.some(([cod]) => podeVerAba(cod));
     menuCadastros.classList.toggle("oculto", !temCadastro);
     if (!temCadastro) fecharMenuCadastros();
+    menuClientes.classList.toggle("oculto", !podeVerAba("clientes"));
+    if (!podeVerAba("clientes")) fecharMenuClientes();
     semAcesso.classList.toggle("oculto", liberadas.length > 0);
     if (!abaAtual || abaAtual === "nenhuma" || !podeVerAba(abaAtual)) {
       mostrarAba(liberadas.length ? liberadas[0] : "nenhuma");
@@ -5450,6 +5523,132 @@
     }, true);
 
     return { link, abrir, html, alternarKit, valido };
+  })();
+
+  // --- Clientes > Cadastro de clientes ---
+  // Busca no cadastro do ERP (clientes_buscar, até 200 resultados). Última conversa e contatos da Sonax vêm do
+  // HistCliente; "Chamar" abre o contato na Sonax (a conversa fica registrada lá e volta para o histórico).
+  const ClientesCad = (() => {
+    const el = (id) => document.getElementById(id);
+    const SONAX_CONTATO = "https://chat.sonax.net.br/omnichannel-chat/contacts/view/";
+    const LIMITE = 200;
+    const DESC_PRIMEIRO = ["compra", "conversa"];   // o primeiro clique já mostra o mais recente
+    const vista = { ordem: null, desc: false };
+    let lista = [], seq = 0, timer = null, iniciado = false;
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo)
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(String(m).slice(0, 200)); }
+      return res.json();
+    }
+    function dataBR(iso) { if (!iso) return ""; const [a, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m + "/" + a; }
+    function primeiroNome(n) { return String(n || "").trim().split(/\s+/)[0] || ""; }
+
+    function iniciar() {
+      if (!iniciado) {
+        iniciado = true;
+        el("cc-busca").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(buscar, 400); });
+        el("cc-cab").addEventListener("click", (ev) => {
+          const th = ev.target.closest("th[data-ord]");
+          if (!th) return;
+          if (vista.ordem === th.dataset.ord) vista.desc = !vista.desc;
+          else { vista.ordem = th.dataset.ord; vista.desc = DESC_PRIMEIRO.includes(th.dataset.ord); }
+          render();
+        });
+      }
+      setTimeout(() => el("cc-busca").focus(), 0);
+    }
+
+    async function buscar() {
+      const termo = el("cc-busca").value.trim();
+      const meu = ++seq;
+      if (termo.length < 2) {
+        lista = [];
+        el("cc-resumo").textContent = "Digite pelo menos 2 letras para buscar.";
+        el("cc-corpo").innerHTML = '<tr><td colspan="7" class="estado-vazio">Busque um cliente pelo nome, código, CNPJ/CPF, cidade ou telefone.</td></tr>';
+        return;
+      }
+      el("cc-resumo").textContent = "Buscando…";
+      try {
+        const r = await rpc("clientes_buscar", { p_busca: termo });
+        if (meu !== seq) return;   // chegou resposta de uma busca antiga
+        lista = r || [];
+        render();
+        HistCliente.buscarResumos(lista.slice(0, LIMITE).map((c) => c.codcliente))
+          .then(() => { if (meu === seq) render(); }).catch(() => {});
+      } catch (e) {
+        if (meu !== seq) return;
+        el("cc-resumo").textContent = "";
+        el("cc-corpo").innerHTML = '<tr><td colspan="7" class="estado-vazio">Não foi possível buscar: ' + esc(e.message) + "</td></tr>";
+      }
+    }
+
+    // valor de cada coluna para ordenar; vazio vai sempre para o fim
+    function valorOrdem(c, campo) {
+      if (campo === "cliente") return String(c.nome || "").toLowerCase();
+      if (campo === "cidade") return c.cidade ? String(c.cidade).toLowerCase() : null;
+      if (campo === "vendedor") return c.vendedor ? String(c.vendedor).toLowerCase() : null;
+      if (campo === "compra") return c.ultima_compra || null;
+      if (campo === "conversa") return HistCliente.ultimoEm(c.codcliente);
+      return null;
+    }
+    function ordenada() {
+      const base = lista.slice(0, LIMITE);
+      if (!vista.ordem) return base;   // sem coluna escolhida: a ordem do banco (código exato, depois quem começa com o texto)
+      const sinal = vista.desc ? -1 : 1;
+      return base.map((c, i) => ({ c, i, v: valorOrdem(c, vista.ordem) })).sort((a, b) => {
+        if (a.v == null || b.v == null) return a.v == null && b.v == null ? a.i - b.i : a.v == null ? 1 : -1;
+        return a.v < b.v ? -sinal : a.v > b.v ? sinal : a.i - b.i;
+      }).map((x) => x.c);
+    }
+
+    // "Chamar" (um por contato da Sonax) + "Conversas"
+    function acoes(c) {
+      const r = HistCliente.resumo(c.codcliente);
+      const contatos = (r && r.contatos) || [];
+      let chamar;
+      if (r === undefined) chamar = '<button type="button" class="btn-2via" disabled>…</button>';
+      else if (!contatos.length) chamar = '<button type="button" class="btn-2via" disabled title="Este cliente ainda não tem contato ligado na Sonax">sem contato na Sonax</button>';
+      else chamar = contatos.slice(0, 3).map((ct) =>
+        '<a class="btn-2via chamar" href="' + SONAX_CONTATO + encodeURIComponent(ct.id) + '" target="_blank" rel="noopener" title="Abrir na Sonax: ' +
+          esc((ct.nome || "") + (ct.celular ? " · " + ct.celular : "")) + '">Chamar' + (contatos.length > 1 && ct.nome ? " " + esc(primeiroNome(ct.nome)) : "") + "</a>").join("");
+      return '<div class="cc-acoes">' + chamar +
+        '<button type="button" class="btn-2via" ' + HistCliente.marcador(c.codcliente, c.nome, true) + ">Conversas</button></div>";
+    }
+
+    function render() {
+      el("cc-cab").querySelectorAll("th[data-ord]").forEach((th) => {
+        const s = th.querySelector(".seta-ord");
+        if (s) s.remove();
+        const ativa = th.dataset.ord === vista.ordem;
+        th.classList.toggle("ord-ativa", ativa);
+        if (ativa) th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (vista.desc ? "▼" : "▲") + "</span>");
+      });
+      el("cc-resumo").textContent = lista.length > LIMITE ? "Mais de " + LIMITE + " clientes: mostrando os " + LIMITE + " primeiros. Refine a busca."
+        : lista.length + (lista.length === 1 ? " cliente encontrado" : " clientes encontrados");
+      const linhas = ordenada();
+      el("cc-corpo").innerHTML = linhas.length ? linhas.map((c) =>
+        "<tr>" +
+          '<td><span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(c.codcliente, c.nome, true) + ">" + esc(c.nome || "—") + "</span>" +
+            "<small>" + [c.fantasia && c.fantasia !== c.nome ? esc(c.fantasia) : "", "Cód. " + c.codcliente, c.documento ? esc(c.documento) : ""].filter(Boolean).join(" · ") + "</small></td>" +
+          "<td>" + esc([c.cidade, c.uf].filter(Boolean).join(" / ") || "—") + "</td>" +
+          '<td class="cc-fones">' + ([c.fone1, c.fone2].filter(Boolean).map(esc).join("<br>") || '<span class="cod-cliente">—</span>') + "</td>" +
+          "<td>" + esc(c.vendedor || "—") + "</td>" +
+          "<td>" + (c.ultima_compra ? dataBR(c.ultima_compra) + (c.ultimo_pedido ? "<small>" + PedidoDet.link(c.ultimo_pedido, "pedido " + c.ultimo_pedido) + "</small>" : "")
+            : '<span class="cod-cliente">nunca comprou</span>') + "</td>" +
+          "<td>" + HistCliente.celulaUltimo(c.codcliente) + "</td>" +
+          "<td>" + acoes(c) + "</td>" +
+        "</tr>").join("")
+        : '<tr><td colspan="7" class="estado-vazio">Nenhum cliente encontrado com “' + esc(el("cc-busca").value.trim()) + "”.</td></tr>";
+    }
+
+    return { iniciar };
   })();
 
 
