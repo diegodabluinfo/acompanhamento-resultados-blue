@@ -1345,7 +1345,7 @@
             <div class="hist-ctl" style="flex:1 1 300px;">
               <span>Mostrar</span>
               <div class="filtro-periodo" id="rh-blocos">
-                <button type="button" data-bloco="serie" class="ativa"><i class="hist-pt" style="background:#2a78d6"></i>Produzido × meta</button>
+                <button type="button" data-bloco="serie" class="ativa"><i class="hist-pt" style="background:#2a78d6"></i>Final × meta</button>
                 <button type="button" data-bloco="yoy" class="ativa"><i class="hist-pt" style="background:#eb6834"></i>vs. ano anterior</button>
                 <button type="button" data-bloco="tab" class="ativa">Tabela por vendedor</button>
               </div>
@@ -1355,18 +1355,19 @@
           <div class="kpi-grid" id="rh-kpis"></div>
 
           <div class="hist-cartao" id="rh-bloco-serie">
-            <h3>Produzido por mês</h3>
+            <h3>Final por mês (já com os descontos)</h3>
             <p class="hist-sub" id="rh-sub-serie"></p>
             <div class="hist-legenda">
-              <span><i style="background:#2a78d6"></i>Produzido</span>
-              <span><span class="hist-tracejado"></span>Meta (desde ago/2026)</span>
+              <span><i style="background:#2a78d6"></i>Final (produzido - créditos - devoluções + inadimplência)</span>
+              <span><i style="background:#f2b8b0"></i>Descontos</span>
+              <span><span class="hist-tracejado"></span>Meta (desde jul/2026)</span>
             </div>
             <svg id="rh-g-serie" viewBox="0 0 980 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Barras do produzido por mês com a linha da meta"></svg>
           </div>
 
           <div class="hist-cartao" id="rh-bloco-yoy">
             <h3>Comparado com o mesmo mês do ano anterior</h3>
-            <p class="hist-sub">Barra azul = este ano; laranja = mesmo mês do ano anterior. Em cima, a variação.</p>
+            <p class="hist-sub">Final (com descontos). Barra azul = este ano; laranja = mesmo mês do ano anterior. Em cima, a variação.</p>
             <div class="hist-legenda">
               <span><i style="background:#2a78d6"></i>Este ano</span>
               <span><i style="background:#eb6834"></i>Ano anterior</span>
@@ -1375,12 +1376,12 @@
           </div>
 
           <div class="hist-cartao" id="rh-bloco-tab">
-            <h3>Produzido por vendedor, mês a mês</h3>
+            <h3>Final por vendedor, mês a mês</h3>
             <p class="hist-sub">Verde: subiu em relação ao mês anterior; vermelho: caiu. Clique no título da coluna para ordenar.</p>
             <div class="tabela-scroll"><table class="rh-tabela"><thead id="rh-cab"></thead><tbody id="rh-corpo"></tbody><tfoot id="rh-pe"></tfoot></table></div>
           </div>
-          <div class="rodape-nota">Produzido = pedidos faturados no ERP, mesma regra dos meses automáticos (desde jan/2024).
-            Meta, final e % atingido existem só nos meses lançados no Cadastro de Metas (desde ago/2026). O mês atual ainda está em andamento.</div>
+          <div class="rodape-nota">Final = produzido (pedidos faturados no ERP, sem tabela 99) - créditos - devoluções + inadimplência, a mesma conta da tela Mês.
+            Desde jan/2024 os créditos vêm do ERP; devoluções e inadimplência existem desde jul/2026. Meta e % atingido, desde jul/2026. O mês atual ainda está em andamento.</div>
         </div>
       </div>
 
@@ -6005,7 +6006,7 @@
   const ResHist = (() => {
     const el = (id) => document.getElementById(id);
     const NS = "http://www.w3.org/2000/svg";
-    const COR = { prod: "#2a78d6", ant: "#eb6834", meta: "#64748b" };
+    const COR = { prod: "#2a78d6", ant: "#eb6834", meta: "#64748b", desc: "#f2b8b0" };
     const MES3 = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
     let linhas = null, carregando = false, ligado = false;
     const metaEquipe = {};   // "2026-07" -> meta da equipe do mês
@@ -6066,9 +6067,10 @@
       for (const l of linhas) {
         if (vendedor && String(l.vendedor_id) !== vendedor) continue;
         const k = comp(l.competencia);
-        const a = m.get(k) || { comp: k, prod: 0, meta: 0, final: 0, temMeta: false };
+        const a = m.get(k) || { comp: k, prod: 0, cred: 0, dev: 0, inad: 0, meta: 0, final: 0, temMeta: false };
         a.prod += Number(l.produzido || 0);
-        if (l.final != null) a.final += Number(l.final);   // final de todos (igual ao TOTAL da tela Mês)
+        a.cred += Number(l.creditos || 0); a.dev += Number(l.devolucoes || 0); a.inad += Number(l.inadimplencia || 0);
+        a.final += Number(l.final || 0);   // final = produzido - créditos - devoluções + inadimplência (igual ao TOTAL da tela Mês)
         if (l.tem_meta && l.objetivo != null) { a.meta += Number(l.objetivo); a.temMeta = true; }
         m.set(k, a);
       }
@@ -6114,7 +6116,7 @@
       carregando = true;
       el("rh-kpis").innerHTML = '<div class="estado-vazio" style="grid-column:1/-1">Carregando o histórico…</div>';
       try {
-        linhas = await rpc("resultados_historico");
+        linhas = await rpc("resultados_historico_v2");
         // meta da equipe (separada das individuais) vale para a visão "Equipe toda"
         try {
           const r = await fetch(SUPABASE_URL + "/rest/v1/metas_equipe?select=competencia,objetivo",
@@ -6146,25 +6148,25 @@
 
     function renderKpis() {
       const m = porMes(), todos = mesesTodos(), meses = mesesDoPeriodo();
-      const soma = (lista) => lista.reduce((t, k) => t + ((m.get(k) || {}).prod || 0), 0);
+      const soma = (lista, c) => lista.reduce((t, k) => t + ((m.get(k) || {})[c || "final"] || 0), 0);
       const total = soma(meses);
       const ini = todos.indexOf(meses[0]);
       const anteriores = ini >= meses.length ? todos.slice(ini - meses.length, ini) : null;
       const totalAnt = anteriores ? soma(anteriores) : null;
       const varPct = totalAnt ? (total - totalAnt) / totalAnt * 100 : null;
       let melhor = null;
-      meses.forEach((k) => { const v = (m.get(k) || {}).prod || 0; if (!melhor || v > melhor.v) melhor = { k, v }; });
+      meses.forEach((k) => { const v = (m.get(k) || {}).final || 0; if (!melhor || v > melhor.v) melhor = { k, v }; });
       const comMeta = meses.map((k) => m.get(k)).filter((a) => a && a.temMeta && a.meta > 0);
       const pctMedio = comMeta.length ? comMeta.reduce((t, a) => t + a.final, 0) / comMeta.reduce((t, a) => t + a.meta, 0) * 100 : null;
       const kpi = (rot, val, nota) => '<div class="kpi"><div class="rotulo">' + rot + '</div><div class="valor">' + val + "</div>" + (nota ? '<div class="nota">' + nota + "</div>" : "") + "</div>";
       const quemTxt = vendedor ? el("rh-vendedor").selectedOptions[0].textContent : "equipe toda", quem = esc(quemTxt);
       el("rh-kpis").innerHTML =
-        kpi("Produzido no período", fmtMoeda(total), meses.length + (meses.length === 1 ? " mês · " : " meses · ") + quem) +
+        kpi("Final no período", fmtMoeda(total), "bruto " + fmtMoeda(soma(meses, "prod")) + " · descontos " + fmtMoeda(soma(meses, "prod") - total) + " · " + quem) +
         kpi("Comparado ao período anterior", varPct == null ? "—" : '<span style="color:' + (varPct >= 0 ? "var(--verde)" : "var(--vermelho)") + '">' + (varPct >= 0 ? "+" : "") + pct1(varPct) + "</span>",
             totalAnt ? "antes: " + fmtMoeda(totalAnt) : "sem dados do período anterior") +
         kpi("Média por mês", fmtMoeda(meses.length ? total / meses.length : 0), "") +
         kpi("Melhor mês", melhor ? nomeMesLongo(melhor.k) : "—", melhor ? fmtMoeda(melhor.v) : "") +
-        kpi("% da meta (média)", pctMedio == null ? "—" : pct1(pctMedio), comMeta.length ? comMeta.length + (comMeta.length === 1 ? " mês com meta" : " meses com meta") : "meta só desde ago/2026");
+        kpi("% da meta (média)", pctMedio == null ? "—" : pct1(pctMedio), comMeta.length ? comMeta.length + (comMeta.length === 1 ? " mês com meta" : " meses com meta") : "meta só desde jul/2026");
       el("rh-sub-serie").textContent = (vendedor ? quemTxt : "Equipe toda") + " · " + (meses.length ? rotMes(meses[0]) + " a " + rotMes(meses[meses.length - 1]) : "") +
         ". O último mês ainda está em andamento.";
     }
@@ -6173,7 +6175,7 @@
       const svg = el("rh-g-serie"); svg.innerHTML = "";
       const m = porMes(), meses = mesesDoPeriodo();
       const W = 980, H = 300, E = 62, D = 14, T = 16, B = 34, aw = W - E - D, ah = H - T - B;
-      const max = Math.max(1, ...meses.map((k) => Math.max((m.get(k) || {}).prod || 0, (m.get(k) || {}).meta || 0)));
+      const max = Math.max(1, ...meses.map((k) => Math.max((m.get(k) || {}).prod || 0, (m.get(k) || {}).final || 0, (m.get(k) || {}).meta || 0)));
       const { topo, passo } = escala(max);
       const y = (v) => T + ah - v / topo * ah;
       for (let v = 0; v <= topo + 1e-9; v += passo) {
@@ -6183,15 +6185,18 @@
       const slot = aw / Math.max(1, meses.length), bw = Math.min(46, slot * 0.68);
       const pontosMeta = [];
       meses.forEach((k, i) => {
-        const a = m.get(k) || { prod: 0, meta: 0, temMeta: false, final: 0 };
+        const a = m.get(k) || { prod: 0, cred: 0, dev: 0, inad: 0, meta: 0, temMeta: false, final: 0 };
         const cx = E + slot * i + slot / 2;
-        svgEl("rect", { x: cx - bw / 2, y: y(a.prod), width: bw, height: Math.max(0, T + ah - y(a.prod)), rx: 3, fill: COR.prod }, svg);
+        const desc = Math.max(0, a.prod - a.final);   // créditos + devoluções (- inadimplência) por cima do final
+        svgEl("rect", { x: cx - bw / 2, y: y(a.final), width: bw, height: Math.max(0, T + ah - y(a.final)), rx: 3, fill: COR.prod }, svg);
+        if (desc > 0) svgEl("rect", { x: cx - bw / 2, y: y(a.final + desc), width: bw, height: Math.max(0, y(a.final) - y(a.final + desc)), rx: 2, fill: COR.desc }, svg);
         if (meses.length <= 24 || i % 2 === 0) texto(svg, cx, H - B + 16, rotMes(k), { class: "gx", "text-anchor": "middle" });
-        if (meses.length <= 14) texto(svg, cx, y(a.prod) - 6, moedaCurta(a.prod), { class: "rotulo", "text-anchor": "middle", fill: COR.prod });
+        if (meses.length <= 14) texto(svg, cx, y(Math.max(a.prod, a.final)) - 6, moedaCurta(a.final), { class: "rotulo", "text-anchor": "middle", fill: COR.prod });
         if (a.temMeta && a.meta > 0) pontosMeta.push([cx, y(a.meta)]);
         const alvo = svgEl("rect", { x: E + slot * i, y: T, width: slot, height: ah, class: "alvo" }, svg);
-        ligarDica(alvo, "<b>" + nomeMesLongo(k) + "</b>" + ld(COR.prod, "Produzido", fmtMoeda(a.prod)) +
-          (a.temMeta ? ld(COR.meta, "Meta", fmtMoeda(a.meta)) + ld("", "Final", fmtMoeda(a.final)) + ld("", "% atingido", a.meta ? pct1(a.final / a.meta * 100) : "—") : ""));
+        ligarDica(alvo, "<b>" + nomeMesLongo(k) + "</b>" + ld("", "Produzido (bruto)", fmtMoeda(a.prod)) + ld(COR.desc, "Créditos", "- " + fmtMoeda(a.cred)) +
+          ld(COR.desc, "Devoluções", "- " + fmtMoeda(a.dev)) + (a.inad ? ld("", "Inadimplência", fmtMoeda(a.inad)) : "") + ld(COR.prod, "<b>Final</b>", "<b>" + fmtMoeda(a.final) + "</b>") +
+          (a.temMeta ? ld(COR.meta, "Meta", fmtMoeda(a.meta)) + ld("", "% atingido", a.meta ? pct1(a.final / a.meta * 100) : "—") : ""));
       });
       if (pontosMeta.length) {
         svgEl("polyline", { points: pontosMeta.map((p) => p.join(",")).join(" "), fill: "none", stroke: COR.meta, "stroke-width": 2, "stroke-dasharray": "6 4" }, svg);
@@ -6205,7 +6210,7 @@
       const meses = mesesDoPeriodo().filter((k) => todos.has(anoAntes(k)));
       const W = 980, H = 280, E = 62, D = 14, T = 26, B = 34, aw = W - E - D, ah = H - T - B;
       if (!meses.length) { texto(svg, W / 2, H / 2, "Sem o mesmo mês do ano anterior neste período.", { class: "gx", "text-anchor": "middle" }); return; }
-      const val = (k) => (m.get(k) || {}).prod || 0;
+      const val = (k) => (m.get(k) || {}).final || 0;
       const max = Math.max(1, ...meses.map((k) => Math.max(val(k), val(anoAntes(k)))));
       const { topo, passo } = escala(max);
       const y = (v) => T + ah - v / topo * ah;
@@ -6235,8 +6240,8 @@
         const k = comp(l.competencia); if (!meses.includes(k)) continue;
         const id = String(l.vendedor_id);
         const v = vend.get(id) || { id, nome: l.nome_curto || l.nome_completo, m: {}, total: 0 };
-        v.m[k] = (v.m[k] || 0) + Number(l.produzido || 0);
-        v.total += Number(l.produzido || 0);
+        v.m[k] = (v.m[k] || 0) + Number(l.final || 0);
+        v.total += Number(l.final || 0);
         vend.set(id, v);
       }
       const lista = [...vend.values()].filter((v) => v.total !== 0);
