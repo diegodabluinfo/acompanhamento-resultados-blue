@@ -909,6 +909,10 @@
   #view-orcamento .orc-salvos-tabela tbody tr { cursor: pointer; }
   #view-orcamento .orc-salvos-tabela tbody tr:hover td { background: #f3f8fd; }
   #view-orcamento .orc-salvos-tabela small { display: block; color: var(--texto-suave); font-weight: 400; }
+  #view-orcamento .orc-salvos-tabela th[data-ord] { cursor: pointer; user-select: none; }
+  #view-orcamento .orc-salvos-tabela th[data-ord]:hover, #view-orcamento .orc-salvos-tabela th.ord-ativa { color: var(--azul); }
+  #view-orcamento .orc-salvos-tabela th .seta-ord { font-size: 0.7rem; margin-left: 3px; color: var(--azul); }
+  #view-orcamento .orc-salvos-limpar { font-size: 0.8rem; color: var(--azul); cursor: pointer; text-decoration: underline; margin-left: 6px; background: none; border: 0; padding: 0; font-family: inherit; }
   #view-orcamento .orc-sit { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
   #view-orcamento .sit-aberto { background: #eef1f6; color: #4a5d72; }
   #view-orcamento .sit-enviado { background: #dbeaf9; color: #06478a; }
@@ -1889,13 +1893,29 @@
                 <option value="aprovado">Aprovado</option>
                 <option value="perdido">Perdido</option>
               </select>
+              <select id="orc-salvos-vend" aria-label="Quem fez">
+                <option value="">Todos os vendedores</option>
+              </select>
+              <select id="orc-salvos-ret" aria-label="Retorno">
+                <option value="">Todos os retornos</option>
+                <option value="atrasado">Retorno atrasado</option>
+                <option value="hoje">Retorno para hoje</option>
+                <option value="futuro">Retorno marcado (futuro)</option>
+                <option value="sem">Sem retorno</option>
+              </select>
+              <select id="orc-salvos-ped" aria-label="Pedido no ERP">
+                <option value="">Com ou sem pedido</option>
+                <option value="com">Com pedido no ERP</option>
+                <option value="vendido">Com pedido vendido</option>
+                <option value="sem">Sem pedido no ERP</option>
+              </select>
               <input type="search" id="orc-salvos-busca" placeholder="Cliente, número (ORC-0001) ou CNPJ" autocomplete="off">
               <button type="button" class="btn-2via" id="orc-salvos-atualizar">Atualizar</button>
             </div>
             <div id="orc-salvos-resumo" class="orc-salvos-resumo"></div>
             <div class="tabela-scroll">
               <table class="orc-salvos-tabela">
-                <thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Quem fez</th><th class="num">Total</th><th>Situação</th><th>Retorno</th><th>Última conversa</th><th>Pedido no ERP</th></tr></thead>
+                <thead><tr id="orc-salvos-cab" title="Clique no título para ordenar; clique de novo para inverter"><th data-ord="numero">Nº</th><th data-ord="data">Data</th><th data-ord="cliente">Cliente</th><th data-ord="quem">Quem fez</th><th data-ord="total" class="num">Total</th><th data-ord="situacao">Situação</th><th data-ord="retorno">Retorno</th><th data-ord="conversa">Última conversa</th><th data-ord="pedido">Pedido no ERP</th></tr></thead>
                 <tbody id="orc-salvos-corpo"></tbody>
               </table>
             </div>
@@ -8257,13 +8277,83 @@
       const box = detalhe && document.getElementById("dt-extras");
       if (box) box.innerHTML = extrasDetalhe(detalhe);
     }
+    // ordem e filtros da lista (no navegador; a situação e a busca vão para o banco)
+    const CHAVE_SALVOS = "orc-salvos-vista-v1";
+    const vista = Object.assign({ ordem: null, desc: false, vend: "", ret: "", ped: "" }, lerGuardado(CHAVE_SALVOS) || {});
+    function guardarVista() { try { localStorage.setItem(CHAVE_SALVOS, JSON.stringify(vista)); } catch (e) {} }
+    const ORDEM_SITUACAO = { aberto: 0, enviado: 1, aprovado: 2, perdido: 3 };
+    const DESC_PRIMEIRO = ["numero", "data", "total", "conversa", "pedido"];   // o primeiro clique já mostra o mais recente/maior
+    // valor de cada coluna para ordenar; null vai sempre para o fim
+    function valorOrdem(o, campo) {
+      switch (campo) {
+        case "numero": return o.numero;
+        case "data": return o.criado_em;
+        case "cliente": return String(o.cliente_nome || "").toLowerCase();
+        case "quem": return String(o.criado_por_nome || "").toLowerCase();
+        case "total": return Number(o.total);
+        case "situacao": return ORDEM_SITUACAO[o.situacao];
+        case "retorno": return o.retorno_em || null;
+        case "conversa": return o.cliente_codigo_erp ? HistCliente.ultimoEm(o.cliente_codigo_erp) : null;
+        case "pedido": {
+          const ps = pedidosOrc.get(o.id) || [];
+          return ps.length ? (ps.some(pedidoVendido) ? 2 : 1) * 1e12 + Math.max(...ps.map((p) => Number(p.valor_total) || 0)) : null;
+        }
+      }
+      return null;
+    }
+    function filtroRetorno(o) {
+      if (!vista.ret) return true;
+      if (vista.ret === "sem") return !o.retorno_em;
+      const cls = retornoSalvo(o).cls;
+      if (vista.ret === "atrasado") return cls === "ret-atrasado";
+      if (vista.ret === "hoje") return cls === "ret-hoje";
+      return ativo(o) && !!o.retorno_em && o.retorno_em > hojeSP();
+    }
+    function filtroPedido(o) {
+      if (!vista.ped) return true;
+      const ps = pedidosOrc.get(o.id) || [];
+      return vista.ped === "sem" ? !ps.length : vista.ped === "vendido" ? ps.some(pedidoVendido) : ps.length > 0;
+    }
+    function listaVisivel() {
+      const lista = salvosLista.filter((o) => (!vista.vend || o.criado_por_nome === vista.vend) && filtroRetorno(o) && filtroPedido(o));
+      if (!vista.ordem) return lista;   // sem coluna escolhida: a ordem do banco (retornos vencidos primeiro)
+      const sinal = vista.desc ? -1 : 1;
+      return lista.map((o, i) => ({ o, i, v: valorOrdem(o, vista.ordem) })).sort((a, b) => {
+        if (a.v == null || b.v == null) return a.v == null && b.v == null ? a.i - b.i : a.v == null ? 1 : -1;
+        if (a.v < b.v) return -sinal;
+        if (a.v > b.v) return sinal;
+        return a.i - b.i;
+      }).map((x) => x.o);
+    }
+    function marcarCabecalho() {
+      el("orc-salvos-cab").querySelectorAll("th[data-ord]").forEach((th) => {
+        const s = th.querySelector(".seta-ord");
+        if (s) s.remove();
+        const ativa = th.dataset.ord === vista.ordem;
+        th.classList.toggle("ord-ativa", ativa);
+        if (ativa) th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (vista.desc ? "▼" : "▲") + "</span>");
+      });
+    }
+    // vendedores do filtro "Quem fez": os que aparecem na lista carregada (mantém o escolhido mesmo se sumir)
+    function opcoesVendedor() {
+      const nomes = [...new Set(salvosLista.map((o) => o.criado_por_nome).filter(Boolean).concat(vista.vend ? [vista.vend] : []))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+      el("orc-salvos-vend").innerHTML = '<option value="">Todos os vendedores</option>' +
+        nomes.map((n) => '<option value="' + esc(n) + '"' + (n === vista.vend ? " selected" : "") + ">" + esc(n) + "</option>").join("");
+    }
     function renderSalvos() {
-      const atrasados = salvosLista.filter((o) => retornoSalvo(o).cls === "ret-atrasado").length;
-      const hoje = salvosLista.filter((o) => retornoSalvo(o).cls === "ret-hoje").length;
-      el("orc-salvos-resumo").innerHTML = salvosLista.length + (salvosLista.length === 1 ? " orçamento" : " orçamentos") +
+      opcoesVendedor();
+      el("orc-salvos-ret").value = vista.ret;
+      el("orc-salvos-ped").value = vista.ped;
+      marcarCabecalho();
+      const visiveis = listaVisivel();
+      const filtrando = !!(vista.vend || vista.ret || vista.ped);
+      const atrasados = visiveis.filter((o) => retornoSalvo(o).cls === "ret-atrasado").length;
+      const hoje = visiveis.filter((o) => retornoSalvo(o).cls === "ret-hoje").length;
+      el("orc-salvos-resumo").innerHTML = (filtrando ? visiveis.length + " de " + salvosLista.length : visiveis.length) + (salvosLista.length === 1 ? " orçamento" : " orçamentos") +
         (atrasados ? ' · <span class="ret-atrasado">' + atrasados + (atrasados === 1 ? " retorno atrasado" : " retornos atrasados") + "</span>" : "") +
-        (hoje ? ' · <span class="ret-hoje">' + hoje + (hoje === 1 ? " retorno para hoje" : " retornos para hoje") + "</span>" : "");
-      el("orc-salvos-corpo").innerHTML = salvosLista.length ? salvosLista.map((o) =>
+        (hoje ? ' · <span class="ret-hoje">' + hoje + (hoje === 1 ? " retorno para hoje" : " retornos para hoje") + "</span>" : "") +
+        (filtrando || vista.ordem ? ' <button type="button" class="orc-salvos-limpar" id="orc-salvos-limpar">limpar filtros e ordem</button>' : "");
+      el("orc-salvos-corpo").innerHTML = visiveis.length ? visiveis.map((o) =>
         '<tr data-orc="' + o.id + '">' +
           "<td>" + numeroTexto(o.numero) + (o.versao > 1 ? "<small>versão " + o.versao + "</small>" : "") + "</td>" +
           "<td>" + dataBR(o.criado_em) + "</td>" +
@@ -8278,7 +8368,14 @@
           "<td>" + (o.cliente_codigo_erp ? '<span class="link-hist" style="text-decoration:none" title="Abrir conversas e ligações" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">" + HistCliente.celulaUltimo(o.cliente_codigo_erp) + "</span>" : '<span class="orc-muted">—</span>') + "</td>" +
           "<td>" + celulaPedido(o) + "</td>" +
         "</tr>").join("")
-        : '<tr><td colspan="9" class="estado-vazio">' + (salvosMeus ? "Você ainda não salvou orçamentos com esse filtro. Use “Ver todos” para ver os da equipe." : "Nenhum orçamento com esse filtro.") + "</td></tr>";
+        : '<tr><td colspan="9" class="estado-vazio">' + (salvosLista.length ? "Nenhum orçamento com esses filtros." :
+            salvosMeus ? "Você ainda não salvou orçamentos com esse filtro. Use “Ver todos” para ver os da equipe." : "Nenhum orçamento com esse filtro.") + "</td></tr>";
+    }
+    function ordenarSalvosPor(campo) {
+      if (vista.ordem === campo) vista.desc = !vista.desc;
+      else { vista.ordem = campo; vista.desc = DESC_PRIMEIRO.includes(campo); }
+      guardarVista();
+      renderSalvos();
     }
 
     async function abrirDetalhe(id) {
@@ -9005,6 +9102,18 @@
       el("orc-salvos-situacao").addEventListener("change", listarSalvos);
       el("orc-salvos-busca").addEventListener("input", () => { clearTimeout(salvosTimer); salvosTimer = setTimeout(listarSalvos, 400); });
       el("orc-salvos-atualizar").addEventListener("click", listarSalvos);
+      [["orc-salvos-vend", "vend"], ["orc-salvos-ret", "ret"], ["orc-salvos-ped", "ped"]].forEach(([id, chave]) =>
+        el(id).addEventListener("change", () => { vista[chave] = el(id).value; guardarVista(); renderSalvos(); }));
+      el("orc-salvos-cab").addEventListener("click", (ev) => {
+        const th = ev.target.closest("th[data-ord]");
+        if (th) ordenarSalvosPor(th.dataset.ord);
+      });
+      el("orc-salvos-resumo").addEventListener("click", (ev) => {
+        if (ev.target.id !== "orc-salvos-limpar") return;
+        Object.assign(vista, { ordem: null, desc: false, vend: "", ret: "", ped: "" });
+        guardarVista();
+        renderSalvos();
+      });
       el("orc-salvos-corpo").addEventListener("click", (ev) => {
         const tr = ev.target.closest("tr[data-orc]");
         if (tr) abrirDetalhe(Number(tr.dataset.orc));
