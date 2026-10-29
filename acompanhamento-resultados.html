@@ -300,6 +300,9 @@
   #assist-historico thead th { cursor: pointer; user-select: none; }
   /* --- Resultados > Histórico (mesmo visual do Histórico da Assistência) --- */
   #view-resultados td.lucr-neg { color: var(--vermelho); }
+  #res-cab th[data-ord] { cursor: pointer; user-select: none; }
+  #res-cab th[data-ord]:hover, #res-cab th.ord-ativa { color: var(--azul); }
+  #res-cab th .seta-ord { font-size: 0.7rem; margin-left: 3px; color: var(--azul); }
   .nota-meta-equipe { display: block; font-size: 0.68rem; font-weight: 600; color: var(--texto-suave); white-space: nowrap; }
   #res-historico .hist-controles { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-end; background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,40,70,0.06); margin-bottom: 16px; }
   #res-historico .hist-ctl { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin: 0; }
@@ -399,6 +402,7 @@
   /* acima da ficha do orçamento (.orc-zoom, 1000), que também abre conversas e pedidos */
   #overlay-hist { z-index: 1060; }
   #overlay-pedido { z-index: 1055; }
+  #overlay-ficha { z-index: 1050; }   /* ficha do cliente: acima das janelas das abas, abaixo do pedido e das conversas */
   .link-ped { color: var(--azul); font-weight: 700; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
   .link-ped:hover { text-decoration-style: solid; }
   .modal-hist { max-width: 860px; }
@@ -1306,18 +1310,18 @@
           <div class="tabela-scroll">
             <table>
               <thead>
-                <tr>
-                  <th>Vendedor</th>
-                  <th>Objetivo</th>
-                  <th>Produzido</th>
-                  <th>Créditos</th>
-                  <th>Devoluções</th>
-                  <th title="Títulos vencidos no mês anterior que seguiam em aberto no fim do mês (débito) e títulos já debitados que o cliente pagou depois (crédito)">Inadimplência</th>
-                  <th>Falta</th>
-                  <th>Final</th>
-                  <th>% Atingido</th>
-                  <th class="col-lucr oculto" title="Lucro = produzido - custo dos pedidos - créditos - devoluções × margem do mês + inadimplência">Lucro</th>
-                  <th class="col-lucr oculto" title="Lucratividade = lucro ÷ final">Lucr.</th>
+                <tr id="res-cab" title="Clique no título para ordenar; clique de novo para inverter">
+                  <th data-ord="vendedor">Vendedor</th>
+                  <th data-ord="objetivo">Objetivo</th>
+                  <th data-ord="produzido">Produzido</th>
+                  <th data-ord="creditos">Créditos</th>
+                  <th data-ord="devolucoes">Devoluções</th>
+                  <th data-ord="inadimplencia" title="Títulos vencidos no mês anterior que seguiam em aberto no fim do mês (débito) e títulos já debitados que o cliente pagou depois (crédito)">Inadimplência</th>
+                  <th data-ord="falta">Falta</th>
+                  <th data-ord="final">Final</th>
+                  <th data-ord="pct">% Atingido</th>
+                  <th class="col-lucr oculto" data-ord="lucro" title="Lucro = produzido - custo dos pedidos - créditos - devoluções × margem do mês + inadimplência">Lucro</th>
+                  <th class="col-lucr oculto" data-ord="lucr" title="Lucratividade = lucro ÷ final">Lucr.</th>
                 </tr>
               </thead>
               <tbody id="corpo-tabela">
@@ -3709,9 +3713,39 @@
     if (competencias.length) seletorMes.value = competencias[0];
   }
 
+  // ordem escolhida pelo título da coluna (guardada no navegador); sem escolha = a ordem padrão abaixo
+  const resOrdem = (() => { try { return JSON.parse(localStorage.getItem("res-ordem-v1")) || { col: null, desc: false }; } catch (e) { return { col: null, desc: false }; } })();
+  function valorResOrdem(l, col, competencia) {
+    const lu = lucrMap[l.vendedor_id + "|" + competencia];
+    switch (col) {
+      case "vendedor": return String(l.nome_curto || l.nome_completo || "").toLowerCase();
+      case "objetivo": return l.tem_meta === false ? null : Number(l.objetivo || 0);
+      case "falta": return l.tem_meta === false ? null : Math.max(Number(l.objetivo || 0) - Number(l.final || 0), 0);
+      case "pct": return l.tem_meta === false ? null : Number(l.pct_atingido || 0);
+      case "lucro": return lu ? Number(lu.lucro) : null;
+      case "lucr": return lu && lu.lucratividade != null ? Number(lu.lucratividade) : null;
+      default: return Number(l[col] || 0);
+    }
+  }
+  function marcarCabResultados() {
+    document.querySelectorAll("#res-cab th[data-ord]").forEach((th) => {
+      const s = th.querySelector(".seta-ord"); if (s) s.remove();
+      const ativa = th.dataset.ord === resOrdem.col;
+      th.classList.toggle("ord-ativa", ativa);
+      if (ativa) th.insertAdjacentHTML("beforeend", '<span class="seta-ord">' + (resOrdem.desc ? "▼" : "▲") + "</span>");
+    });
+  }
+
   function renderizarTabela(competencia) {
+    marcarCabResultados();
     const linhas = todasAsLinhas.filter(l => l.competencia === competencia)
       .sort((a, b) => {
+        if (resOrdem.col) {   // coluna escolhida; vazio sempre no fim
+          const x = valorResOrdem(a, resOrdem.col, competencia), z = valorResOrdem(b, resOrdem.col, competencia);
+          if (x == null || z == null) { if (x != null) return -1; if (z != null) return 1; }
+          else if (x !== z) return (x < z ? -1 : 1) * (resOrdem.desc ? -1 : 1);
+          return (a.nome_curto || a.nome_completo).localeCompare(b.nome_curto || b.nome_completo, "pt-BR");
+        }
         // quem já tem meta cadastrada vem primeiro, ordenado pelo % atingido;
         // quem ainda não tem meta aparece depois, do maior faturamento para o menor
         const metaA = a.tem_meta === false ? 0 : 1, metaB = b.tem_meta === false ? 0 : 1;
@@ -3829,6 +3863,13 @@
   }
 
   seletorMes.addEventListener("change", () => renderizarTabela(seletorMes.value));
+  document.getElementById("res-cab").addEventListener("click", (ev) => {
+    const th = ev.target.closest("th[data-ord]"); if (!th) return;
+    if (resOrdem.col === th.dataset.ord) resOrdem.desc = !resOrdem.desc;
+    else { resOrdem.col = th.dataset.ord; resOrdem.desc = th.dataset.ord !== "vendedor"; }
+    try { localStorage.setItem("res-ordem-v1", JSON.stringify(resOrdem)); } catch (e) {}
+    if (seletorMes.value) renderizarTabela(seletorMes.value);
+  });
 
   // --- Inadimplência: detalhe por vendedor (clique na linha) ---
   // crédito e devolução descontam do final — ficam em vermelho quando têm valor
@@ -5615,7 +5656,10 @@
       const el = ev.target.closest("[data-hist-cod]");
       if (!el || ev.target.closest("a")) return;
       ev.preventDefault(); ev.stopPropagation();
-      abrir(el.dataset.histCod, el.dataset.histNome, el.dataset.histGrupo === "1");
+      const conversas = () => abrir(el.dataset.histCod, el.dataset.histNome, el.dataset.histGrupo === "1");
+      // nome do cliente (data-hist-ficha) abre a Ficha do cliente; sem a aba Clientes ou se a ficha falhar, abre as conversas
+      if (el.dataset.histFicha === "1" && typeof ClientesCad !== "undefined" && podeVerAba("clientes")) ClientesCad.abrirFicha(Number(el.dataset.histCod), conversas);
+      else conversas();
     }, true);
 
     return { buscarResumos, resumo, celulaUltimo, ultimoEm, blocoResumo, linksSonax, marcador, abrir };
@@ -5676,7 +5720,7 @@
         (d.market_place === "S" ? ' <span class="pill-tipo pill-reativado">marketplace</span>' : "");
       const nCol = comEstoque ? 9 : 6;
       return '<div class="ped-cab">' +
-          campo("Cliente", '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(d.cod_cliente, d.cliente) + ">" + esc(d.cliente || "—") + '</span> <span class="cod-cliente">' + esc(d.cod_cliente) + "</span>" + selos, "largo") +
+          campo("Cliente", '<span class="link-hist" data-hist-ficha="1" title="Abrir a ficha do cliente" ' + HistCliente.marcador(d.cod_cliente, d.cliente) + ">" + esc(d.cliente || "—") + '</span> <span class="cod-cliente">' + esc(d.cod_cliente) + "</span>" + selos, "largo") +
           campo("CNPJ / CPF", esc(d.cnpj_cpf || "—")) +
           campo("Status", '<span class="pill-st st' + esc(d.status) + '">' + esc(d.status) + "</span> " + (faturado ? '<span class="cod-cliente">faturado</span> ' : "") + (d.intocado && comEstoque ? '<span class="pill-intocado">ninguém mexeu</span>' : "")) +
           campo("Endereço", esc(end || "—"), "largo") +
@@ -5841,13 +5885,6 @@
           const n = ev.target.closest("[data-ficha]");
           if (n) abrirFicha(Number(n.dataset.ficha));
         });
-        el("btn-fechar-ficha").addEventListener("click", fecharFicha);
-        el("overlay-ficha").addEventListener("click", (ev) => { if (ev.target.id === "overlay-ficha") fecharFicha(); });
-        // Esc fecha a ficha só quando o pedido e as conversas (que abrem por cima dela) já estão fechados
-        document.addEventListener("keydown", (ev) => {
-          if (ev.key === "Escape" && !el("overlay-ficha").classList.contains("oculto") &&
-              el("overlay-pedido").classList.contains("oculto") && el("overlay-hist").classList.contains("oculto")) fecharFicha();
-        });
         rpc("clientes_filtros", {}).then((d) => { opcoes = d; montarSelects(); }).catch(() => {});
         if (temFiltro()) buscar();
       }
@@ -5962,7 +5999,7 @@
 
     // --- Ficha do cliente ---
     function fecharFicha() { el("overlay-ficha").classList.add("oculto"); fichaCod = null; }
-    async function abrirFicha(cod) {
+    async function abrirFicha(cod, alternativa) {
       fichaCod = cod;
       el("ficha-titulo").textContent = "Ficha do cliente";
       el("ficha-corpo").innerHTML = '<div class="estado-vazio">Carregando a ficha…</div>';
@@ -5973,7 +6010,9 @@
         if (fichaCod !== cod) return;
         renderFicha(f);
       } catch (e) {
-        if (fichaCod === cod) el("ficha-corpo").innerHTML = '<div class="estado-vazio">Não foi possível abrir a ficha: ' + esc(e.message) + "</div>";
+        if (fichaCod !== cod) return;
+        if (alternativa) { fecharFicha(); alternativa(); return; }   // ex.: código de grupo que não é cliente: abre as conversas
+        el("ficha-corpo").innerHTML = '<div class="estado-vazio">Não foi possível abrir a ficha: ' + esc(e.message) + "</div>";
       }
     }
     function renderFicha(f) {
@@ -6034,6 +6073,15 @@
               "</td><td>" + fmtMoeda(Number(i.qtd) * Number(i.valunit)) + "</td><td>" + dataBR(i.dt_fatura) + "</td><td>" + PedidoDet.link(i.pedido) + "</td></tr>").join("") +
             "</tbody></table></div>");
     }
+
+    // a ficha abre de qualquer aba (nome do cliente), então os botões dela são ligados uma vez aqui
+    el("btn-fechar-ficha").addEventListener("click", fecharFicha);
+    el("overlay-ficha").addEventListener("click", (ev) => { if (ev.target.id === "overlay-ficha") fecharFicha(); });
+    // Esc fecha a ficha só quando o pedido e as conversas (que abrem por cima dela) já estão fechados
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape" && !el("overlay-ficha").classList.contains("oculto") &&
+          el("overlay-pedido").classList.contains("oculto") && el("overlay-hist").classList.contains("oculto")) { ev.stopImmediatePropagation(); fecharFicha(); }
+    }, true);
 
     return { iniciar, abrirFicha };
   })();
@@ -6569,7 +6617,7 @@
           '<td class="cor num"><b class="motivo-link" data-res-pedido="' + esc(x.pedido) + '" title="Abrir o pedido: itens, estoque e motivo">' + esc(x.pedido) + '</b><span class="sub">' + dataBR(x.data) + "</span></td>" +
           '<td class="cor num" style="text-align:left;" title="' + esc(x.nome_vend || "") + '">' + esc(vendCurto(x.nome_vend)) + "</td>" +
           '<td class="cor num">' + esc(x.cod_cliente) + "</td>" +
-          '<td class="cor quebra" style="text-align:left;"><span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" +
+          '<td class="cor quebra" style="text-align:left;"><span class="link-hist" data-hist-ficha="1" title="Abrir a ficha do cliente" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" +
             (x.cidade ? '<div class="atividade-cliente">' + esc([x.cidade, x.uf].filter(Boolean).join(" / ")) + "</div>" : "") + "</td>" +
           '<td class="cor num">' + fmtMoeda(x.valor_total) + "</td>" +
           '<td class="num">' + (x.pc_lucrat == null ? "—" : fmtDec(n(x.pc_lucrat), 1) + "%") + "</td>" +
@@ -8225,7 +8273,7 @@
             "<td>" + hhmm(x.hora_fatura) + "</td>" +
             "<td>" + PedidoDet.link(x.pedido) + (x.os ? ' <span class="atividade-cliente">OS ' + esc(x.os) + "</span>" : "") + "</td>" +
             "<td>" + esc(x.nota_fiscal || "—") + "</td>" +
-            '<td style="text-align:left;">' + (x.cod_cliente ? '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" : esc(x.cliente || "—")) + selos +
+            '<td style="text-align:left;">' + (x.cod_cliente ? '<span class="link-hist" data-hist-ficha="1" title="Abrir a ficha do cliente" ' + HistCliente.marcador(x.cod_cliente, x.cliente) + ">" + esc(x.cliente || "—") + "</span>" : esc(x.cliente || "—")) + selos +
               (x.cidade ? '<div class="atividade-cliente">' + esc([x.cidade, x.uf].filter(Boolean).join(" / ")) + "</div>" : "") + "</td>" +
             "<td>" + fmtInt(x.itens) + "</td>" +
             "<td>" + fmtMoeda(x.faturado) + "</td>" +
@@ -8673,7 +8721,7 @@
   // código do ERP antes do nome, atividade logo abaixo
   function celulaCliente(l) {
     return "<td>" + '<span class="cod-cliente">' + esc(String(l.grupo_id)) + "</span> " +
-      '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(l.grupo_id, l.cliente, true) + ">" + esc(l.cliente) + "</span>" +
+      '<span class="link-hist" data-hist-ficha="1" title="Abrir a ficha do cliente" ' + HistCliente.marcador(l.grupo_id, l.cliente, true) + ">" + esc(l.cliente) + "</span>" +
       rotuloGrupo(l.clientes_no_grupo) +
       (l.atividade ? '<div class="atividade-cliente">' + esc(l.atividade) + "</div>" : "") + "</td>";
   }
@@ -9799,7 +9847,7 @@
         '<tr data-orc="' + o.id + '">' +
           "<td>" + numeroTexto(o.numero) + (o.versao > 1 ? "<small>versão " + o.versao + "</small>" : "") + "</td>" +
           "<td>" + dataBR(o.criado_em) + "</td>" +
-          "<td>" + (o.cliente_codigo_erp ? '<span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">" + esc(o.cliente_nome) + "</span>" : esc(o.cliente_nome)) +
+          "<td>" + (o.cliente_codigo_erp ? '<span class="link-hist" data-hist-ficha="1" title="Abrir a ficha do cliente" ' + HistCliente.marcador(o.cliente_codigo_erp, o.cliente_nome, true) + ">" + esc(o.cliente_nome) + "</span>" : esc(o.cliente_nome)) +
             "<small>" + (o.cliente_codigo_erp ? "ERP " + esc(o.cliente_codigo_erp) : "cliente novo") +
             (o.cliente_documento ? " · " + formatarDocumento(o.cliente_documento) : "") + "</small></td>" +
           "<td>" + esc(o.criado_por_nome || "") + "</td>" +
@@ -10865,7 +10913,7 @@
           const tent = c.primeira_tentativa ? (diaSP(c.primeira_tentativa) === c.data_lista ? horaSP(c.primeira_tentativa) : dataHoraSP(c.primeira_tentativa)) : "—";
           const vezes = n(c.vezes_na_lista_30d);
           return "<tr><td>" + fmtInt(c.posicao) + "</td>" +
-            '<td class="ld-cli" style="text-align:left;white-space:normal"><span class="link-hist" title="Ver conversas e ligações" ' + HistCliente.marcador(c.codcliente, c.cliente, true) + ">" + esc(c.cliente || "—") + '</span> <span class="cod-cliente">' + esc(c.codcliente) + "</span>" +
+            '<td class="ld-cli" style="text-align:left;white-space:normal"><span class="link-hist" data-hist-ficha="1" title="Abrir a ficha do cliente" ' + HistCliente.marcador(c.codcliente, c.cliente, true) + ">" + esc(c.cliente || "—") + '</span> <span class="cod-cliente">' + esc(c.codcliente) + "</span>" +
               ((c.acao || c.motivo) ? '<div class="cod-cliente" style="font-weight:400">' + esc([c.acao, c.motivo].filter(Boolean).join(" · ")) + "</div>" : "") + "</td>" +
             "<td>" + situacao(c) + "</td>" +
             "<td>" + fmtInt(c.dias_sem_comprar) + "</td>" +
