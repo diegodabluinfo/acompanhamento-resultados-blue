@@ -299,6 +299,7 @@
   #assist-historico tfoot td { font-weight: 700; background: #f7fafd; border-top: 1px solid var(--borda); }
   #assist-historico thead th { cursor: pointer; user-select: none; }
   /* --- Resultados > Histórico (mesmo visual do Histórico da Assistência) --- */
+  #view-resultados td.lucr-neg { color: var(--vermelho); }
   .nota-meta-equipe { display: block; font-size: 0.68rem; font-weight: 600; color: var(--texto-suave); white-space: nowrap; }
   #res-historico .hist-controles { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-end; background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,40,70,0.06); margin-bottom: 16px; }
   #res-historico .hist-ctl { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; margin: 0; }
@@ -1315,6 +1316,8 @@
                   <th>Falta</th>
                   <th>Final</th>
                   <th>% Atingido</th>
+                  <th class="col-lucr oculto" title="Lucro = produzido - custo dos pedidos - créditos - devoluções × margem do mês + inadimplência">Lucro</th>
+                  <th class="col-lucr oculto" title="Lucratividade = lucro ÷ final">Lucr.</th>
                 </tr>
               </thead>
               <tbody id="corpo-tabela">
@@ -1348,6 +1351,7 @@
                 <button type="button" data-bloco="serie" class="ativa"><i class="hist-pt" style="background:#2a78d6"></i>Final × meta</button>
                 <button type="button" data-bloco="yoy" class="ativa"><i class="hist-pt" style="background:#eb6834"></i>vs. ano anterior</button>
                 <button type="button" data-bloco="tab" class="ativa">Tabela por vendedor</button>
+                <button type="button" data-bloco="lucro" class="ativa oculto" id="rh-btn-lucro"><i class="hist-pt" style="background:#1baf7a"></i>Lucratividade</button>
               </div>
             </div>
           </div>
@@ -1363,6 +1367,16 @@
               <span><span class="hist-tracejado"></span>Meta (desde jul/2026)</span>
             </div>
             <svg id="rh-g-serie" viewBox="0 0 980 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Barras do produzido por mês com a linha da meta"></svg>
+          </div>
+
+          <div class="hist-cartao oculto" id="rh-bloco-lucro">
+            <h3>Lucro e lucratividade por mês</h3>
+            <p class="hist-sub">Lucro = produzido − custo dos pedidos − créditos − devoluções × margem do mês + inadimplência. Lucratividade = lucro ÷ final.</p>
+            <div class="hist-legenda">
+              <span><i style="background:#1baf7a"></i>Lucro</span>
+              <span><i style="background:#123d80"></i>Lucratividade (%)</span>
+            </div>
+            <svg id="rh-g-lucro" viewBox="0 0 980 280" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Barras do lucro por mês e linha da lucratividade"></svg>
           </div>
 
           <div class="hist-cartao" id="rh-bloco-yoy">
@@ -3655,6 +3669,22 @@
     } catch (e) { return {}; }
   }
 
+  // lucratividade por vendedor e mês (resultados_lucratividade); só volta dados para quem tem a permissão resultados_lucratividade
+  let lucrMap = {};
+  async function buscarLucratividade() {
+    try {
+      const s = await garantirSessaoValida();
+      if (!s) return {};
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/resultados_lucratividade", { method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + s.access_token, "Content-Type": "application/json" }, body: "{}" });
+      if (!res.ok) return {};
+      const m = {};
+      (await res.json()).forEach((l) => { m[l.vendedor_id + "|" + l.competencia] = l; });
+      return m;
+    } catch (e) { return {}; }
+  }
+  const fmtLucrPct = (v) => v == null ? "—" : fmtDec(Number(v) * 100, 1) + "%";
+
   async function buscarResultados() {
     const res = await leitura(
       `${SUPABASE_URL}/rest/v1/v_metas_mensais_completo?select=*&order=competencia.desc,nome_completo.asc`
@@ -3697,7 +3727,10 @@
       return;
     }
 
-    let somaObjetivo = 0, somaProduzido = 0, somaCreditos = 0, somaDevolucoes = 0, somaInadimplencia = 0, somaFinal = 0;
+    let somaObjetivo = 0, somaProduzido = 0, somaCreditos = 0, somaDevolucoes = 0, somaInadimplencia = 0, somaFinal = 0, somaLucro = 0, somaFinalLucr = 0;
+    const verLucr = Object.keys(lucrMap).length > 0;
+    document.querySelectorAll("#view-resultados th.col-lucr").forEach((th) => th.classList.toggle("oculto", !verLucr));
+    const celLucr = (lu) => !verLucr ? "" : lu ? `<td class="${Number(lu.lucro) < 0 ? "lucr-neg" : ""}" title="Produzido ${fmtMoeda(lu.produzido)} − custo ${fmtMoeda(lu.custo)} = lucro bruto ${fmtMoeda(lu.lucro_bruto)} (${fmtLucrPct(lu.margem_bruta)}); − créditos ${fmtMoeda(lu.creditos)} − devoluções × margem ${fmtMoeda(lu.perda_devolucoes)} + inadimplência ${fmtMoeda(lu.inadimplencia)}">${fmtMoeda(lu.lucro)}</td><td class="${Number(lu.lucro) < 0 ? "lucr-neg" : ""}">${fmtLucrPct(lu.lucratividade)}</td>` : "<td>—</td><td>—</td>";
     const competenciaAtual = competencia;
 
     corpoTabela.innerHTML = linhas.map(l => {
@@ -3715,6 +3748,8 @@
       somaDevolucoes += devolucoes;
       somaInadimplencia += inadimplencia;
       somaFinal += final;
+      const lu = lucrMap[l.vendedor_id + "|" + competenciaAtual];
+      if (lu) { somaLucro += Number(lu.lucro || 0); somaFinalLucr += Number(lu.final || 0); }
       return `<tr class="vend-clicavel" data-vendedor="${l.vendedor_id}" data-competencia="${competenciaAtual}">
         <td title="${l.nome_completo}">${l.nome_curto || l.nome_completo}${semMeta ? ' <span class="pill-tipo pill-sem-meta">sem meta</span>' : ""}</td>
         <td>${semMeta ? "—" : fmtMoeda(objetivo)}</td>
@@ -3725,6 +3760,7 @@
         <td>${semMeta ? "—" : fmtMoeda(falta)}</td>
         <td>${fmtMoeda(final)}</td>
         <td>${semMeta ? "—" : `<span class="pct-pill ${classePct(l.pct_atingido)}">${fmtPct(l.pct_atingido)}</span>`}</td>
+        ${celLucr(lu)}
       </tr>`;
     }).join("");
 
@@ -3743,6 +3779,7 @@
         <td>${fmtMoeda(faltaTotal)}</td>
         <td>${fmtMoeda(somaFinal)}</td>
         <td><span class="pct-pill ${classePct(pctTotal)}">${fmtPct(pctTotal)}</span></td>
+        ${verLucr ? `<td class="${somaLucro < 0 ? "lucr-neg" : ""}">${fmtMoeda(somaLucro)}</td><td>${somaFinalLucr > 0 ? fmtLucrPct(somaLucro / somaFinalLucr) : "—"}</td>` : ""}
       </tr>`;
 
     const ehAutomatico = mesCorteAutomatico && competencia >= mesCorteAutomatico;
@@ -3755,14 +3792,16 @@
     appIniciado = true;
     corpoTabela.innerHTML = '<tr><td colspan="9" class="estado-vazio">Carregando...</td></tr>';
     try {
-      const [linhas, cutoff, sincronizacao, equipe] = await Promise.all([
+      const [linhas, cutoff, sincronizacao, equipe, lucr] = await Promise.all([
         buscarResultados(),
         buscarConfigAutomacao(),
         buscarUltimaSincronizacao(),
-        buscarMetasEquipe()
+        buscarMetasEquipe(),
+        buscarLucratividade()
       ]);
       todasAsLinhas = linhas;
       metasEquipe = equipe;
+      lucrMap = lucr;
       mesCorteAutomatico = cutoff;
       preencherSeletorMes(linhas);
       if (seletorMes.value) renderizarTabela(seletorMes.value);
@@ -3815,7 +3854,7 @@
     tr.classList.add("aberta");
     const det = document.createElement("tr");
     det.className = "detalhe-vend";
-    det.innerHTML = '<td colspan="9"><div class="det-vend-box">Carregando...</div></td>';
+    det.innerHTML = '<td colspan="' + (Object.keys(lucrMap).length ? 11 : 9) + '"><div class="det-vend-box">Carregando...</div></td>';
     tr.after(det);
     const box = det.querySelector(".det-vend-box");
     const vend = tr.dataset.vendedor, comp = tr.dataset.competencia;
@@ -6010,8 +6049,9 @@
     const MES3 = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
     let linhas = null, carregando = false, ligado = false;
     const metaEquipe = {};   // "2026-07" -> meta da equipe do mês
+    let lucrHist = null;     // "vendedor|2026-07" -> {lucro, final}; null = sem a permissão resultados_lucratividade
     let periodo = 12, vendedor = "";
-    const blocos = { serie: true, yoy: true, tab: true };
+    const blocos = { serie: true, yoy: true, tab: true, lucro: true };
     let ordem = { col: "total", dir: -1 };
 
     async function rpc(nome, corpo) {
@@ -6071,6 +6111,8 @@
         a.prod += Number(l.produzido || 0);
         a.cred += Number(l.creditos || 0); a.dev += Number(l.devolucoes || 0); a.inad += Number(l.inadimplencia || 0);
         a.final += Number(l.final || 0);   // final = produzido - créditos - devoluções + inadimplência (igual ao TOTAL da tela Mês)
+        const lu = lucrHist && lucrHist[l.vendedor_id + "|" + k];
+        if (lu) { a.lucro = (a.lucro || 0) + Number(lu.lucro || 0); a.finalLucr = (a.finalLucr || 0) + Number(lu.final || 0); }
         if (l.tem_meta && l.objetivo != null) { a.meta += Number(l.objetivo); a.temMeta = true; }
         m.set(k, a);
       }
@@ -6123,6 +6165,12 @@
             { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token } });
           if (r.ok) (await r.json()).forEach((l) => { metaEquipe[comp(l.competencia)] = Number(l.objetivo); });
         } catch (e) { /* sem meta da equipe: usa a soma das individuais */ }
+        try {
+          const lu = await rpc("resultados_lucratividade");
+          lucrHist = {};
+          lu.forEach((l) => { lucrHist[l.vendedor_id + "|" + comp(l.competencia)] = l; });
+          el("rh-btn-lucro").classList.remove("oculto");
+        } catch (e) { lucrHist = null; }   // sem a permissão: o bloco não aparece
         const nomes = new Map();
         linhas.forEach((l) => nomes.set(String(l.vendedor_id), l.nome_curto || l.nome_completo));
         el("rh-vendedor").innerHTML = '<option value="">Equipe toda</option>' + [...nomes].sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
@@ -6140,10 +6188,47 @@
       el("rh-bloco-serie").classList.toggle("oculto", !blocos.serie);
       el("rh-bloco-yoy").classList.toggle("oculto", !blocos.yoy);
       el("rh-bloco-tab").classList.toggle("oculto", !blocos.tab);
+      el("rh-bloco-lucro").classList.toggle("oculto", !blocos.lucro || !lucrHist);
       renderKpis();
       if (blocos.serie) renderSerie();
       if (blocos.yoy) renderYoy();
       if (blocos.tab) renderTabela();
+      if (blocos.lucro && lucrHist) renderLucro();
+    }
+
+    function renderLucro() {
+      const svg = el("rh-g-lucro"); svg.innerHTML = "";
+      const m = porMes(), meses = mesesDoPeriodo();
+      const W = 980, H = 280, E = 62, D = 52, T = 22, B = 34, aw = W - E - D, ah = H - T - B;
+      const val = (k) => (m.get(k) || {}).lucro || 0;
+      const pct = (k) => { const a = m.get(k) || {}; return a.finalLucr ? a.lucro / a.finalLucr * 100 : null; };
+      const max = Math.max(1, ...meses.map(val)), minV = Math.min(0, ...meses.map(val));
+      const { topo, passo } = escala(max - minV);
+      const base0 = minV < 0 ? -Math.ceil(-minV / passo) * passo : 0;
+      const y = (v) => T + ah - (v - base0) / (topo) * ah;
+      for (let v = base0; v <= base0 + topo + 1e-9; v += passo) {
+        svgEl("line", { x1: E, x2: W - D, y1: y(v), y2: y(v), class: v ? "grade" : "eixo" }, svg);
+        texto(svg, E - 8, y(v) + 4, moedaCurta(v), { class: "gy", "text-anchor": "end" });
+      }
+      const ps = meses.map(pct).filter((v) => v != null);
+      const pMax = Math.max(40, ...ps.map((v) => Math.ceil(v / 10) * 10)), pMin = Math.min(0, ...ps.map((v) => Math.floor(v / 10) * 10));
+      const yp = (v) => T + ah - (v - pMin) / (pMax - pMin) * ah;
+      for (let v = pMin; v <= pMax; v += 10) texto(svg, W - D + 8, yp(v) + 4, v + "%", { class: "gy", "text-anchor": "start" });
+      const slot = aw / Math.max(1, meses.length), bw = Math.min(40, slot * 0.6), pontos = [];
+      meses.forEach((k, i) => {
+        const v = val(k), cx = E + slot * i + slot / 2;
+        svgEl("rect", { x: cx - bw / 2, y: Math.min(y(v), y(0)), width: bw, height: Math.abs(y(0) - y(v)), rx: 3, fill: v < 0 ? "#d6453a" : "#1baf7a" }, svg);
+        if (meses.length <= 24 || i % 2 === 0) texto(svg, cx, H - B + 16, rotMes(k), { class: "gx", "text-anchor": "middle" });
+        const p = pct(k);
+        if (p != null) { pontos.push([cx, yp(p)]); if (meses.length <= 14) texto(svg, cx, yp(p) - 8, pct1(p), { class: "rotulo", "text-anchor": "middle", fill: "#123d80" }); }
+        const a = m.get(k) || {};
+        const alvo = svgEl("rect", { x: E + slot * i, y: T, width: slot, height: ah, class: "alvo" }, svg);
+        ligarDica(alvo, "<b>" + nomeMesLongo(k) + "</b>" + ld("#1baf7a", "Lucro", fmtMoeda(v)) + ld("", "Final", fmtMoeda(a.finalLucr || 0)) + ld("#123d80", "Lucratividade", p == null ? "—" : pct1(p)));
+      });
+      if (pontos.length) {
+        svgEl("polyline", { points: pontos.map((p) => p.join(",")).join(" "), fill: "none", stroke: "#123d80", "stroke-width": 2 }, svg);
+        pontos.forEach(([x, yy]) => svgEl("circle", { cx: x, cy: yy, r: 3.5, fill: "#fff", stroke: "#123d80", "stroke-width": 2 }, svg));
+      }
     }
 
     function renderKpis() {
@@ -6164,7 +6249,8 @@
         kpi("Final no período", fmtMoeda(total), "bruto " + fmtMoeda(soma(meses, "prod")) + " · descontos " + fmtMoeda(soma(meses, "prod") - total) + " · " + quem) +
         kpi("Comparado ao período anterior", varPct == null ? "—" : '<span style="color:' + (varPct >= 0 ? "var(--verde)" : "var(--vermelho)") + '">' + (varPct >= 0 ? "+" : "") + pct1(varPct) + "</span>",
             totalAnt ? "antes: " + fmtMoeda(totalAnt) : "sem dados do período anterior") +
-        kpi("Média por mês", fmtMoeda(meses.length ? total / meses.length : 0), "") +
+        (lucrHist ? (() => { const lu = soma(meses, "lucro"), fl = soma(meses, "finalLucr"); return kpi("Lucro no período", fmtMoeda(lu), fl ? "lucratividade " + pct1(lu / fl * 100) : ""); })()
+                  : kpi("Média por mês", fmtMoeda(meses.length ? total / meses.length : 0), "")) +
         kpi("Melhor mês", melhor ? nomeMesLongo(melhor.k) : "—", melhor ? fmtMoeda(melhor.v) : "") +
         kpi("% da meta (média)", pctMedio == null ? "—" : pct1(pctMedio), comMeta.length ? comMeta.length + (comMeta.length === 1 ? " mês com meta" : " meses com meta") : "meta só desde jul/2026");
       el("rh-sub-serie").textContent = (vendedor ? quemTxt : "Equipe toda") + " · " + (meses.length ? rotMes(meses[0]) + " a " + rotMes(meses[meses.length - 1]) : "") +
