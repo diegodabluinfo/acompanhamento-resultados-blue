@@ -1229,7 +1229,7 @@
   .imp-arq-nome { font-weight: 700; word-break: break-all; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .imp-arq-meta { font-size: 0.8rem; color: var(--texto-suave); margin-top: 3px; line-height: 1.5; }
   .imp-arq-meta b { color: var(--texto); }
-  .imp-arq-tipo select { padding: 6px 8px; font-size: 0.85rem; border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
+  .imp-tipo { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; background: #e4eefc; color: #1a4f94; white-space: nowrap; }
   .imp-arq-prob { grid-column: 1 / -1; font-size: 0.8rem; color: var(--erro); }
   .imp-arq-aviso { grid-column: 1 / -1; font-size: 0.8rem; color: var(--amarelo); }
   .imp-arq-res { grid-column: 1 / -1; font-size: 0.8rem; }
@@ -2879,18 +2879,18 @@
         <div id="importar-liberada" class="oculto">
           <div class="form-card">
             <h2>Importar do ERP</h2>
-            <p class="sub">Os arquivos exportados do Vanguarda (BlueSys) entram aqui e o painel se atualiza sozinho em até 1 minuto.</p>
+            <p class="sub">Os arquivos do BlueSys entram aqui e o painel se atualiza sozinho em até 1 minuto.</p>
             <div id="aviso-importar" class="aviso"></div>
             <div class="imp-passos">
-              <div><b>1.</b> No BlueSys (tela Comandos de pesquisa), rode o SQL da rodada e clique em <b>GravXls</b>. O arquivo <code>.xls</code> que ele gera entra aqui direto. (CSV também serve; o GravaTxt do SVInfo costuma falhar.)</div>
-              <div><b>2.</b> Arraste os arquivos para a área abaixo — pode ser vários de uma vez — e confira o que foi reconhecido (tipo, linhas, período).</div>
-              <div><b>3.</b> Clique em <b>Enviar</b>. O resultado de cada arquivo aparece aqui embaixo; a barra do rodapé passa a mostrar a nova data.</div>
+              <div><b>1.</b> No BlueSys, rode o SQL da rodada e clique em <b>GravXls</b>.</div>
+              <div><b>2.</b> Arraste os arquivos <code>.xls</code> para a área abaixo (pode ser vários de uma vez).</div>
+              <div><b>3.</b> Clique em <b>Enviar</b>. Pronto — em até 1 minuto o painel está atualizado.</div>
             </div>
             <div id="imp-rodadas" class="imp-rodadas"></div>
             <div id="imp-drop" class="imp-drop" tabindex="0" role="button" aria-label="Escolher arquivos para importar">
-              <input type="file" id="imp-arquivo" multiple accept=".xls,.csv,.txt,.tsv,application/vnd.ms-excel,text/csv,text/plain" class="oculto">
+              <input type="file" id="imp-arquivo" multiple accept=".xls,application/vnd.ms-excel" class="oculto">
               <div class="imp-drop-txt"><b>Arraste os arquivos aqui</b> ou <span class="imp-link">clique para escolher</span></div>
-              <div class="imp-drop-sub">XLS do GravXls ou CSV · vários arquivos de uma vez · o tipo é reconhecido pelo cabeçalho</div>
+              <div class="imp-drop-sub">arquivos .xls do GravXls · pode arrastar vários de uma vez</div>
             </div>
             <div id="imp-lista" class="imp-lista"></div>
             <div class="imp-acoes">
@@ -2922,9 +2922,8 @@
             </div>
           </div>
           <div class="rodape-nota">
-            Cada arquivo vira um lote. A rotina do painel (roda a cada minuto) valida, converte os formatos brasileiros (datas e vírgula decimal)
-            e grava nas tabelas do ERP dentro do painel. Se algo der errado, nada do lote é gravado e o motivo aparece em Situação.
-            Mandar o mesmo arquivo duas vezes não duplica nada: o que já existe é atualizado.
+            Pode mandar o mesmo arquivo mais de uma vez: nada duplica, o que já existe é atualizado.
+            Se algo der errado, nada daquele arquivo é gravado e o motivo aparece em Situação.
           </div>
         </div>
       </div>
@@ -11945,6 +11944,7 @@
       ["20:30", ["pedidos", "produtos", "contareceber", "clientes"]]
     ];
     const COLUNAS_DATA = ["dt_fatura", "data_entrada", "emissao", "vencimento", "dt_alteracao", "data"];
+    const PLURAL = { pedidos: "pedidos", produtos: "produtos", contareceber: "títulos", os: "ordens de serviço", clientes: "clientes" };
     let contrato = null, arquivos = [], enviando = false, pollTimer = null, ligado = false, seq = 0;
     let el = null;
 
@@ -12144,12 +12144,13 @@
           if (ehBIFF(bytes)) {                                   // GravXls do SVInfo (Excel 4.0)
             const x = lerBIFF(buf); tabela = x.linhas; enc = x.enc; sep = "";
           } else if (ehOLE(bytes) || ehZIP(bytes)) {
-            throw new Error("Este Excel é do formato novo (97+ / .xlsx). Use o botão GravXls do SVInfo (gera Excel 4.0) ou salve como CSV.");
+            throw new Error("Este arquivo não veio do botão GravXls do BlueSys. Rode o SQL de novo e clique em GravXls.");
           } else {
             const t = decodificar(buf); sep = detectarSeparador(t.texto); enc = t.enc;
             tabela = lerCSV(t.texto, sep);
+            if (tabela.length < 2 || tabela[0].length < 2) throw new Error("Este arquivo não veio do botão GravXls do BlueSys. Rode o SQL de novo e clique em GravXls.");
           }
-          if (tabela.length < 2) throw new Error("Arquivo sem linhas (só o cabeçalho, ou vazio).");
+          if (tabela.length < 2) throw new Error("O arquivo veio vazio (só o cabeçalho). Rode o SQL de novo e clique em GravXls.");
           const cabecalho = tabela[0].map(normalizarCabecalho);
           const repetidas = cabecalho.filter((h, i) => h && cabecalho.indexOf(h) !== i);
           if (repetidas.length) throw new Error("Coluna repetida no cabeçalho: " + [...new Set(repetidas)].join(", ") + ". Ajuste o SQL para ter nomes únicos.");
@@ -12166,8 +12167,8 @@
     function aplicarTipo(a, tipo) {
       const av = avaliarTipo(tipo, a.cabecalho);
       a.tipo = tipo; a.problemas = []; a.avisos = [];
-      if (!av.completo) a.problemas.push("Faltam colunas obrigatórias de " + (ROTULOS[tipo] || tipo) + ": " + av.faltam.join(", "));
-      if (av.ignoradas.length) a.avisos.push("Colunas que o painel não conhece e vão ser ignoradas: " + av.ignoradas.join(", "));
+      if (!av.completo) a.problemas.push("Não é o arquivo de nenhum SQL do painel. Parece " + (ROTULOS[tipo] || tipo) + ", mas faltam as colunas " + av.faltam.join(", ") + ". Rode o SQL original e exporte de novo.");
+      if (av.ignoradas.length) console.info("Importar do ERP: colunas do arquivo que o painel não usa:", av.ignoradas.join(", "));
       // período (quando o arquivo tem uma coluna de data conhecida)
       a.periodo = null;
       const colData = COLUNAS_DATA.find((c) => a.cabecalho.indexOf(c) >= 0);
@@ -12256,8 +12257,9 @@
     }
     function fmtN(n) { return Number(n || 0).toLocaleString("pt-BR"); }
     function rotuloSituacao(s) {
-      return { enviando: "enviando", recebido: "na fila", processando: "processando", ok: "ok", parcial: "ok com avisos", erro: "erro", cancelado: "cancelado",
-               lendo: "lendo", pronto: "pronto", invalido: "não dá para enviar", falhou: "falhou" }[s] || s;
+      return { enviando: "enviando", recebido: "enviado, o painel está gravando", processando: "gravando", ok: "importado", parcial: "importado com aviso",
+               erro: "não importado", cancelado: "cancelado", lendo: "lendo o arquivo", pronto: "pronto para enviar", invalido: "não dá para enviar",
+               falhou: "falha no envio, clique em Enviar de novo" }[s] || s;
     }
     function resumoResultado(l) {
       if (!l) return "";
@@ -12266,21 +12268,17 @@
       if (l.situacao === "recebido") return '<span style="color:var(--texto-suave)">aguardando a rotina (roda a cada minuto)</span>';
       if (l.situacao === "processando") return '<span style="color:var(--texto-suave)">gravando…</span>';
       if (l.situacao === "enviando") return '<span style="color:var(--texto-suave)">' + fmtN(l.linhas) + " linhas recebidas até agora</span>";
-      const d = l.detalhe || {}, partes = [];
+      const d = l.detalhe || {}, frases = [];
       Object.keys(d).forEach((k) => {
         const v = d[k];
-        if (!v || typeof v !== "object" || Array.isArray(v)) return;
-        let t = (TABELAS[k] || k) + ": ";
-        const seg = [];
-        if (v.lidas != null) seg.push(fmtN(v.lidas) + " lidas");
-        if (v.gravadas != null) seg.push(fmtN(v.gravadas) + " gravadas");
-        if (v.apagadas) seg.push(fmtN(v.apagadas) + " apagadas");
-        if (v.mudancas_status) seg.push(fmtN(v.mudancas_status) + " mudanças de status");
-        if (v.de && v.ate) seg.push("janela " + dataBR(v.de) + " a " + dataBR(v.ate));
-        partes.push('<span class="imp-res-linha">' + esc(t + seg.join(" · ")) + "</span>");
+        if (!v || typeof v !== "object" || Array.isArray(v) || v.gravadas == null) return;
+        let f = fmtN(v.gravadas) + " " + (TABELAS[k] || k) + (v.gravadas === 1 ? " gravado" : " gravados");
+        if (v.apagadas) f += " (" + fmtN(v.apagadas) + " que sumiram do ERP foram apagados)";
+        if (v.mudancas_status) f += " · " + fmtN(v.mudancas_status) + " mudanças de status";
+        frases.push(f);
       });
+      const partes = frases.length ? ['<span class="imp-res-linha">' + esc(frases.join(" · ")) + "</span>"] : [];
       (d.avisos || []).forEach((av) => partes.push('<span class="imp-res-linha" style="color:var(--amarelo)">&#9888; ' + esc(av) + "</span>"));
-      if (d.segundos != null) partes.push('<span class="imp-res-linha" style="color:var(--texto-suave)">' + d.segundos + " s</span>");
       return partes.join("");
     }
     function renderRodadas() {
@@ -12300,16 +12298,12 @@
       e.lista.innerHTML = arquivos.map((a) => {
         const cls = a.estado === "invalido" || a.estado === "falhou" || a.estado === "erro" ? " erro" : (a.estado === "ok" || a.estado === "parcial" ? " ok" : "");
         const meta = [];
-        if (a.linhas) meta.push("<b>" + fmtN(a.linhas.length) + "</b> linhas" + (a.registros != null ? " · <b>" + fmtN(a.registros) + "</b> registros" : ""));
-        if (a.periodo) meta.push(a.periodo.coluna + " de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
-        if (a.enc) meta.push(a.enc + (a.sep ? " · separador " + esc(a.sep) : ""));
-        meta.push((a.tamanho / 1024).toFixed(0) + " KB");
-        const podeTrocar = a.estado === "pronto" || a.estado === "invalido" || a.estado === "falhou";
-        const tipoHtml = a.cabecalho
-          ? '<div class="imp-arq-tipo"><select data-id="' + a.id + '"' + (podeTrocar ? "" : " disabled") + ">" +
-              tipos().map((t) => '<option value="' + t + '"' + (t === a.tipo ? " selected" : "") + ">" + esc(ROTULOS[t] || t) + "</option>").join("") +
-            "</select></div>"
-          : "";
+        if (a.linhas && a.estado !== "invalido") {
+          const nome = PLURAL[a.tipo] || "registros";
+          meta.push(a.registros != null ? "<b>" + fmtN(a.registros) + "</b> " + nome + " (" + fmtN(a.linhas.length) + " linhas)" : "<b>" + fmtN(a.linhas.length) + "</b> linhas");
+          if (a.periodo) meta.push("de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
+        }
+        const tipoHtml = (a.cabecalho && a.estado !== "invalido") ? '<div class="imp-arq-tipo"><span class="imp-tipo">' + esc(ROTULOS[a.tipo] || a.tipo) + "</span></div>" : "";
         const st = '<span class="imp-st ' + esc(a.estado) + '">' + esc(rotuloSituacao(a.estado)) + "</span>";
         const barra = a.estado === "enviando" ? '<div class="imp-barra"><div style="width:' + Math.round(a.progresso * 100) + '%"></div></div>' : "";
         const cancel = (a.estado === "recebido" && a.lote) ? ' <button type="button" class="imp-btn-x" data-cancelar="' + a.lote + '">cancelar</button>' : "";
@@ -12352,10 +12346,6 @@
       ["dragenter", "dragover"].forEach((t) => e.drop.addEventListener(t, (ev) => { ev.preventDefault(); e.drop.classList.add("sobre"); }));
       ["dragleave", "drop"].forEach((t) => e.drop.addEventListener(t, (ev) => { ev.preventDefault(); e.drop.classList.remove("sobre"); }));
       e.drop.addEventListener("drop", (ev) => adicionarArquivos(Array.from(ev.dataTransfer.files || [])));
-      e.lista.addEventListener("change", (ev) => {
-        const sel = ev.target.closest("select[data-id]"); if (!sel) return;
-        const a = arquivos.find((x) => x.id === Number(sel.dataset.id)); if (a && a.cabecalho) { aplicarTipo(a, sel.value); render(); }
-      });
       document.getElementById("view-importar").addEventListener("click", (ev) => {
         const b = ev.target.closest("button[data-cancelar]"); if (!b) return;
         b.disabled = true; cancelarLote(Number(b.dataset.cancelar));
