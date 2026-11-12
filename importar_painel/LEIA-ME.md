@@ -9,11 +9,11 @@ Rode no BlueSys/SVInfo, tela **Comandos de pesquisa**: **Executa → GravXls**. 
 
 | Arquivo | O que traz | Janela | Rodadas |
 |---|---|---|---|
-| `1_pedidos.sql` | pedido + itens (uma linha por item, prefixo `IT_`), com cancelados | faturados/criados nos últimos **8 dias** + todos os **abertos** dos últimos 90 dias | 09:50 · 12:40 · 15:40 · 20:30 |
-| `2_produtos.sql` | produto, estoque, reserva, preço base, custo, faixa, fatores 04/07/08, promoção | BLUE: **ativos** + alterados em 8 dias + com promoção | 09:50 · 12:40 · 15:40 · 20:30 |
-| `3_contas_receber.sql` | títulos (33 colunas) | **em aberto** + emitidos/quitados/cancelados nos últimos **60 dias** | 09:50 · 20:30 |
+| `1_pedidos.sql` | pedido + itens (uma linha por item, prefixo `IT_`), com cancelados | faturados/criados nos últimos **8 dias** + todos os **abertos** dos últimos 90 dias | 09:50 · 13:15 · 15:40 · 18:30 |
+| `2_produtos.sql` | produto, estoque, reserva, preço base, custo, faixa, fatores 04/07/08, promoção | BLUE: **ativos** + alterados em 8 dias + com promoção | 09:50 · 13:15 · 15:40 · 18:30 |
+| `3_contas_receber.sql` | títulos (33 colunas) | **em aberto** + emitidos/quitados/cancelados nos últimos **60 dias** | 09:50 · 18:30 |
 | `4_os.sql` | OS + itens (prefixo `IT_`) | **abertas** (status 1, 2, 3, 4, 6) + movimentadas nos últimos **90 dias** | 09:50 · 15:40 |
-| `5_clientes.sql` | cadastro completo (40 colunas) + atividade principal | **completo** (39 mil linhas, ~4 MB — o ERP não tem data de alteração confiável em CLIENTES) | 20:30 |
+| `5_clientes.sql` | cadastro completo (40 colunas) + atividade principal | **completo** (39 mil linhas, ~4 MB — o ERP não tem data de alteração confiável em CLIENTES) | 18:30 |
 | `6_cadastros_ocasional/*.sql` | vendedores, formas de pagamento, tipos, atividades, contatos, tabelas de preço, faixas, fatores, kits, promoções | completo | só quando mudar algo no Vanguarda (vendedor novo, tabela nova, kit novo…) |
 
 Depois de exportar, arraste os arquivos para **Cadastros → Importar do ERP** no painel. O tipo é reconhecido pelo cabeçalho; o nome do arquivo é só para organização.

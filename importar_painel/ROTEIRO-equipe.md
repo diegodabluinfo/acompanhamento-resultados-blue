@@ -7,9 +7,11 @@
 | Rodada | Rode estes SQLs | Para quê |
 |---|---|---|
 | **09:50** | 1 PEDIDOS · 2 PRODUTOS · 3 CONTAS A RECEBER · 4 OS | a cobrança automática das 10h precisa dos títulos de hoje |
-| **12:40** | 1 PEDIDOS · 2 PRODUTOS | orçamentos da tarde com preço e estoque certos |
+| **13:15** (volta do almoço) | 1 PEDIDOS · 2 PRODUTOS | orçamentos da tarde com preço e estoque certos |
 | **15:40** | 1 PEDIDOS · 2 PRODUTOS · 4 OS | pico da tarde |
-| **20:30** | 1 PEDIDOS · 2 PRODUTOS · 3 CONTAS A RECEBER · 5 CLIENTES | fecha o dia: lista do dia, ranking e recepção de amanhã |
+| **18:30** (quem sair por último — Luiz ou Lucas; pode ser 18:15) | 1 PEDIDOS · 2 PRODUTOS · 3 CONTAS A RECEBER · 5 CLIENTES | fecha o dia: lista do dia, ranking e recepção de amanhã |
+
+Na tela, os horários do dia aparecem como etiquetas: o arquivo fica **riscado** quando entra, a rodada fica **verde** quando completa, **vermelha** quando passou do horário sem tudo, e **azul** na próxima a fazer. A barra do rodapé mostra a próxima importação prevista e fica vermelha quando atrasa.
 
 Na dúvida, mande os 5 — repetir arquivo não faz mal.
 

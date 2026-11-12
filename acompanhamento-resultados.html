@@ -172,8 +172,8 @@
   }
   .barra-sinc b { color: var(--texto); font-weight: 600; }
   .barra-sinc .sinc-sep { margin: 0 8px; color: var(--borda); }
-  .barra-sinc.atrasada { background: #fff6e5; color: #855200; border-top-color: #f0dcae; }
-  .barra-sinc.atrasada b { color: #6b4100; }
+  .barra-sinc.atrasada { background: var(--erro-fundo); color: var(--erro); border-top-color: #f2b8b0; }
+  .barra-sinc.atrasada b { color: var(--erro); }
 
   .card-tabela {
     background: #fff;
@@ -1221,6 +1221,12 @@
   .imp-rodada { border: 1px solid var(--borda); border-radius: 10px; padding: 6px 10px; font-size: 0.8rem; background: #fbfcfe; color: var(--texto-suave); }
   .imp-rodada b { color: var(--azul-escuro); margin-right: 6px; }
   .imp-rodada.agora { border-color: var(--azul); box-shadow: 0 0 0 2px rgba(30,95,191,0.12); color: var(--texto); }
+  .imp-rodada.feita { background: var(--sucesso-fundo); border-color: #bfe3cc; color: var(--texto-suave); }
+  .imp-rodada.feita b { color: var(--sucesso); }
+  .imp-rodada.atrasada { background: var(--erro-fundo); border-color: #f2b8b0; color: var(--erro); }
+  .imp-rodada.atrasada b { color: var(--erro); }
+  .imp-rodada s { color: var(--texto-suave); opacity: 0.75; }
+  .imp-rodada .imp-rodada-tag { margin-left: 6px; font-size: 0.72rem; font-weight: 700; }
   .imp-drop { border: 2px dashed var(--borda); border-radius: 14px; padding: 26px 16px; text-align: center; cursor: pointer; background: #fbfcfe; transition: border-color .15s, background .15s; }
   .imp-drop:hover, .imp-drop:focus, .imp-drop.sobre { border-color: var(--azul); background: #f1f6ff; outline: none; }
   .imp-drop-txt { font-size: 0.98rem; }
@@ -3779,15 +3785,16 @@
     try {
       // v_painel_frescor devolve as duas datas numa linha só e respeita o cadastro de acesso
       // 31/10/2026: a view também devolve a próxima rodada prevista e a anterior (horários em automacao_config)
-      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_painel_frescor?select=carregado_em,dt_fatura,proxima_sincronizacao,sincronizacao_prevista_anterior&limit=1`);
+      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_painel_frescor?select=carregado_em,dt_fatura,proxima_sincronizacao,sincronizacao_prevista_anterior,horarios&limit=1`);
       const linha = res.ok ? (await res.json())[0] : null;
       return {
         carregadoEm: (linha && linha.carregado_em) || null,
         dtFatura: (linha && linha.dt_fatura) || null,
         proxima: (linha && linha.proxima_sincronizacao) || null,
-        previstaAnterior: (linha && linha.sincronizacao_prevista_anterior) || null
+        previstaAnterior: (linha && linha.sincronizacao_prevista_anterior) || null,
+        horarios: (linha && Array.isArray(linha.horarios)) ? linha.horarios.map((t) => String(t).slice(0, 5)) : null   // ["09:50", ...] (12/11: a tela Importar usa)
       };
-    } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null, proxima: null, previstaAnterior: null }; }
+    } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null, proxima: null, previstaAnterior: null, horarios: null }; }
   }
 
   // --- barra fixa de sincronização do ERP (31/10/2026) ---
@@ -3828,8 +3835,8 @@
       const [ano, mes, dia] = s.dtFatura.split("-");
       partes.push("vendas faturadas até <b>" + dia + "/" + mes + "/" + ano + "</b>");
     }
-    if (s.proxima) partes.push("próxima importação <b>" + quandoProxima(s.proxima) + "</b>");
-    if (atrasada) partes.unshift("&#9888; Importação atrasada (prevista " + fmtDiaHora(s.previstaAnterior) + ")");
+    if (s.proxima) partes.push("próxima importação prevista <b>" + quandoProxima(s.proxima) + "</b>");
+    if (atrasada) partes.unshift("&#9888; <b>Importação atrasada</b> — a das " + fmtDiaHora(s.previstaAnterior).replace(" às ", " ") + " ainda não foi feita");
     barraSinc.innerHTML = partes.join('<span class="sinc-sep">·</span>');
     barraSinc.classList.toggle("atrasada", atrasada);
     barraSinc.classList.remove("oculto");
@@ -11945,12 +11952,15 @@
       produtos_promocao_erp: "promoções", contareceber_erp: "títulos", os_erp: "OS", os_itens_erp: "itens de OS",
       clientes_erp: "clientes", clientes_atividades_erp: "atividades de cliente"
     };
-    const RODADAS = [
-      ["09:50", ["pedidos", "produtos", "contareceber", "os"]],
-      ["12:40", ["pedidos", "produtos"]],
-      ["15:40", ["pedidos", "produtos", "os"]],
-      ["20:30", ["pedidos", "produtos", "contareceber", "clientes"]]
+    // horários vêm de automacao_config (via v_painel_frescor); aqui só o que entra em cada rodada, na ordem
+    const RODADAS_ARQUIVOS = [
+      ["pedidos", "produtos", "contareceber", "os"],
+      ["pedidos", "produtos"],
+      ["pedidos", "produtos", "os"],
+      ["pedidos", "produtos", "contareceber", "clientes"]
     ];
+    const HORARIOS_PADRAO = ["09:50", "13:15", "15:40", "18:30"];
+    let horarios = null, ultimosLotes = [], relogio = null;
     const COLUNAS_DATA = ["dt_fatura", "data_entrada", "emissao", "vencimento", "dt_alteracao", "data"];
     const PLURAL = { pedidos: "pedidos", produtos: "produtos", contareceber: "títulos", os: "ordens de serviço", clientes: "clientes" };
     let contrato = null, pacote = null, arquivos = [], enviando = false, pollTimer = null, ligado = false, seq = 0;
@@ -12279,14 +12289,16 @@
     async function acompanhar(forcar) {
       if (document.hidden && !forcar) return;
       let lotes;
-      try { lotes = await rpc("importacao_erp_lotes", { p_limite: 30 }); }
+      try { lotes = await rpc("importacao_erp_lotes", { p_limite: 60 }); }
       catch (err) { pegarElementos().historico.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(err.message) + "</small></td></tr>"; return; }
       arquivos.forEach((a) => {
         if (!a.lote) return;
         const l = lotes.find((x) => x.id === a.lote);
         if (l) { a.estado = l.situacao; a.resultado = l; }
       });
+      ultimosLotes = lotes;
       renderHistorico(lotes);
+      renderRodadas();
       render();
       if (!arquivos.some((a) => a.lote && (a.estado === "recebido" || a.estado === "processando" || a.estado === "enviando"))) pararAcompanhamento();
     }
@@ -12332,12 +12344,35 @@
       e.pacote.innerHTML = '<a class="imp-botao-pacote" href="' + esc(pacote.arquivo) + '" download>&#11015; Baixar os SQLs do BlueSys</a>' +
         (d ? '<span class="imp-pacote-nota">pacote de ' + esc(d) + (pacote.versao ? " · versão " + esc(pacote.versao) : "") + "</span>" : "");
     }
+    // Rodadas do dia: risca cada arquivo que já entrou na janela da rodada; a rodada fica verde quando completa,
+    // vermelha quando passou do horário (+20 min) sem tudo, azul na próxima a fazer.
+    function minutos(hhmm) { const [h, m] = String(hhmm).split(":").map(Number); return h * 60 + (m || 0); }
     function renderRodadas() {
       const e = pegarElementos();
-      const agora = new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
-      let proxima = RODADAS.findIndex(([h]) => h >= agora); if (proxima < 0) proxima = 0;
-      e.rodadas.innerHTML = RODADAS.map(([h, ts], i) =>
-        '<div class="imp-rodada' + (i === proxima ? " agora" : "") + '"><b>' + h + "</b>" + ts.map((t) => ROTULOS[t]).join(", ") + "</div>").join("");
+      const hs = (horarios && horarios.length ? horarios : HORARIOS_PADRAO).slice(0, RODADAS_ARQUIVOS.length);
+      const tz = { timeZone: "America/Sao_Paulo" };
+      const hoje = new Date().toLocaleDateString("pt-BR", tz);
+      const agoraMin = minutos(new Date().toLocaleTimeString("pt-BR", { ...tz, hour: "2-digit", minute: "2-digit" }));
+      const fimDeSemana = [0, 6].indexOf(new Date(new Date().toLocaleString("en-US", tz)).getDay()) >= 0;
+      // lotes de hoje que contam (gravados ou a caminho), com a hora local em minutos
+      const feitosHoje = ultimosLotes.filter((l) => l.criado_em && ["ok", "parcial", "recebido", "processando"].indexOf(l.situacao) >= 0 &&
+        new Date(l.criado_em).toLocaleDateString("pt-BR", tz) === hoje)
+        .map((l) => ({ tipo: l.tipo, min: minutos(new Date(l.criado_em).toLocaleTimeString("pt-BR", { ...tz, hour: "2-digit", minute: "2-digit" })) }));
+      let proximaMarcada = false;
+      e.rodadas.innerHTML = hs.map((h, i) => {
+        const ini = minutos(h) - 40, fim = i + 1 < hs.length ? minutos(hs[i + 1]) - 40 : 24 * 60;
+        const feito = {};
+        RODADAS_ARQUIVOS[i].forEach((t) => { feito[t] = feitosHoje.some((l) => l.tipo === t && l.min >= ini && l.min < fim); });
+        const completa = RODADAS_ARQUIVOS[i].every((t) => feito[t]);
+        const passou = agoraMin > minutos(h) + 20;
+        let cls = "", tag = "";
+        if (completa) { cls = " feita"; tag = "&#10003;"; }
+        else if (passou && !fimDeSemana) { cls = " atrasada"; tag = "atrasada"; }
+        else if (!proximaMarcada && !fimDeSemana) { cls = " agora"; tag = "próxima"; proximaMarcada = true; }
+        return '<div class="imp-rodada' + cls + '"><b>' + esc(h) + "</b>" +
+          RODADAS_ARQUIVOS[i].map((t) => feito[t] ? "<s>" + esc(ROTULOS[t]) + "</s>" : esc(ROTULOS[t])).join(", ") +
+          (tag ? '<span class="imp-rodada-tag">' + tag + "</span>" : "") + "</div>";
+      }).join("");
     }
     function render() {
       const e = pegarElementos();
@@ -12414,7 +12449,9 @@
       e.liberada.classList.toggle("oculto", !pode);
       if (!pode) return;
       ligarEventos();
+      try { const f = await buscarUltimaSincronizacao(); if (f && f.horarios && f.horarios.length) horarios = f.horarios; } catch (err) {}
       renderRodadas();
+      if (!relogio) relogio = setInterval(() => { if (!document.hidden && typeof abaAtual !== "undefined" && abaAtual === "importar") acompanhar(true); }, 60000);
       try {
         if (!contrato) {
           const r = await rpc("importacao_erp_contrato", {});
