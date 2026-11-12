@@ -14,6 +14,8 @@ Rode no BlueSys/SVInfo, tela **Comandos de pesquisa**: **Executa → GravXls**. 
 | `3_contas_receber.sql` | títulos (33 colunas) | **em aberto** + emitidos/quitados/cancelados nos últimos **60 dias** | 09:50 · 18:30 |
 | `4_os.sql` | OS + itens (prefixo `IT_`) | **abertas** (status 1, 2, 3, 4, 6) + movimentadas nos últimos **90 dias** | 09:50 · 15:40 |
 | `5_clientes.sql` | cadastro completo (40 colunas) + atividade principal | **completo** (39 mil linhas, ~4 MB — o ERP não tem data de alteração confiável em CLIENTES) | 18:30 |
+| `7_recuperacao/1_pedidos_desde_20-10-2026.sql` | igual ao `1_pedidos.sql`, mas desde **20/10/2026** (data fixa) | uma vez só, para fechar o buraco de 29/10 a 03/11 (o sincronizador antigo parou às 12:40 de 03/11) | rodar 1× em 12 ou 13/11 |
+| `7_recuperacao/1_pedidos_60dias.sql` | igual ao `1_pedidos.sql`, mas últimos **60 dias** | pega cancelamentos e faturamentos tardios que a janela de 8 dias não vê | sexta às 18:30, no lugar do `1_pedidos.sql` |
 | `6_cadastros_ocasional/*.sql` | vendedores, formas de pagamento, tipos, atividades, contatos, tabelas de preço, faixas, fatores, kits, promoções | completo | só quando mudar algo no Vanguarda (vendedor novo, tabela nova, kit novo…) |
 
 Depois de exportar, arraste os arquivos para **Cadastros → Importar do ERP** no painel. O tipo é reconhecido pelo cabeçalho; o nome do arquivo é só para organização.
