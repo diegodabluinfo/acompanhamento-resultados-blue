@@ -1231,6 +1231,9 @@
   .imp-arq-meta b { color: var(--texto); }
   .imp-tipo { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; background: #e4eefc; color: #1a4f94; white-space: nowrap; }
   .imp-arq-prob { grid-column: 1 / -1; font-size: 0.8rem; color: var(--erro); }
+  .imp-arq-rep { grid-column: 1 / -1; font-size: 0.8rem; color: var(--texto-suave); }
+  .imp-arq.repetido { background: #f7f9fc; border-style: dashed; }
+  .imp-st.repetido { background: #eef1f6; color: var(--texto-suave); }
   .imp-arq-aviso { grid-column: 1 / -1; font-size: 0.8rem; color: var(--amarelo); }
   .imp-arq-res { grid-column: 1 / -1; font-size: 0.8rem; }
   .imp-res-linha { display: block; }
@@ -12046,6 +12049,17 @@
     }
     function ehOLE(bytes) { return bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0; }
     function ehZIP(bytes) { return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4B; }
+    async function impressaoDigital(buf) {
+      try {
+        if (crypto && crypto.subtle) {
+          const h = await crypto.subtle.digest("SHA-256", buf);
+          return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        }
+      } catch (e) {}
+      const bytes = new Uint8Array(buf); let a = 0xcbf29ce4, b = 0x84222325;   // FNV-1a em duas metades
+      for (let i = 0; i < bytes.length; i++) { a = Math.imul(a ^ bytes[i], 0x01000193) >>> 0; b = Math.imul(b ^ bytes[(i * 7) % bytes.length], 0x01000193) >>> 0; }
+      return "fnv-" + a.toString(16).padStart(8, "0") + b.toString(16).padStart(8, "0") + "-" + bytes.length;
+    }
     function numeroXls(x) {
       if (!isFinite(x)) return "";
       if (Number.isInteger(x)) return String(x);
@@ -12157,6 +12171,19 @@
           a.enc = enc; a.sep = sep === "\t" ? "TAB" : sep; a.cabecalho = cabecalho;
           a.linhas = tabela.slice(1).map((l) => { if (l.length < cabecalho.length) { while (l.length < cabecalho.length) l.push(""); } return l.slice(0, cabecalho.length); });
           aplicarTipo(a, detectarTipo(cabecalho).tipo);
+          if (a.estado === "pronto") {
+            a.hash = await impressaoDigital(buf);
+            const outro = arquivos.find((x) => x !== a && x.hash === a.hash);
+            if (outro) { a.estado = "repetido"; a.problemas = ["É o mesmo arquivo que " + outro.nome + ", já está na lista."]; }
+            else {
+              try {
+                const v = await rpc("importacao_erp_verificar", { p_hash: a.hash });
+                if (v && v.repetido) { a.estado = "repetido"; a.repetidoDe = v; a.problemas = [v.situacao === "ok" || v.situacao === "parcial"
+                  ? "Este arquivo já foi importado em " + fmtQuando(v.criado_em) + (v.email ? " por " + v.email.split("@")[0] : "") + ". Não precisa mandar de novo."
+                  : "Este arquivo já foi enviado em " + fmtQuando(v.criado_em) + " e o painel está gravando."]; }
+              } catch (e) { console.warn("Importar do ERP: não consegui verificar repetição", e); }
+            }
+          }
         } catch (err) {
           a.estado = "invalido"; a.problemas = [err.message];
         }
@@ -12196,7 +12223,7 @@
     }
     async function enviarArquivo(a) {
       a.estado = "enviando"; a.progresso = 0; a.problemas = []; render();
-      const r = await rpc("importacao_erp_abrir", { p_tipo: a.tipo, p_arquivo: a.nome, p_colunas: a.cabecalho, p_linhas: a.linhas.length });
+      const r = await rpc("importacao_erp_abrir", { p_tipo: a.tipo, p_arquivo: a.nome, p_colunas: a.cabecalho, p_linhas: a.linhas.length, p_hash: a.hash || null });
       a.lote = r.lote;
       const ordem = r.colunas, idx = ordem.map((c) => a.cabecalho.indexOf(c));
       const passo = tamanhoBloco(a);
@@ -12260,7 +12287,7 @@
     function rotuloSituacao(s) {
       return { enviando: "enviando", recebido: "enviado, o painel está gravando", processando: "gravando", ok: "importado", parcial: "importado com aviso",
                erro: "não importado", cancelado: "cancelado", lendo: "lendo o arquivo", pronto: "pronto para enviar", invalido: "não dá para enviar",
-               falhou: "falha no envio, clique em Enviar de novo" }[s] || s;
+               falhou: "falha no envio, clique em Enviar de novo", repetido: "já importado" }[s] || s;
     }
     function resumoResultado(l) {
       if (!l) return "";
@@ -12297,7 +12324,7 @@
         return;
       }
       e.lista.innerHTML = arquivos.map((a) => {
-        const cls = a.estado === "invalido" || a.estado === "falhou" || a.estado === "erro" ? " erro" : (a.estado === "ok" || a.estado === "parcial" ? " ok" : "");
+        const cls = a.estado === "invalido" || a.estado === "falhou" || a.estado === "erro" ? " erro" : (a.estado === "ok" || a.estado === "parcial" ? " ok" : (a.estado === "repetido" ? " repetido" : ""));
         const meta = [];
         if (a.linhas && a.estado !== "invalido") {
           const nome = PLURAL[a.tipo] || "registros";
@@ -12311,7 +12338,7 @@
         return '<div class="imp-arq' + cls + '">' +
           '<div><div class="imp-arq-nome">' + esc(a.nome) + " " + st + cancel + '</div><div class="imp-arq-meta">' + meta.join(" · ") + "</div></div>" +
           tipoHtml +
-          a.problemas.map((p) => '<div class="imp-arq-prob">&#10060; ' + esc(p) + "</div>").join("") +
+          a.problemas.map((p) => '<div class="' + (a.estado === "repetido" ? "imp-arq-rep" : "imp-arq-prob") + '">' + (a.estado === "repetido" ? "&#10003; " : "&#10060; ") + esc(p) + "</div>").join("") +
           a.avisos.map((p) => '<div class="imp-arq-aviso">&#9888; ' + esc(p) + "</div>").join("") +
           barra +
           (a.resultado ? '<div class="imp-arq-res">' + resumoResultado(a.resultado) + "</div>" : "") +
