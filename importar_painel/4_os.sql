@@ -1,0 +1,56 @@
+SELECT o.ID_OS                               AS ID_OS,
+       o.FILIAL                              AS FILIAL,
+       o.STATUS                              AS STATUS,
+       CAST(o.CODCLIENTE AS VARCHAR(12))     AS CODCLIENTE,
+       o.NOME                                AS NOME,
+       o.FONE                                AS FONE,
+       o.CONTATO                             AS CONTATO,
+       o.EQUIPAMENTO                         AS EQUIPAMENTO,
+       o.MARCA                               AS MARCA,
+       o.MODELO                              AS MODELO,
+       o.SERIE                               AS SERIE,
+       CAST(SUBSTRING(o.ACESSORIOS FROM 1 FOR 255) AS VARCHAR(255))   AS ACESSORIOS,
+       CAST(SUBSTRING(o.DEFEITO FROM 1 FOR 255) AS VARCHAR(255))   AS DEFEITO,
+       CAST(SUBSTRING(o.SERVICO FROM 1 FOR 255) AS VARCHAR(255))   AS SERVICO,
+       CAST(SUBSTRING(o.OBSERVACOES FROM 1 FOR 255) AS VARCHAR(255))   AS OBSERVACOES,
+       CAST(SUBSTRING(o.OBS FROM 1 FOR 255) AS VARCHAR(255))   AS OBS,
+       o.TECNICO                             AS TECNICO,
+       o.DATA_ENTRADA                        AS DATA_ENTRADA,
+       o.DIGITACAO                           AS DIGITACAO,
+       o.DTAPROV                             AS DTAPROV,
+       o.APROVADO                            AS APROVADO,
+       o.DATA_FINALIZA                       AS DATA_FINALIZA,
+       o.DATA_SAIDA                          AS DATA_SAIDA,
+       o.ENTREGUE                            AS ENTREGUE,
+       o.DATA_CANCEL                         AS DATA_CANCEL,
+       o.USUARIO_ENTRA                       AS USUARIO_ENTRA,
+       o.USUARIO_SAIDA                       AS USUARIO_SAIDA,
+       o.USUARIO_CANCEL                      AS USUARIO_CANCEL,
+       o.USUARIO_APROVA                      AS USUARIO_APROVA,
+       o.USUARIO_ENTREGA                     AS USUARIO_ENTREGA,
+       o.VALORPECA                           AS VALORPECA,
+       o.VALORSERVICO                        AS VALORSERVICO,
+       o.TOTAL                               AS TOTAL,
+       CAST(o.PEDIDO AS VARCHAR(12))         AS PEDIDO,
+       CAST(o.PEDIDO_SERV AS VARCHAR(12))    AS PEDIDO_SERV,
+       o.GARANTIA                            AS GARANTIA,
+       CAST(o.OS_GARANTIA AS VARCHAR(12))    AS OS_GARANTIA,
+       o.OS_CLIENTE                          AS OS_CLIENTE,
+       o.FPAG                                AS FPAG,
+       i.GRUPO                               AS IT_GRUPO,
+       i.CODIGO                              AS IT_CODIGO,
+       i.DESCRICAO                           AS IT_DESCRICAO,
+       i.QTD                                 AS IT_QTD,
+       i.VALUNIT                             AS IT_VALUNIT,
+       i.ISS                                 AS IT_ISS,
+       CAST(i.REQUISICAO AS VARCHAR(12))     AS IT_REQUISICAO,
+       CAST(2 AS INTEGER) AS SQL_VERSAO
+  FROM OS o
+  LEFT JOIN OSITENS i ON i.ID_OS = o.ID_OS AND i.FILIAL = o.FILIAL
+ WHERE o.STATUS IN ('1', '2', '3', '4', '6')
+    OR o.DATA_ENTRADA  >= CURRENT_DATE - 90
+    OR o.DATA_FINALIZA >= CURRENT_DATE - 90
+    OR o.DATA_SAIDA    >= CURRENT_DATE - 90
+    OR o.DATA_CANCEL   >= CURRENT_DATE - 90
+    OR o.DIGITACAO     >= CURRENT_DATE - 90
+ ORDER BY o.ID_OS DESC, i.GRUPO, i.CODIGO

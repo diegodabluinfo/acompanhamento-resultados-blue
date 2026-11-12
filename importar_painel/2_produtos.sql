@@ -1,0 +1,53 @@
+SELECT c.FILIAL                AS FILIAL,
+       c.GRUPO                 AS GRUPO,
+       c.CODIGO                AS CODIGO,
+       c.DESCRICAO             AS DESCRICAO,
+       c.DESCR_ECOMM           AS DESCR_ECOMM,
+       c.MARCA                 AS MARCA,
+       c.TIPO                  AS TIPO,
+       c.ATIVO                 AS ATIVO,
+       c.ECOMMERCE             AS ECOMMERCE,
+       c.GRITPR                AS GRITPR,
+       c.LUCRA                 AS LUCRA,
+       c.PRECO1                AS PRECO1,
+       c.CUSTO                 AS CUSTO,
+       c.VALOR_SUGESTAO        AS VALOR_SUGESTAO,
+       c.QTD                   AS QTD,
+       c.QTD_RESERVA           AS QTD_RESERVA,
+       c.QTD_COMPRADA          AS QTD_COMPRADA,
+       c.QTD_TRANSITO          AS QTD_TRANSITO,
+       c.MINIMO                AS MINIMO,
+       c.LOCALEST              AS LOCALEST,
+       c.GARANTIA              AS GARANTIA,
+       c.DATA_CADASTRO         AS DATA_CADASTRO,
+       c.ALTERADO              AS ALTERADO,
+       c.REFFORNEC             AS REFFORNEC,
+       c.EAN13                 AS EAN13,
+       c.NCM                   AS NCM,
+       c.UNIDADE               AS UNIDADE,
+       c.ISS                   AS ISS,
+       c.FABRICANTE            AS FABRICANTE,
+       c.CUSTOMEDIO            AS CUSTOMEDIO,
+       c.CUSTOULTIMACOMPRA     AS CUSTOULTIMACOMPRA,
+       c.SUBSTITUTO            AS SUBSTITUTO,
+       c.VALOR_MINIMO_VENDA    AS VALOR_MINIMO_VENDA,
+       c.QTD_MINIMA_VENDA      AS QTD_MINIMA_VENDA,
+       (SELECT t.PERC FROM TAB_LUCRAT t
+         WHERE t.FILIAL = c.FILIAL AND t.TABELA = '04' AND t.LUCRAT = c.LUCRA) AS FATOR_04,
+       (SELECT t.PERC FROM TAB_LUCRAT t
+         WHERE t.FILIAL = c.FILIAL AND t.TABELA = '07' AND t.LUCRAT = c.LUCRA) AS FATOR_07,
+       (SELECT t.PERC FROM TAB_LUCRAT t
+         WHERE t.FILIAL = c.FILIAL AND t.TABELA = '08' AND t.LUCRAT = c.LUCRA) AS FATOR_08,
+       e.TIPO                  AS PROMO_TIPO,
+       e.DESCONTO              AS PROMO_DESCONTO,
+       e.TIPO_DESCONTO         AS PROMO_TIPO_DESCONTO,
+       COALESCE(NULLIF(TRIM(e.TIPO_REBATE), ''), '-') AS PROMO_TIPO_REBATE,
+       e.DATAHORAINICIO        AS PROMO_INICIO,
+       e.DATAHORAFIM           AS PROMO_FIM,
+       e.VALOR_SUGESTAO        AS PROMO_VALOR_SUGESTAO,
+       CAST(2 AS INTEGER) AS SQL_VERSAO
+  FROM CADAESTO c
+  LEFT JOIN ESPECIAL e ON e.FILIAL = c.FILIAL AND e.GRUPO = c.GRUPO AND e.CODIGO = c.CODIGO
+ WHERE c.FILIAL = 'BLUE'
+   AND (c.ATIVO = 'S' OR c.ALTERADO >= CURRENT_DATE - 8 OR e.CODIGO IS NOT NULL)
+ ORDER BY c.GRUPO, c.CODIGO

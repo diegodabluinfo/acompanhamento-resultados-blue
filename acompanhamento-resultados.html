@@ -1213,6 +1213,10 @@
   #importar-liberada .form-card { max-width: 980px; }
   .imp-passos { display: grid; gap: 6px; font-size: 0.86rem; color: var(--texto-suave); margin-bottom: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   .imp-passos code { background: #eef1f6; padding: 0 5px; border-radius: 5px; color: var(--texto); }
+  .imp-pacote { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .imp-botao-pacote { display: inline-block; padding: 8px 14px; border-radius: 9px; border: 1px solid var(--azul); color: var(--azul); font-weight: 700; font-size: 0.88rem; text-decoration: none; background: #fff; }
+  .imp-botao-pacote:hover { background: #f1f6ff; }
+  .imp-pacote-nota { font-size: 0.8rem; color: var(--texto-suave); }
   .imp-rodadas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
   .imp-rodada { border: 1px solid var(--borda); border-radius: 10px; padding: 6px 10px; font-size: 0.8rem; background: #fbfcfe; color: var(--texto-suave); }
   .imp-rodada b { color: var(--azul-escuro); margin-right: 6px; }
@@ -2885,10 +2889,11 @@
             <p class="sub">Os arquivos do BlueSys entram aqui e o painel se atualiza sozinho em até 1 minuto.</p>
             <div id="aviso-importar" class="aviso"></div>
             <div class="imp-passos">
-              <div><b>1.</b> No BlueSys, rode o SQL da rodada e clique em <b>GravXls</b>.</div>
+              <div><b>1.</b> No BlueSys, rode o SQL da rodada (os SQLs estão no pacote abaixo) e clique em <b>GravXls</b>.</div>
               <div><b>2.</b> Arraste os arquivos <code>.xls</code> para a área abaixo (pode ser vários de uma vez).</div>
               <div><b>3.</b> Clique em <b>Enviar</b>. Pronto — em até 1 minuto o painel está atualizado.</div>
             </div>
+            <div id="imp-pacote" class="imp-pacote"></div>
             <div id="imp-rodadas" class="imp-rodadas"></div>
             <div id="imp-drop" class="imp-drop" tabindex="0" role="button" aria-label="Escolher arquivos para importar">
               <input type="file" id="imp-arquivo" multiple accept=".xls,application/vnd.ms-excel" class="oculto">
@@ -11948,7 +11953,7 @@
     ];
     const COLUNAS_DATA = ["dt_fatura", "data_entrada", "emissao", "vencimento", "dt_alteracao", "data"];
     const PLURAL = { pedidos: "pedidos", produtos: "produtos", contareceber: "títulos", os: "ordens de serviço", clientes: "clientes" };
-    let contrato = null, arquivos = [], enviando = false, pollTimer = null, ligado = false, seq = 0;
+    let contrato = null, pacote = null, arquivos = [], enviando = false, pollTimer = null, ligado = false, seq = 0;
     let el = null;
 
     function pegarElementos() {
@@ -11958,6 +11963,7 @@
         liberada: document.getElementById("importar-liberada"),
         aviso: document.getElementById("aviso-importar"),
         rodadas: document.getElementById("imp-rodadas"),
+        pacote: document.getElementById("imp-pacote"),
         drop: document.getElementById("imp-drop"),
         input: document.getElementById("imp-arquivo"),
         lista: document.getElementById("imp-lista"),
@@ -12122,6 +12128,7 @@
       return set;
     }
     function colunaExtra(tipo, h) {
+      if (h === "sql_versao") return true;
       if (tipo === "produtos") return /^fator_\d\d$/.test(h) || h.indexOf("promo_") === 0;
       if (tipo === "clientes") return h === "cnae_principal";
       return false;
@@ -12213,6 +12220,14 @@
         a.registros = set.size;
       } else a.registros = null;
       a.estado = a.problemas.length ? "invalido" : "pronto";
+      // versão do SQL que gerou o arquivo (coluna constante SQL_VERSAO) x versão atual do pacote
+      const iv = a.cabecalho.indexOf("sql_versao");
+      a.versao = iv >= 0 && a.linhas.length ? parseInt(String(a.linhas[0][iv]).trim(), 10) || null : null;
+      if (a.estado === "pronto" && principal.versao_sql && (!a.versao || a.versao < principal.versao_sql)) {
+        a.estado = "desatualizado";
+        a.problemas = ["Este arquivo foi gerado com um SQL antigo" + (a.versao ? " (versão " + a.versao + "; a atual é " + principal.versao_sql + ")" : "") +
+                       ". Baixe o pacote novo de SQLs, rode o SQL de " + (ROTULOS[tipo] || tipo).toLowerCase() + " de novo no BlueSys e exporte."];
+      }
     }
 
     // ---------- envio ----------
@@ -12223,7 +12238,7 @@
     }
     async function enviarArquivo(a) {
       a.estado = "enviando"; a.progresso = 0; a.problemas = []; render();
-      const r = await rpc("importacao_erp_abrir", { p_tipo: a.tipo, p_arquivo: a.nome, p_colunas: a.cabecalho, p_linhas: a.linhas.length, p_hash: a.hash || null });
+      const r = await rpc("importacao_erp_abrir", { p_tipo: a.tipo, p_arquivo: a.nome, p_colunas: a.cabecalho, p_linhas: a.linhas.length, p_hash: a.hash || null, p_versao: a.versao || null });
       a.lote = r.lote;
       const ordem = r.colunas, idx = ordem.map((c) => a.cabecalho.indexOf(c));
       const passo = tamanhoBloco(a);
@@ -12287,7 +12302,7 @@
     function rotuloSituacao(s) {
       return { enviando: "enviando", recebido: "enviado, o painel está gravando", processando: "gravando", ok: "importado", parcial: "importado com aviso",
                erro: "não importado", cancelado: "cancelado", lendo: "lendo o arquivo", pronto: "pronto para enviar", invalido: "não dá para enviar",
-               falhou: "falha no envio, clique em Enviar de novo", repetido: "já importado" }[s] || s;
+               falhou: "falha no envio, clique em Enviar de novo", repetido: "já importado", desatualizado: "SQL desatualizado" }[s] || s;
     }
     function resumoResultado(l) {
       if (!l) return "";
@@ -12309,6 +12324,14 @@
       (d.avisos || []).forEach((av) => partes.push('<span class="imp-res-linha" style="color:var(--amarelo)">&#9888; ' + esc(av) + "</span>"));
       return partes.join("");
     }
+    function renderPacote() {
+      const e = pegarElementos();
+      if (!e.pacote) return;
+      if (!pacote) { e.pacote.innerHTML = ""; return; }
+      const d = pacote.publicado_em ? dataBR(String(pacote.publicado_em).slice(0, 10)) : "";
+      e.pacote.innerHTML = '<a class="imp-botao-pacote" href="' + esc(pacote.arquivo) + '" download>&#11015; Baixar os SQLs do BlueSys</a>' +
+        (d ? '<span class="imp-pacote-nota">pacote de ' + esc(d) + (pacote.versao ? " · versão " + esc(pacote.versao) : "") + "</span>" : "");
+    }
     function renderRodadas() {
       const e = pegarElementos();
       const agora = new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
@@ -12324,7 +12347,7 @@
         return;
       }
       e.lista.innerHTML = arquivos.map((a) => {
-        const cls = a.estado === "invalido" || a.estado === "falhou" || a.estado === "erro" ? " erro" : (a.estado === "ok" || a.estado === "parcial" ? " ok" : (a.estado === "repetido" ? " repetido" : ""));
+        const cls = a.estado === "invalido" || a.estado === "falhou" || a.estado === "erro" || a.estado === "desatualizado" ? " erro" : (a.estado === "ok" || a.estado === "parcial" ? " ok" : (a.estado === "repetido" ? " repetido" : ""));
         const meta = [];
         if (a.linhas && a.estado !== "invalido") {
           const nome = PLURAL[a.tipo] || "registros";
@@ -12332,13 +12355,14 @@
           if (a.periodo) meta.push("de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
         }
         const tipoHtml = (a.cabecalho && a.estado !== "invalido") ? '<div class="imp-arq-tipo"><span class="imp-tipo">' + esc(ROTULOS[a.tipo] || a.tipo) + "</span></div>" : "";
+        const linkPacote = a.estado === "desatualizado" && pacote ? ' <a class="imp-link" href="' + esc(pacote.arquivo) + '" download>Baixar o pacote novo</a>' : "";
         const st = '<span class="imp-st ' + esc(a.estado) + '">' + esc(rotuloSituacao(a.estado)) + "</span>";
         const barra = a.estado === "enviando" ? '<div class="imp-barra"><div style="width:' + Math.round(a.progresso * 100) + '%"></div></div>' : "";
         const cancel = (a.estado === "recebido" && a.lote) ? ' <button type="button" class="imp-btn-x" data-cancelar="' + a.lote + '">cancelar</button>' : "";
         return '<div class="imp-arq' + cls + '">' +
           '<div><div class="imp-arq-nome">' + esc(a.nome) + " " + st + cancel + '</div><div class="imp-arq-meta">' + meta.join(" · ") + "</div></div>" +
           tipoHtml +
-          a.problemas.map((p) => '<div class="' + (a.estado === "repetido" ? "imp-arq-rep" : "imp-arq-prob") + '">' + (a.estado === "repetido" ? "&#10003; " : "&#10060; ") + esc(p) + "</div>").join("") +
+          a.problemas.map((p) => '<div class="' + (a.estado === "repetido" ? "imp-arq-rep" : "imp-arq-prob") + '">' + (a.estado === "repetido" ? "&#10003; " : "&#10060; ") + esc(p) + linkPacote + "</div>").join("") +
           a.avisos.map((p) => '<div class="imp-arq-aviso">&#9888; ' + esc(p) + "</div>").join("") +
           barra +
           (a.resultado ? '<div class="imp-arq-res">' + resumoResultado(a.resultado) + "</div>" : "") +
@@ -12392,8 +12416,13 @@
       ligarEventos();
       renderRodadas();
       try {
-        if (!contrato) contrato = await rpc("importacao_erp_contrato", {});
+        if (!contrato) {
+          const r = await rpc("importacao_erp_contrato", {});
+          contrato = Array.isArray(r) ? r : (r && r.tipos) || [];
+          pacote = Array.isArray(r) ? null : (r && r.pacote) || null;
+        }
         if (!contrato || !contrato.length) throw new Error("contrato de importação vazio");
+        renderPacote();
       } catch (err) {
         avisar(e.aviso, "erro", "Não foi possível carregar a lista de arquivos aceitos: " + err.message);
         return;
