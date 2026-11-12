@@ -6,10 +6,10 @@ Rode no BlueSys/SVInfo, tela **Comandos de pesquisa**: cole o SQL inteiro, **Exe
 
 | Arquivo | O que traz | Rodadas |
 |---|---|---|
-| `1_pedidos.sql` | pedidos dos últimos 8 dias (+ abertos) com itens | 09:50 · 13:15 · 15:40 · 18:30 |
-| `2_produtos.sql` | produtos ativos: estoque, preço, promoção | 09:50 · 13:15 · 15:40 · 18:30 |
-| `3_contas_receber.sql` | títulos em aberto + 60 dias | 09:50 · 18:30 |
-| `4_os.sql` | OS abertas + 90 dias, com itens | 09:50 · 15:40 |
+| `1_pedidos.sql` | pedidos dos últimos 8 dias (+ abertos) com itens | até 09:50 · 13:15 · 15:40 · 18:30 |
+| `2_produtos.sql` | produtos ativos: estoque, preço, promoção | até 09:50 · 13:15 · 15:40 · 18:30 |
+| `3_contas_receber.sql` | títulos em aberto + 60 dias | até 09:50 · 18:30 |
+| `4_os.sql` | OS abertas + 90 dias, com itens | até 09:50 · 15:40 |
 | `5_clientes.sql` | cadastro completo de clientes | 18:30 |
 
-Passo a passo completo: `ROTEIRO-equipe.md`.
+A rodada "até 09:50" é feita logo depois da baixa dos boletos no sistema. Passo a passo completo: `ROTEIRO-equipe.md`.

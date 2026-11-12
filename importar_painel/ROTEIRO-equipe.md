@@ -6,12 +6,12 @@
 
 | Rodada | Rode estes SQLs | Para quê |
 |---|---|---|
-| **09:50** | 1 PEDIDOS · 2 PRODUTOS · 3 CONTAS A RECEBER · 4 OS | a cobrança automática das 10h precisa dos títulos de hoje |
+| **até 09:50** (logo depois da baixa dos boletos) | 1 PEDIDOS · 2 PRODUTOS · 3 CONTAS A RECEBER · 4 OS | a cobrança automática das 10h precisa dos títulos de hoje já baixados |
 | **13:15** (volta do almoço) | 1 PEDIDOS · 2 PRODUTOS | orçamentos da tarde com preço e estoque certos |
 | **15:40** | 1 PEDIDOS · 2 PRODUTOS · 4 OS | pico da tarde |
 | **18:30** (quem sair por último — Luiz ou Lucas; pode ser 18:15) | 1 PEDIDOS · 2 PRODUTOS · 3 CONTAS A RECEBER · 5 CLIENTES | fecha o dia: lista do dia, ranking e recepção de amanhã |
 
-Na tela, os horários do dia aparecem como etiquetas: o arquivo fica **riscado** quando entra, a rodada fica **verde** quando completa, **vermelha** quando passou do horário sem tudo, e **azul** na próxima a fazer. A barra do rodapé mostra a próxima importação prevista e fica vermelha quando atrasa.
+Na tela, os horários do dia aparecem como etiquetas: o arquivo fica **riscado** quando entra, a rodada fica **verde** quando completa, **vermelha** quando passou do horário sem tudo, e **azul** na próxima a fazer. A primeira rodada é "até 09:50": tudo que entrar de manhã, depois da baixa dos boletos, conta para ela. A barra do rodapé mostra a próxima importação prevista e fica **vermelha** enquanto faltar qualquer arquivo da rodada anterior — ela diz quais (ex.: "faltam Produtos e Ordens de serviço").
 
 Na dúvida, mande os 5 — repetir arquivo não faz mal.
 
@@ -32,7 +32,7 @@ Na dúvida, mande os 5 — repetir arquivo não faz mal.
 | **erro** (vermelho) | Nada daquele arquivo foi gravado. O motivo está em "Resultado". Corrija (normalmente rodar o SQL e exportar de novo) e mande de novo. |
 | **falhou** no envio | Caiu a internet no meio. Clique em **Enviar** de novo — o arquivo sobe outra vez do zero. |
 | Mandei o arquivo errado | Se ainda estiver "na fila", clique em **cancelar** no cartão. Se já processou, mande o arquivo certo por cima: o painel atualiza, não duplica. |
-| Barra do rodapé laranja "Importação atrasada" | A rodada do horário não foi feita. Faça agora. |
+| Barra do rodapé vermelha "Importação atrasada" | A rodada do horário não foi feita, ou foi feita pela metade — a barra diz quais arquivos faltam. Mande o que falta agora. |
 
 **Regra de ouro:** o painel nunca duplica — o mesmo pedido/título/produto mandado duas vezes é só atualizado. Mandar de novo é sempre seguro.
 

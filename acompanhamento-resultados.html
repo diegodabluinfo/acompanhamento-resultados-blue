@@ -1227,6 +1227,7 @@
   .imp-rodada.atrasada b { color: var(--erro); }
   .imp-rodada s { color: var(--texto-suave); opacity: 0.75; }
   .imp-rodada .imp-rodada-tag { margin-left: 6px; font-size: 0.72rem; font-weight: 700; }
+  .imp-rodada .imp-rodada-dica { display: block; font-size: 0.72rem; color: var(--texto-suave); font-weight: 400; }
   .imp-drop { border: 2px dashed var(--borda); border-radius: 14px; padding: 26px 16px; text-align: center; cursor: pointer; background: #fbfcfe; transition: border-color .15s, background .15s; }
   .imp-drop:hover, .imp-drop:focus, .imp-drop.sobre { border-color: var(--azul); background: #f1f6ff; outline: none; }
   .imp-drop-txt { font-size: 0.98rem; }
@@ -3786,22 +3787,32 @@
     try {
       // v_painel_frescor devolve as duas datas numa linha só e respeita o cadastro de acesso
       // 31/10/2026: a view também devolve a próxima rodada prevista e a anterior (horários em automacao_config)
-      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_painel_frescor?select=carregado_em,dt_fatura,proxima_sincronizacao,sincronizacao_prevista_anterior,horarios&limit=1`);
+      // 12/11/2026 (tarde): também devolve os arquivos de cada rodada (rodadas) e o que ainda falta da rodada
+      // prevista anterior (faltam) — a barra fica vermelha enquanto faltar qualquer arquivo, não só pedidos.
+      const res = await leitura(`${SUPABASE_URL}/rest/v1/v_painel_frescor?select=carregado_em,dt_fatura,proxima_sincronizacao,sincronizacao_prevista_anterior,horarios,rodadas,faltam&limit=1`);
       const linha = res.ok ? (await res.json())[0] : null;
       return {
         carregadoEm: (linha && linha.carregado_em) || null,
         dtFatura: (linha && linha.dt_fatura) || null,
         proxima: (linha && linha.proxima_sincronizacao) || null,
         previstaAnterior: (linha && linha.sincronizacao_prevista_anterior) || null,
-        horarios: (linha && Array.isArray(linha.horarios)) ? linha.horarios.map((t) => String(t).slice(0, 5)) : null   // ["09:50", ...] (12/11: a tela Importar usa)
+        horarios: (linha && Array.isArray(linha.horarios)) ? linha.horarios.map((t) => String(t).slice(0, 5)) : null,   // ["09:50", ...] (12/11: a tela Importar usa)
+        rodadas: (linha && Array.isArray(linha.rodadas)) ? linha.rodadas : null,                                        // [["pedidos","produtos",...], ...] por horário
+        faltam: (linha && Array.isArray(linha.faltam)) ? linha.faltam : null                                             // tipos que a rodada anterior ainda não recebeu
       };
-    } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null, proxima: null, previstaAnterior: null, horarios: null }; }
+    } catch (e) { console.error("Erro ao buscar última sincronização:", e); return { carregadoEm: null, dtFatura: null, proxima: null, previstaAnterior: null, horarios: null, rodadas: null, faltam: null }; }
+  }
+  const ROTULO_ARQUIVO_ERP = { pedidos: "Pedidos", produtos: "Produtos", contareceber: "Contas a receber", os: "Ordens de serviço", clientes: "Clientes" };
+  function listaArquivosErp(tipos) {
+    const n = (tipos || []).map((t) => ROTULO_ARQUIVO_ERP[t] || t);
+    return n.length <= 1 ? n.join("") : n.slice(0, -1).join(", ") + " e " + n[n.length - 1];
   }
 
   // --- barra fixa de sincronização do ERP (31/10/2026) ---
   // Mostra a última carga do ERP, até que dia há vendas faturadas e quando é a próxima rodada prevista
-  // (dias úteis 09:50, 12:40, 15:40 e 20:30; sem fim de semana e feriado — calculado pela view v_painel_frescor).
-  // Fica laranja quando a rodada prevista anterior já passou há mais de 20 min e a carga não chegou.
+  // (dias úteis: até 09:50, 13:15, 15:40 e 18:30 — automacao_config; sem fim de semana e feriado — calculado pela view v_painel_frescor).
+  // Fica vermelha quando a rodada prevista anterior já passou há mais de 20 min e ainda falta algum arquivo dela
+  // (a view v_painel_frescor diz quais: coluna "faltam", comparando import_erp.lotes com automacao_config.sincronizacao_rodadas).
   const barraSinc = document.getElementById("barra-sinc");
   let barraSincTimer = null;
   function atualizarBarraSinc(s) {
@@ -3825,19 +3836,29 @@
       return semana + " " + dia.slice(0, 5) + " às " + hora;
     };
     const partes = [];
-    let atrasada = false;
-    if (s.carregadoEm) {
-      partes.push("ERP importado em <b>" + fmtDiaHora(s.carregadoEm) + "</b>");
-      if (s.previstaAnterior && (new Date(s.previstaAnterior) - new Date(s.carregadoEm)) > 20 * 60 * 1000) atrasada = true;
-    } else {
-      partes.push("ERP ainda sem importação registrada");
+    let atrasada = false, faltam = null;
+    // 12/11/2026 (tarde): atrasada = a rodada prevista anterior passou há mais de 20 min e ainda falta algum dos
+    // arquivos dela (a view diz quais). Se a view não mandar "faltam" (versão antiga), vale a regra velha: só pedidos.
+    if (s.previstaAnterior && (Date.now() - new Date(s.previstaAnterior)) > 20 * 60 * 1000) {
+      if (Array.isArray(s.faltam)) { if (s.faltam.length) { atrasada = true; faltam = s.faltam; } }
+      else if (!s.carregadoEm || (new Date(s.previstaAnterior) - new Date(s.carregadoEm)) > 20 * 60 * 1000) atrasada = true;
     }
+    if (s.carregadoEm) partes.push("ERP importado em <b>" + fmtDiaHora(s.carregadoEm) + "</b>");
+    else partes.push("ERP ainda sem importação registrada");
     if (s.dtFatura) {
       const [ano, mes, dia] = s.dtFatura.split("-");
       partes.push("vendas faturadas até <b>" + dia + "/" + mes + "/" + ano + "</b>");
     }
-    if (s.proxima) partes.push("próxima importação prevista <b>" + quandoProxima(s.proxima) + "</b>");
-    if (atrasada) partes.unshift("&#9888; <b>Importação atrasada</b> — a das " + fmtDiaHora(s.previstaAnterior).replace(" às ", " ") + " ainda não foi feita");
+    // a primeira rodada do dia é "até 09:50" (logo depois da baixa dos boletos), as outras são "às HH:MM"
+    const ehPrimeira = (iso) => !!(s.horarios && s.horarios.length && fmtDiaHora(iso).slice(-5) === s.horarios[0]);
+    if (s.proxima) partes.push("próxima importação prevista <b>" + (ehPrimeira(s.proxima) ? quandoProxima(s.proxima).replace(" às ", " até ") : quandoProxima(s.proxima)) + "</b>");
+    if (atrasada) {
+      const hora = fmtDiaHora(s.previstaAnterior), rotulo = ehPrimeira(s.previstaAnterior) ? "a prevista até " + hora.replace(" às ", " ") : "a das " + hora.replace(" às ", " ");
+      const i = s.horarios ? s.horarios.indexOf(hora.slice(-5)) : -1;
+      const tudo = faltam && s.rodadas && i >= 0 && Array.isArray(s.rodadas[i]) && s.rodadas[i].length === faltam.length;
+      partes.unshift("&#9888; <b>Importação atrasada</b> — " + rotulo + " ainda não foi feita" +
+        (faltam && !tudo ? (faltam.length > 1 ? ": faltam <b>" : ": falta <b>") + listaArquivosErp(faltam) + "</b>" : (faltam ? " (" + listaArquivosErp(faltam) + ")" : "")));
+    }
     barraSinc.innerHTML = partes.join('<span class="sinc-sep">·</span>');
     barraSinc.classList.toggle("atrasada", atrasada);
     barraSinc.classList.remove("oculto");
@@ -11984,15 +12005,17 @@
       produtos_promocao_erp: "promoções", contareceber_erp: "títulos", os_erp: "OS", os_itens_erp: "itens de OS",
       clientes_erp: "clientes", clientes_atividades_erp: "atividades de cliente"
     };
-    // horários vêm de automacao_config (via v_painel_frescor); aqui só o que entra em cada rodada, na ordem
-    const RODADAS_ARQUIVOS = [
+    // horários e arquivos de cada rodada vêm de automacao_config (via v_painel_frescor: horarios + rodadas);
+    // o que está aqui é só o padrão, usado se a view não responder. A primeira rodada é "até 09:50" (logo depois
+    // da baixa dos boletos): tudo que for importado desde 00:00 conta para ela.
+    const RODADAS_PADRAO = [
       ["pedidos", "produtos", "contareceber", "os"],
       ["pedidos", "produtos"],
       ["pedidos", "produtos", "os"],
       ["pedidos", "produtos", "contareceber", "clientes"]
     ];
     const HORARIOS_PADRAO = ["09:50", "13:15", "15:40", "18:30"];
-    let horarios = null, ultimosLotes = [], relogio = null;
+    let horarios = null, rodadas = null, ultimosLotes = [], relogio = null;
     const COLUNAS_DATA = ["dt_fatura", "data_entrada", "emissao", "vencimento", "dt_alteracao", "data"];
     const TIPOS_EQUIPE = ["pedidos", "produtos", "contareceber", "os", "clientes"];   // o resto é controle técnico (administrador)
     function souAdmin() { return !!(typeof meuAcesso !== "undefined" && meuAcesso && meuAcesso.admin); }
@@ -12411,7 +12434,8 @@
     function minutos(hhmm) { const [h, m] = String(hhmm).split(":").map(Number); return h * 60 + (m || 0); }
     function renderRodadas() {
       const e = pegarElementos();
-      const hs = (horarios && horarios.length ? horarios : HORARIOS_PADRAO).slice(0, RODADAS_ARQUIVOS.length);
+      const rods = rodadas && rodadas.length ? rodadas : RODADAS_PADRAO;
+      const hs = (horarios && horarios.length ? horarios : HORARIOS_PADRAO).slice(0, rods.length);
       const tz = { timeZone: "America/Sao_Paulo" };
       const hoje = new Date().toLocaleDateString("pt-BR", tz);
       const agoraMin = minutos(new Date().toLocaleTimeString("pt-BR", { ...tz, hour: "2-digit", minute: "2-digit" }));
@@ -12422,17 +12446,18 @@
         .map((l) => ({ tipo: l.tipo, min: minutos(new Date(l.criado_em).toLocaleTimeString("pt-BR", { ...tz, hour: "2-digit", minute: "2-digit" })) }));
       let proximaMarcada = false;
       e.rodadas.innerHTML = hs.map((h, i) => {
-        const ini = minutos(h) - 40, fim = i + 1 < hs.length ? minutos(hs[i + 1]) - 40 : 24 * 60;
+        const ini = i === 0 ? 0 : minutos(h) - 40, fim = i + 1 < hs.length ? minutos(hs[i + 1]) - 40 : 24 * 60;
         const feito = {};
-        RODADAS_ARQUIVOS[i].forEach((t) => { feito[t] = feitosHoje.some((l) => l.tipo === t && l.min >= ini && l.min < fim); });
-        const completa = RODADAS_ARQUIVOS[i].every((t) => feito[t]);
+        rods[i].forEach((t) => { feito[t] = feitosHoje.some((l) => l.tipo === t && l.min >= ini && l.min < fim); });
+        const completa = rods[i].every((t) => feito[t]);
         const passou = agoraMin > minutos(h) + 20;
         let cls = "", tag = "";
         if (completa) { cls = " feita"; tag = "&#10003;"; }
         else if (passou && !fimDeSemana) { cls = " atrasada"; tag = "atrasada"; }
         else if (!proximaMarcada && !fimDeSemana) { cls = " agora"; tag = "próxima"; proximaMarcada = true; }
-        return '<div class="imp-rodada' + cls + '"><b>' + esc(h) + "</b>" +
-          RODADAS_ARQUIVOS[i].map((t) => feito[t] ? "<s>" + esc(ROTULOS[t]) + "</s>" : esc(ROTULOS[t])).join(", ") +
+        return '<div class="imp-rodada' + cls + '"><b>' + (i === 0 ? "até " : "") + esc(h) + "</b>" +
+          rods[i].map((t) => feito[t] ? "<s>" + esc(ROTULOS[t]) + "</s>" : esc(ROTULOS[t])).join(", ") +
+          (i === 0 ? '<span class="imp-rodada-dica">logo depois da baixa dos boletos</span>' : "") +
           (tag ? '<span class="imp-rodada-tag">' + tag + "</span>" : "") + "</div>";
       }).join("");
     }
@@ -12511,7 +12536,11 @@
       e.liberada.classList.toggle("oculto", !pode);
       if (!pode) return;
       ligarEventos();
-      try { const f = await buscarUltimaSincronizacao(); if (f && f.horarios && f.horarios.length) horarios = f.horarios; } catch (err) {}
+      try {
+        const f = await buscarUltimaSincronizacao();
+        if (f && f.horarios && f.horarios.length) horarios = f.horarios;
+        if (f && Array.isArray(f.rodadas) && f.rodadas.length) rodadas = f.rodadas;
+      } catch (err) {}
       renderRodadas();
       if (!relogio) relogio = setInterval(() => { if (!document.hidden && typeof abaAtual !== "undefined" && abaAtual === "importar") acompanhar(true); }, 60000);
       try {
