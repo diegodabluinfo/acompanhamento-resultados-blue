@@ -2882,15 +2882,15 @@
             <p class="sub">Os arquivos exportados do Vanguarda (BlueSys) entram aqui e o painel se atualiza sozinho em até 1 minuto.</p>
             <div id="aviso-importar" class="aviso"></div>
             <div class="imp-passos">
-              <div><b>1.</b> No BlueSys, rode o SQL da rodada e exporte o resultado como CSV (separador <code>;</code> ou <code>,</code>, tanto faz; acentos em UTF-8 ou Windows também).</div>
+              <div><b>1.</b> No BlueSys (tela Comandos de pesquisa), rode o SQL da rodada e clique em <b>GravXls</b>. O arquivo <code>.xls</code> que ele gera entra aqui direto. (CSV também serve; o GravaTxt do SVInfo costuma falhar.)</div>
               <div><b>2.</b> Arraste os arquivos para a área abaixo — pode ser vários de uma vez — e confira o que foi reconhecido (tipo, linhas, período).</div>
               <div><b>3.</b> Clique em <b>Enviar</b>. O resultado de cada arquivo aparece aqui embaixo; a barra do rodapé passa a mostrar a nova data.</div>
             </div>
             <div id="imp-rodadas" class="imp-rodadas"></div>
             <div id="imp-drop" class="imp-drop" tabindex="0" role="button" aria-label="Escolher arquivos para importar">
-              <input type="file" id="imp-arquivo" multiple accept=".csv,.txt,.tsv,text/csv,text/plain" class="oculto">
+              <input type="file" id="imp-arquivo" multiple accept=".xls,.csv,.txt,.tsv,application/vnd.ms-excel,text/csv,text/plain" class="oculto">
               <div class="imp-drop-txt"><b>Arraste os arquivos aqui</b> ou <span class="imp-link">clique para escolher</span></div>
-              <div class="imp-drop-sub">CSV exportado do BlueSys · vários arquivos de uma vez · o tipo é reconhecido pelo cabeçalho</div>
+              <div class="imp-drop-sub">XLS do GravXls ou CSV · vários arquivos de uma vez · o tipo é reconhecido pelo cabeçalho</div>
             </div>
             <div id="imp-lista" class="imp-lista"></div>
             <div class="imp-acoes">
@@ -12036,6 +12036,70 @@
     }
     function dataBR(iso) { return iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : ""; }
 
+    // ---------- Excel antigo (BIFF 2/3/4), que é o que o botão GravXls do SVInfo gera ----------
+    // Lê direto os registros LABEL / NUMBER / RK / INTEGER; sem biblioteca. Excel 97+ (.xls dentro de
+    // arquivo OLE, começa com D0 CF 11 E0) e .xlsx (zip) não entram por aqui.
+    function ehBIFF(bytes) {
+      if (bytes.length < 4) return false;
+      const t = bytes[0] | (bytes[1] << 8);
+      return t === 0x0409 || t === 0x0209 || t === 0x0009;   // BOF do BIFF4, BIFF3, BIFF2
+    }
+    function ehOLE(bytes) { return bytes.length >= 4 && bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0; }
+    function ehZIP(bytes) { return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4B; }
+    function numeroXls(x) {
+      if (!isFinite(x)) return "";
+      if (Number.isInteger(x)) return String(x);
+      return String(+x.toFixed(6));           // tira o ruído de ponto flutuante (1155.0009999 -> 1155.001)
+    }
+    function lerBIFF(buf) {
+      const bytes = new Uint8Array(buf), dv = new DataView(buf);
+      const dec = new TextDecoder("windows-1252");
+      const celulas = new Map();               // "r,c" -> texto
+      let maxR = -1, maxC = -1, pos = 0, codepage = null;
+      const poe = (r, c, v) => { celulas.set(r + "," + c, v); if (r > maxR) maxR = r; if (c > maxC) maxC = c; };
+      const rk = (v) => {                        // número compacto: bit0 = /100, bit1 = inteiro de 30 bits, senão parte alta de um double
+        const cem = v & 1, inteiro = v & 2;
+        let x;
+        if (inteiro) x = v >> 2;
+        else { const b = new ArrayBuffer(8), w = new DataView(b); w.setUint32(4, (v & 0xFFFFFFFC) >>> 0, true); w.setUint32(0, 0, true); x = w.getFloat64(0, true); }
+        return cem ? x / 100 : x;
+      };
+      while (pos + 4 <= bytes.length) {
+        const tipo = dv.getUint16(pos, true), n = dv.getUint16(pos + 2, true), d = pos + 4;
+        if (d + n > bytes.length) break;
+        if (tipo === 0x000A) break;              // EOF
+        if (tipo === 0x0042 && n >= 2) codepage = dv.getUint16(d, true);
+        else if (tipo === 0x0204 && n >= 8) {    // LABEL (BIFF3/4): row, col, xf, len16, texto
+          const r = dv.getUint16(d, true), c = dv.getUint16(d + 2, true), len = dv.getUint16(d + 6, true);
+          poe(r, c, dec.decode(bytes.subarray(d + 8, d + 8 + Math.min(len, n - 8))));
+        } else if (tipo === 0x0203 && n >= 14) { // NUMBER: row, col, xf, double
+          poe(dv.getUint16(d, true), dv.getUint16(d + 2, true), numeroXls(dv.getFloat64(d + 6, true)));
+        } else if (tipo === 0x027E && n >= 10) { // RK: row, col, xf, rk
+          poe(dv.getUint16(d, true), dv.getUint16(d + 2, true), numeroXls(rk(dv.getInt32(d + 6, true))));
+        } else if (tipo === 0x0004 && n >= 8) {  // LABEL (BIFF2): row, col, attr(3), len8, texto
+          const r = dv.getUint16(d, true), c = dv.getUint16(d + 2, true), len = bytes[d + 7];
+          poe(r, c, dec.decode(bytes.subarray(d + 8, d + 8 + Math.min(len, n - 8))));
+        } else if (tipo === 0x0003 && n >= 15) { // NUMBER (BIFF2): row, col, attr(3), double
+          poe(dv.getUint16(d, true), dv.getUint16(d + 2, true), numeroXls(dv.getFloat64(d + 7, true)));
+        } else if (tipo === 0x0002 && n >= 9) {  // INTEGER (BIFF2): row, col, attr(3), uint16
+          poe(dv.getUint16(d, true), dv.getUint16(d + 2, true), String(dv.getUint16(d + 7, true)));
+        } else if (tipo === 0x0205 && n >= 8) {  // BOOLERR: row, col, xf, valor, ehErro
+          const r = dv.getUint16(d, true), c = dv.getUint16(d + 2, true);
+          if (bytes[d + 7] === 0) poe(r, c, bytes[d + 6] ? "S" : "N");
+        }
+        pos = d + n;
+      }
+      if (maxR < 0) throw new Error("Planilha vazia ou num formato que não reconheço.");
+      const linhas = [];
+      for (let r = 0; r <= maxR; r++) {
+        const l = new Array(maxC + 1);
+        let vazia = true;
+        for (let c = 0; c <= maxC; c++) { const v = celulas.get(r + "," + c); l[c] = v == null ? "" : v; if (l[c] !== "") vazia = false; }
+        if (!vazia) linhas.push(l);
+      }
+      return { linhas, enc: codepage === 1252 || codepage == null ? "Excel 4.0 (Windows-1252)" : "Excel 4.0 (cp " + codepage + ")" };
+    }
+
     // ---------- contrato (tipos de arquivo e colunas aceitas) ----------
     function tipos() { return [...new Set(contrato.map((c) => c.tipo))]; }
     function colunasAceitas(tipo) {
@@ -12074,11 +12138,17 @@
         const a = { id: ++seq, nome: f.name, tamanho: f.size, estado: "lendo", problemas: [], avisos: [], progresso: 0 };
         arquivos.push(a); render();
         try {
-          if (/\.xlsx?$/i.test(f.name)) throw new Error("Planilha do Excel não entra direto: no BlueSys exporte como CSV (texto).");
           if (f.size > 60 * 1024 * 1024) throw new Error("Arquivo acima de 60 MB. Quebre a consulta em partes.");
-          const { texto, enc } = decodificar(await f.arrayBuffer());
-          const sep = detectarSeparador(texto);
-          const tabela = lerCSV(texto, sep);
+          const buf = await f.arrayBuffer(), bytes = new Uint8Array(buf);
+          let tabela, enc, sep;
+          if (ehBIFF(bytes)) {                                   // GravXls do SVInfo (Excel 4.0)
+            const x = lerBIFF(buf); tabela = x.linhas; enc = x.enc; sep = "";
+          } else if (ehOLE(bytes) || ehZIP(bytes)) {
+            throw new Error("Este Excel é do formato novo (97+ / .xlsx). Use o botão GravXls do SVInfo (gera Excel 4.0) ou salve como CSV.");
+          } else {
+            const t = decodificar(buf); sep = detectarSeparador(t.texto); enc = t.enc;
+            tabela = lerCSV(t.texto, sep);
+          }
           if (tabela.length < 2) throw new Error("Arquivo sem linhas (só o cabeçalho, ou vazio).");
           const cabecalho = tabela[0].map(normalizarCabecalho);
           const repetidas = cabecalho.filter((h, i) => h && cabecalho.indexOf(h) !== i);
@@ -12232,7 +12302,7 @@
         const meta = [];
         if (a.linhas) meta.push("<b>" + fmtN(a.linhas.length) + "</b> linhas" + (a.registros != null ? " · <b>" + fmtN(a.registros) + "</b> registros" : ""));
         if (a.periodo) meta.push(a.periodo.coluna + " de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
-        if (a.enc) meta.push(a.enc + " · separador " + esc(a.sep));
+        if (a.enc) meta.push(a.enc + (a.sep ? " · separador " + esc(a.sep) : ""));
         meta.push((a.tamanho / 1024).toFixed(0) + " KB");
         const podeTrocar = a.estado === "pronto" || a.estado === "invalido" || a.estado === "falhou";
         const tipoHtml = a.cabecalho
