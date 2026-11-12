@@ -12167,7 +12167,8 @@
     function aplicarTipo(a, tipo) {
       const av = avaliarTipo(tipo, a.cabecalho);
       a.tipo = tipo; a.problemas = []; a.avisos = [];
-      if (!av.completo) a.problemas.push("Não é o arquivo de nenhum SQL do painel. Parece " + (ROTULOS[tipo] || tipo) + ", mas faltam as colunas " + av.faltam.join(", ") + ". Rode o SQL original e exporte de novo.");
+      if (!av.completo && av.reconhecidas < 3) a.problemas.push("Este arquivo não é um export dos SQLs do painel. Rode o SQL no BlueSys e clique em GravXls.");
+      else if (!av.completo) a.problemas.push("Não é o arquivo de nenhum SQL do painel. Parece " + (ROTULOS[tipo] || tipo) + ", mas faltam as colunas " + av.faltam.join(", ") + ". Rode o SQL original e exporte de novo.");
       if (av.ignoradas.length) console.info("Importar do ERP: colunas do arquivo que o painel não usa:", av.ignoradas.join(", "));
       // período (quando o arquivo tem uma coluna de data conhecida)
       a.periodo = null;
