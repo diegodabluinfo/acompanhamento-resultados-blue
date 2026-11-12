@@ -1240,6 +1240,7 @@
   .imp-arq-meta { font-size: 0.8rem; color: var(--texto-suave); margin-top: 3px; line-height: 1.5; }
   .imp-arq-meta b { color: var(--texto); }
   .imp-tipo { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; background: #e4eefc; color: #1a4f94; white-space: nowrap; }
+  .imp-tipo.imp-controle { background: var(--amarelo-fundo); color: var(--amarelo); }
   .imp-arq-prob { grid-column: 1 / -1; font-size: 0.8rem; color: var(--erro); }
   .imp-arq-rep { grid-column: 1 / -1; font-size: 0.8rem; color: var(--texto-suave); }
   .imp-arq.repetido { background: #f7f9fc; border-style: dashed; }
@@ -11962,6 +11963,10 @@
     const HORARIOS_PADRAO = ["09:50", "13:15", "15:40", "18:30"];
     let horarios = null, ultimosLotes = [], relogio = null;
     const COLUNAS_DATA = ["dt_fatura", "data_entrada", "emissao", "vencimento", "dt_alteracao", "data"];
+    const TIPOS_EQUIPE = ["pedidos", "produtos", "contareceber", "os", "clientes"];   // o resto é controle técnico (administrador)
+    function souAdmin() { return !!(typeof meuAcesso !== "undefined" && meuAcesso && meuAcesso.admin); }
+    function hojeISO() { const d = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }).split("/"); return d[2] + "-" + d[1] + "-" + d[0]; }
+    function diasAtras(n) { const t = new Date(hojeISO() + "T12:00:00Z"); t.setUTCDate(t.getUTCDate() - n); return t.toISOString().slice(0, 10); }
     const PLURAL = { pedidos: "pedidos", produtos: "produtos", contareceber: "títulos", os: "ordens de serviço", clientes: "clientes" };
     let contrato = null, pacote = null, arquivos = [], enviando = false, pollTimer = null, ligado = false, seq = 0;
     let el = null;
@@ -12229,6 +12234,22 @@
         const set = new Set(); a.linhas.forEach((l) => set.add(idx.map((i) => String(l[i] || "").trim()).join("\u0001")));
         a.registros = set.size;
       } else a.registros = null;
+      // controle técnico: cadastros fora dos 5 e arquivo de pedidos com faturados/cancelados de mais de 8 dias (ex.: 60 dias)
+      a.controle = false;
+      if (!a.problemas.length) {
+        if (TIPOS_EQUIPE.indexOf(tipo) < 0) {
+          if (souAdmin()) a.controle = true;
+          else a.problemas.push("Este cadastro é importação de controle: só o administrador faz.");
+        } else if (tipo === "pedidos") {
+          const idt = a.cabecalho.indexOf("dt_fatura"), ist = a.cabecalho.indexOf("status"), limite = diasAtras(9);
+          let antigos = 0;
+          a.linhas.forEach((l) => { const d = dataDe(l[idt]); if (d && d < limite && ["25","30","99","CA","CB","CO"].indexOf(String(l[ist] || "").trim()) >= 0) antigos++; });
+          if (antigos > 0) {
+            if (souAdmin()) a.controle = true;
+            else a.problemas.push("Este arquivo tem pedidos de mais de 8 dias atrás. Importação de controle: só o administrador faz. Use o 1_pedidos.sql normal.");
+          }
+        }
+      }
       a.estado = a.problemas.length ? "invalido" : "pronto";
       // versão do SQL que gerou o arquivo (coluna constante SQL_VERSAO) x versão atual do pacote
       const iv = a.cabecalho.indexOf("sql_versao");
@@ -12333,6 +12354,11 @@
         frases.push(f);
       });
       const partes = frases.length ? ['<span class="imp-res-linha">' + esc(frases.join(" · ")) + "</span>"] : [];
+      if (d.controle) {
+        const k = d.controle, ex = (k.exemplos || []).slice(0, 5).map((x) => x.pedido + " (" + [x.status, x.valor, x.dt].filter((v) => v && v.indexOf(">") > 0 && v.split(">")[0] !== v.split(">")[1]).join("; ") + ")").join(", ");
+        partes.push('<span class="imp-res-linha" style="color:#1a4f94">Conferência: ' + fmtN(k.pedidos_antigos) + " pedidos antigos comparados · " + fmtN(k.novos_no_painel) + " não existiam no painel · <b>" +
+          fmtN(k.com_diferenca) + " estavam diferentes do ERP</b>" + (ex ? " — ex.: " + esc(ex) : "") + "</span>");
+      }
       (d.avisos || []).forEach((av) => partes.push('<span class="imp-res-linha" style="color:var(--amarelo)">&#9888; ' + esc(av) + "</span>"));
       return partes.join("");
     }
@@ -12389,7 +12415,7 @@
           meta.push(a.registros != null ? "<b>" + fmtN(a.registros) + "</b> " + nome + " (" + fmtN(a.linhas.length) + " linhas)" : "<b>" + fmtN(a.linhas.length) + "</b> linhas");
           if (a.periodo) meta.push("de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
         }
-        const tipoHtml = (a.cabecalho && a.estado !== "invalido") ? '<div class="imp-arq-tipo"><span class="imp-tipo">' + esc(ROTULOS[a.tipo] || a.tipo) + "</span></div>" : "";
+        const tipoHtml = (a.cabecalho && a.estado !== "invalido") ? '<div class="imp-arq-tipo"><span class="imp-tipo">' + esc(ROTULOS[a.tipo] || a.tipo) + "</span>" + (a.controle ? ' <span class="imp-tipo imp-controle">controle técnico</span>' : "") + "</div>" : "";
         const linkPacote = a.estado === "desatualizado" && pacote ? ' <a class="imp-link" href="' + esc(pacote.arquivo) + '" download>Baixar o pacote novo</a>' : "";
         const st = '<span class="imp-st ' + esc(a.estado) + '">' + esc(rotuloSituacao(a.estado)) + "</span>";
         const barra = a.estado === "enviando" ? '<div class="imp-barra"><div style="width:' + Math.round(a.progresso * 100) + '%"></div></div>' : "";
