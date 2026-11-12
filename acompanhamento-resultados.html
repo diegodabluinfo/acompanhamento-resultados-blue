@@ -1097,6 +1097,17 @@
   #view-orcamento .orc-sel-item strong { display: block; margin-bottom: 4px; }
   #view-orcamento .orc-linha { display: flex; justify-content: space-between; gap: 6px; align-items: center; margin-top: 4px; }
   #view-orcamento .orc-qtd { width: 66px; padding: 7px; font-size: 0.85rem; }
+  #view-orcamento .orc-tag-kit { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; background: #eef3fb; color: #2a5aa8; }
+  /* preço unitário editável no orçamento (sugestão 4) e margem por item */
+  #view-orcamento .orc-preco-un { width: 84px; padding: 6px 7px; font-size: 0.82rem; text-align: right; font: inherit; border: 1px solid var(--borda); border-radius: 7px; }
+  #view-orcamento .orc-linha > span { white-space: nowrap; }
+  #view-orcamento .orc-linha .orc-qtd { width: 54px; }
+  #view-orcamento .orc-linha > b { margin-left: auto; white-space: nowrap; }
+  #view-orcamento .orc-preco-un.editado { border-color: #2a78d6; background: #f3f8ff; }
+  #view-orcamento .orc-margem-item { font-size: 0.74rem; font-weight: 700; white-space: nowrap; }
+  #view-orcamento .orc-margem-item.ok { color: #116342; } #view-orcamento .orc-margem-item.baixa { color: #9a6700; } #view-orcamento .orc-margem-item.neg { color: #b42318; }
+  #view-orcamento .orc-se-margem { margin-top: 8px; font-size: 0.8rem; color: var(--texto-suave); }
+  #view-orcamento .orc-se-margem b { font-size: 0.95rem; }
   #view-orcamento .orc-excluir { border: 0; background: transparent; color: #a33636; padding: 0; font-size: 0.78rem; font-weight: 600; text-decoration: underline; }
   #view-orcamento .orc-total { font-weight: 800; font-size: 1.5rem; color: #064c81; margin: 16px 0; }
   #view-orcamento .orc-caixa { background: #f3f7fc; border: 1px solid #dce8f2; border-radius: 10px; padding: 12px; margin: 12px 0; }
@@ -2322,6 +2333,7 @@
                 <div><label for="orc-se-venda">Valor de venda (R$)</label><input type="text" id="orc-se-venda" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
                 <div><label for="orc-se-qtd">Qtd.</label><input type="number" id="orc-se-qtd" min="1" step="1" value="1"></div>
               </div>
+              <div class="orc-se-margem" id="orc-se-margem">Margem bruta: <b>—</b> <span class="orc-muted">(preencha custo e valor de venda)</span></div>
               <label for="orc-se-prazo">Prazo de entrega</label>
               <div class="orc-se-prazo"><input type="number" id="orc-se-prazo" min="1" max="365" step="1" placeholder="10"><span>dias</span></div>
               <label for="orc-se-obs">Observação interna (não aparece para o cliente)</label>
@@ -9262,6 +9274,11 @@
     let indiceFotos = null;    // codigo -> versão; null enquanto o índice não carregou
     let dados = [], carregando = false, ligado = false, carregadoEm = null, erro = null;
     let ativa = "Processador", carrinho = [], tabela = 0, termo = "", ordem = "asc", ajustado = null, previewId = null;
+    // ajustado = {id: centavos} com os preços unitários em vigor quando diferem da tabela. Vem de três lugares:
+    // "Ratear" (rateio do total), orçamento salvo reaberto, ou o vendedor digitando o unitário de um item (sugestão 4).
+    // manual = true quando o preço foi digitado item a item ou veio do orçamento salvo: trocar quantidade ou
+    // acrescentar peça não apaga esses preços (o rateio, sim, porque o total deixa de valer).
+    let manual = false;
     const POR_PAGINA = 30;
     let pagina = 1;   // página da lista de produtos; volta para 1 ao trocar categoria, busca ou ordem
     // configuração da folha do cliente (tela "Visualizar impressão"); vai junto com o orçamento salvo.
@@ -9391,7 +9408,8 @@
         p: [Number(r.preco_revenda || 0), Number(r.preco_sem_ie || 0), Number(r.preco_consumo || 0)],
         c: classificar(r.descricao),
         cost: r.custo == null ? null : Number(r.custo),
-        promo: r.promocao_ate || null
+        promo: r.promocao_ate || null,
+        kit: !!r.kit   // kit do ERP (computador montado, kit CPU…): o estoque é quanto dá para montar com os componentes
       };
     }
 
@@ -9460,6 +9478,7 @@
     function centsEfetivo(i) { return ajustado && ajustado[i.id] != null ? ajustado[i.id] : cents(price(byId(i.id))); }
     function invalidarRateio() {
       ajustado = null;
+      manual = false;
       el("orc-rateio-info").textContent = "O ajuste é rateado proporcionalmente entre os itens, considerando as quantidades.";
     }
     function parseMoedaBR(raw) {
@@ -9481,7 +9500,7 @@
         if (!MULTI.has(p.c)) carrinho = carrinho.filter((i) => byId(i.id).c !== p.c);
         carrinho.push({ id, qty: 1 });
       }
-      invalidarRateio();
+      if (!manual) invalidarRateio();
       const pos = ESSENCIAIS.indexOf(ativa);
       if (p.c === "Gabinete" && gabineteComFonte(p.d)) {
         // o gabinete já traz fonte: não avança para Fonte e oferece tirar a fonte avulsa que já estiver no orçamento
@@ -9496,14 +9515,38 @@
       let n = Math.floor(Number(q));
       if (!Number.isFinite(n)) n = 1;
       r.qty = Math.max(1, Math.min(n, p.s));
-      invalidarRateio();
+      if (!manual) invalidarRateio();
       render();
     }
     function remover(id) {
       carrinho = carrinho.filter((i) => i.id !== id);
       encomendas = encomendas.filter((e) => e.id !== id);
-      invalidarRateio();
+      if (manual && ajustado) { delete ajustado[id]; if (!carrinho.length) invalidarRateio(); } else invalidarRateio();
       render();
+    }
+    // sugestão 4 (Lucas): o vendedor digita o valor unitário de um item do orçamento
+    function mudarPreco(id, raw) {
+      const r = carrinho.find((i) => i.id === id), p = byId(id);
+      if (!r || !p) return;
+      const v = parseMoedaBR(raw);
+      if (!Number.isFinite(v) || v < 0 || v > 1e7) { alert("Informe um valor unitário válido (ex.: 1.250,00)."); render(); return; }
+      if (p.cost != null && v < Number(p.cost) && !confirm("O valor unitário (" + money(v) + ") é menor que o custo (" + money(p.cost) + "). Manter assim mesmo?")) { render(); return; }
+      if (!manual) { ajustado = null; manual = true; }   // sai do rateio: daqui em diante os preços são item a item
+      ajustado = ajustado || {};
+      if (cents(v) === cents(price(p))) delete ajustado[id]; else ajustado[id] = cents(v);
+      if (!Object.keys(ajustado).length) { ajustado = null; manual = false; el("orc-rateio-info").textContent = "O ajuste é rateado proporcionalmente entre os itens, considerando as quantidades."; }
+      else el("orc-rateio-info").textContent = "Preços unitários digitados item a item. “Restaurar” volta para a tabela.";
+      render();
+    }
+    // margem bruta de um item: (venda − custo) ÷ venda
+    function margemItem(p, unit) {
+      if (p.cost == null || !(unit > 0)) return null;
+      return 100 * (unit - Number(p.cost)) / unit;
+    }
+    function htmlMargem(m) {
+      if (m == null) return "";
+      const cls = m < 0 ? "neg" : m < 10 ? "baixa" : "ok";
+      return '<span class="orc-margem-item ' + cls + '" title="Margem bruta do item: (venda − custo) ÷ venda. Uso interno.">margem ' + m.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%</span>";
     }
 
     // --- item sob encomenda ---
@@ -9560,6 +9603,7 @@
       carrinho.push({ id: e.id, qty: qtd });
       ["orc-se-desc", "orc-se-custo", "orc-se-venda", "orc-se-prazo", "orc-se-obs"].forEach((id) => { el(id).value = ""; });
       el("orc-se-qtd").value = "1";
+      el("orc-se-custo").dispatchEvent(new Event("input"));   // zera a margem mostrada no formulário
       tirarImagemEncomenda();
       avisoEncomenda("Adicionado ao orçamento.", "ok");
       invalidarRateio();
@@ -9647,7 +9691,8 @@
           (foto ? '<button type="button" class="orc-mini" data-zoom-id="' + esc(p.id) + '" title="Ver foto grande">' +
             '<img src="' + esc(foto.mini) + '" data-grande="' + esc(foto.f[0]) + '" loading="lazy" alt=""></button>' : "") +
           "<div><h3>" + esc(p.d) + "</h3>" +
-          '<div class="orc-meta">CÓD. ' + esc(p.cod) + " · Estoque: <strong>" + p.s + "</strong>" +
+          '<div class="orc-meta">CÓD. ' + esc(p.cod) + (p.kit ? " · Monta até: <strong>" + p.s + "</strong>" : " · Estoque: <strong>" + p.s + "</strong>") +
+            (p.kit ? '<span class="orc-tag-kit" title="Kit do ERP: o estoque é dos componentes">kit</span>' : "") +
             (p.promo && tabela !== 2 ? '<span class="orc-tag-promo">Promoção até ' + dataCurta(p.promo) + "</span>" : "") +
             (p.c === "Gabinete" && gabineteComFonte(p.d) ? '<span class="orc-tag-fonte">com fonte</span>' : "") +
           "</div></div>" +
@@ -9677,11 +9722,16 @@
       el("orc-selecionados").innerHTML = carrinho.map((i) => {
         const p = byId(i.id), unit = centsEfetivo(i) / 100;
         const encomenda = p.c === SOB_ENCOMENDA;
-        return '<div class="orc-sel-item"><strong>' + esc(p.c) + "</strong><div>" + esc(p.d) + "</div>" +
-          '<div class="orc-muted">' + (encomenda ? (p.prazo ? "prazo " + esc(p.prazo) : "sem prazo informado") : esc(p.cod)) + " · " + money(unit) + " un. " + (ajustado ? "(ajustado)" : "") +
-            (encomenda ? " · custo " + money(p.cost) : " · estoque " + p.s) + "</div>" +
+        const editado = ajustado && ajustado[i.id] != null && ajustado[i.id] !== cents(price(p));
+        const mostraLucro = p.cost != null && dados.some((x) => x.cost != null);
+        return '<div class="orc-sel-item"><strong>' + esc(p.c) + (p.kit ? '<span class="orc-tag-kit">kit</span>' : "") + "</strong><div>" + esc(p.d) + "</div>" +
+          '<div class="orc-muted">' + (encomenda ? (p.prazo ? "prazo " + esc(p.prazo) : "sem prazo informado") : esc(p.cod)) +
+            (editado ? " · tabela " + money(price(p)) + (manual ? " (editado)" : " (rateado)") : "") +
+            (encomenda ? " · custo " + money(p.cost) : (p.kit ? " · monta até " : " · estoque ") + p.s) +
+            (mostraLucro ? " · " + htmlMargem(margemItem(p, unit)) : "") + "</div>" +
           (encomenda && p.obs ? '<div class="orc-muted orc-sel-obs">Obs.: ' + esc(p.obs) + "</div>" : "") +
           '<div class="orc-linha"><span>Qtd. <input class="orc-qtd" type="number" min="1" step="1" max="' + p.s + '" ' + (MULTI.has(p.c) ? "" : "disabled") + ' value="' + i.qty + '" data-qty="' + esc(p.id) + '"></span>' +
+          '<span title="Valor unitário: clique para alterar">R$ <input class="orc-preco-un' + (editado ? " editado" : "") + '" type="text" inputmode="decimal" value="' + unit.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '" data-preco="' + esc(p.id) + '"></span>' +
           "<b>" + money(i.qty * unit) + '</b><button type="button" class="orc-excluir" data-del="' + esc(p.id) + '">Excluir</button></div></div>';
       }).join("") || '<div class="orc-vazio">Nenhum componente selecionado.</div>';
 
@@ -10210,6 +10260,7 @@
         if (cents(price(p)) !== cents(it.preco_tabela)) mudou.push(p.d + ": " + money(it.preco_tabela) + " → " + money(price(p)) + " hoje");
       }
       if (!carrinho.length) ajustado = null;
+      manual = !!ajustado;   // os preços salvos ficam mesmo que a quantidade mude; "Restaurar" volta para a tabela de hoje
       el("orc-rateio-info").textContent = "Preços do orçamento salvo " + numeroTexto(o.numero) + " (versão " + o.versao + ").";
       reaberto = { numero: o.numero, versao: o.versao, fora, mudou, estoque };
       salvo = { id: o.id, numero: o.numero, versao: o.versao, em: new Date(o.atualizado_em),
@@ -10748,7 +10799,11 @@
       el("orc-busca").addEventListener("input", (ev) => { termo = ev.target.value; pagina = 1; renderCatalogo(); });
       el("orc-ordem").addEventListener("change", (ev) => { ordem = ev.target.value; pagina = 1; renderCatalogo(); });
       el("orc-tabela").addEventListener("change", (ev) => { tabela = Number(ev.target.value); invalidarRateio(); render(); });
-      el("orc-selecionados").addEventListener("change", (ev) => { const q = ev.target.closest("[data-qty]"); if (q) mudarQtd(q.dataset.qty, q.value); });
+      el("orc-selecionados").addEventListener("change", (ev) => {
+        const q = ev.target.closest("[data-qty]"); if (q) { mudarQtd(q.dataset.qty, q.value); return; }
+        const pr = ev.target.closest("[data-preco]"); if (pr) mudarPreco(pr.dataset.preco, pr.value);
+      });
+      el("orc-selecionados").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && ev.target.closest("[data-preco]")) ev.target.blur(); });
       el("orc-selecionados").addEventListener("click", (ev) => { const d = ev.target.closest("[data-del]"); if (d) remover(d.dataset.del); });
       el("orc-ratear").addEventListener("click", () => {
         if (!carrinho.length) { alert("Adicione componentes antes de ajustar o total."); return; }
@@ -10757,12 +10812,23 @@
         const result = distribuir(cents(v));
         if (!result || result.error) { alert((result && result.error) || "Não foi possível realizar o rateio."); return; }
         ajustado = result;
+        manual = false;
         el("orc-rateio-info").textContent = "Total rateado proporcionalmente sobre os preços unitários. Qualquer alteração nas peças, quantidades ou tabela de preços redefine o rateio.";
         render();
       });
       el("orc-restaurar").addEventListener("click", () => { invalidarRateio(); render(); });
       // item sob encomenda: imagem por arquivo ou print colado (Ctrl+V) em qualquer campo do formulário
       el("orc-se-adicionar").addEventListener("click", adicionarEncomenda);
+      // sugestão 5 (Lucas): margem bruta do item sob encomenda enquanto digita custo e venda
+      const margemEncomenda = () => {
+        const custo = parseMoedaBR(el("orc-se-custo").value), venda = parseMoedaBR(el("orc-se-venda").value), box = el("orc-se-margem");
+        if (!Number.isFinite(custo) || !Number.isFinite(venda) || !(venda > 0)) { box.innerHTML = 'Margem bruta: <b>—</b> <span class="orc-muted">(preencha custo e valor de venda)</span>'; return; }
+        const lucro = venda - custo, m = 100 * lucro / venda, cls = m < 0 ? "neg" : m < 10 ? "baixa" : "ok";
+        box.innerHTML = 'Margem bruta: <b class="orc-margem-item ' + cls + '" style="font-size:0.95rem">' + m.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%</b>" +
+          " · lucro " + money(lucro) + " por unidade" + (custo > 0 ? " · markup " + (100 * lucro / custo).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%" : "") +
+          ' <span class="orc-muted">(uso interno, não aparece para o cliente)</span>';
+      };
+      ["orc-se-custo", "orc-se-venda"].forEach((id) => el(id).addEventListener("input", margemEncomenda));
       el("orc-se-anexar").addEventListener("click", () => el("orc-se-arquivo").click());
       el("orc-se-arquivo").addEventListener("change", (ev) => { if (ev.target.files[0]) anexarImagemEncomenda(ev.target.files[0]); });
       el("orc-se-tirar").addEventListener("click", tirarImagemEncomenda);
