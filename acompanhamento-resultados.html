@@ -12139,7 +12139,7 @@
     async function enviarTodos() {
       if (enviando) return;
       const e = pegarElementos();
-      const prontos = arquivos.filter((a) => a.estado === "pronto");
+      const prontos = arquivos.filter((a) => a.estado === "pronto" || a.estado === "falhou");   // "falhou" = tentar de novo
       if (!prontos.length) { avisar(e.aviso, "erro", "Nenhum arquivo pronto para enviar."); return; }
       enviando = true; e.btnEnviar.disabled = true; e.aviso.className = "aviso";
       for (const a of prontos) {
@@ -12234,7 +12234,7 @@
         if (a.periodo) meta.push(a.periodo.coluna + " de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
         if (a.enc) meta.push(a.enc + " · separador " + esc(a.sep));
         meta.push((a.tamanho / 1024).toFixed(0) + " KB");
-        const podeTrocar = a.estado === "pronto" || a.estado === "invalido";
+        const podeTrocar = a.estado === "pronto" || a.estado === "invalido" || a.estado === "falhou";
         const tipoHtml = a.cabecalho
           ? '<div class="imp-arq-tipo"><select data-id="' + a.id + '"' + (podeTrocar ? "" : " disabled") + ">" +
               tipos().map((t) => '<option value="' + t + '"' + (t === a.tipo ? " selected" : "") + ">" + esc(ROTULOS[t] || t) + "</option>").join("") +
@@ -12252,7 +12252,7 @@
           (a.resultado ? '<div class="imp-arq-res">' + resumoResultado(a.resultado) + "</div>" : "") +
           "</div>";
       }).join("");
-      const prontos = arquivos.filter((a) => a.estado === "pronto").length;
+      const prontos = arquivos.filter((a) => a.estado === "pronto" || a.estado === "falhou").length;
       e.btnEnviar.classList.toggle("oculto", prontos === 0);
       e.btnEnviar.textContent = prontos === 1 ? "Enviar 1 arquivo" : "Enviar " + prontos + " arquivos";
       e.btnLimpar.classList.toggle("oculto", enviando);
