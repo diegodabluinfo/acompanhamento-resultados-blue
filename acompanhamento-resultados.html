@@ -1209,6 +1209,42 @@
     #view-orcamento .orc-vi { grid-template-columns: 1fr; }
     #view-orcamento .orc-vi-previa { padding: 8px; }
   }
+  /* ---------- Importar do ERP (plano B, 12/11/2026) ---------- */
+  #importar-liberada .form-card { max-width: 980px; }
+  .imp-passos { display: grid; gap: 6px; font-size: 0.86rem; color: var(--texto-suave); margin-bottom: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .imp-passos code { background: #eef1f6; padding: 0 5px; border-radius: 5px; color: var(--texto); }
+  .imp-rodadas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .imp-rodada { border: 1px solid var(--borda); border-radius: 10px; padding: 6px 10px; font-size: 0.8rem; background: #fbfcfe; color: var(--texto-suave); }
+  .imp-rodada b { color: var(--azul-escuro); margin-right: 6px; }
+  .imp-rodada.agora { border-color: var(--azul); box-shadow: 0 0 0 2px rgba(30,95,191,0.12); color: var(--texto); }
+  .imp-drop { border: 2px dashed var(--borda); border-radius: 14px; padding: 26px 16px; text-align: center; cursor: pointer; background: #fbfcfe; transition: border-color .15s, background .15s; }
+  .imp-drop:hover, .imp-drop:focus, .imp-drop.sobre { border-color: var(--azul); background: #f1f6ff; outline: none; }
+  .imp-drop-txt { font-size: 0.98rem; }
+  .imp-link { color: var(--azul); font-weight: 600; text-decoration: underline; }
+  .imp-drop-sub { font-size: 0.78rem; color: var(--texto-suave); margin-top: 4px; }
+  .imp-lista { display: grid; gap: 10px; margin-top: 12px; }
+  .imp-arq { border: 1px solid var(--borda); border-radius: 12px; padding: 10px 12px; background: #fff; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: start; }
+  .imp-arq.erro { border-color: #f2b8b0; background: #fff8f7; }
+  .imp-arq.ok { border-color: #bfe3cc; }
+  .imp-arq-nome { font-weight: 700; word-break: break-all; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .imp-arq-meta { font-size: 0.8rem; color: var(--texto-suave); margin-top: 3px; line-height: 1.5; }
+  .imp-arq-meta b { color: var(--texto); }
+  .imp-arq-tipo select { padding: 6px 8px; font-size: 0.85rem; border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
+  .imp-arq-prob { grid-column: 1 / -1; font-size: 0.8rem; color: var(--erro); }
+  .imp-arq-aviso { grid-column: 1 / -1; font-size: 0.8rem; color: var(--amarelo); }
+  .imp-arq-res { grid-column: 1 / -1; font-size: 0.8rem; }
+  .imp-res-linha { display: block; }
+  .imp-barra { grid-column: 1 / -1; height: 6px; border-radius: 6px; background: #e6ebf3; overflow: hidden; }
+  .imp-barra > div { height: 100%; background: var(--azul); width: 0; transition: width .2s; }
+  .imp-acoes { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .imp-acoes button { padding: 10px 18px; font-size: 0.95rem; }
+  .imp-st { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; white-space: nowrap; background: #eef1f6; color: var(--texto-suave); }
+  .imp-st.ok, .imp-st.pronto { background: var(--sucesso-fundo); color: var(--sucesso); }
+  .imp-st.parcial { background: var(--amarelo-fundo); color: var(--amarelo); }
+  .imp-st.erro, .imp-st.cancelado, .imp-st.invalido, .imp-st.falhou { background: var(--erro-fundo); color: var(--erro); }
+  .imp-st.processando, .imp-st.recebido, .imp-st.enviando, .imp-st.lendo { background: #e4eefc; color: #1a4f94; }
+  .imp-btn-x { background: transparent; color: var(--erro); border: 1px solid #f2b8b0; padding: 3px 9px; font-size: 0.74rem; border-radius: 8px; font-weight: 600; }
+  .imp-btn-x:active { background: var(--erro-fundo); }
 </style>
 </head>
 <body>
@@ -1280,6 +1316,7 @@
             <button class="tab-btn item-menu" data-tab="devolucao" id="tab-btn-devolucao">Lançar Devolução</button>
             <button class="tab-btn item-menu" data-tab="fornecedores" id="tab-btn-fornecedores">Cadastro de Fornecedores</button>
             <button class="tab-btn item-menu" data-tab="metas" id="tab-btn-metas">Cadastro de Metas</button>
+            <button class="tab-btn item-menu" data-tab="importar" id="tab-btn-importar">Importar do ERP</button>
             <button class="tab-btn item-menu oculto" data-tab="usuarios" id="tab-btn-usuarios">Usuários</button>
           </div>
         </div>
@@ -1858,7 +1895,7 @@
             <strong>Pontualidade</strong> = % dos títulos já pagos que foram quitados até o vencimento.
             Títulos vencidos há <strong>mais de 1 ano</strong> ficam fora da visão padrão: em boa parte são de bons pagadores e
             provavelmente resíduo do ERP — confirme com o financeiro antes de cobrar.
-            Dados do ERP atualizados uma vez por dia.
+            Os títulos vêm do ERP nas importações das 09:50 e das 20:30 (barra do rodapé).
           </div>
         </div>
       </div>
@@ -2391,7 +2428,7 @@
         <div id="orc-impressao" class="fl-folha"></div>
 
         <div class="rodape-nota orc-noprint">
-          Estoque e preços vêm do ERP, copiados para o painel nos horários de sincronização (a barra de baixo mostra a última e a próxima). Preços de revenda já com a promoção vigente.
+          Estoque e preços vêm do ERP, importados para o painel nos horários da barra de baixo (última e próxima). Preços de revenda já com a promoção vigente.
           Fotos: site da Blue Distribuidora, copiadas para o Supabase pelo sincronizador de fotos e ligadas pelo código do produto.
         </div>
       </div>
@@ -2826,6 +2863,68 @@
           <div class="rodape-nota">
             Desmarcar "Ativo" tira o fornecedor da lista do lançamento, sem apagar nada já lançado.
             Para renomear, desative o antigo e cadastre outro — trocar o nome aqui não corrige lançamentos antigos.
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ===== ABA: Importar do ERP (cadastro — plano B, 12/11/2026) ===== -->
+      <div id="view-importar" class="oculto">
+        <div id="importar-sem-permissao" class="oculto">
+          <div class="caixa-login">
+            <h2>Sem permissão para esta área</h2>
+            <p class="sub">Sua conta não tem a importação do ERP liberada. Peça ao administrador do painel.</p>
+          </div>
+        </div>
+        <div id="importar-liberada" class="oculto">
+          <div class="form-card">
+            <h2>Importar do ERP</h2>
+            <p class="sub">Os arquivos exportados do Vanguarda (BlueSys) entram aqui e o painel se atualiza sozinho em até 1 minuto.</p>
+            <div id="aviso-importar" class="aviso"></div>
+            <div class="imp-passos">
+              <div><b>1.</b> No BlueSys, rode o SQL da rodada e exporte o resultado como CSV (separador <code>;</code> ou <code>,</code>, tanto faz; acentos em UTF-8 ou Windows também).</div>
+              <div><b>2.</b> Arraste os arquivos para a área abaixo — pode ser vários de uma vez — e confira o que foi reconhecido (tipo, linhas, período).</div>
+              <div><b>3.</b> Clique em <b>Enviar</b>. O resultado de cada arquivo aparece aqui embaixo; a barra do rodapé passa a mostrar a nova data.</div>
+            </div>
+            <div id="imp-rodadas" class="imp-rodadas"></div>
+            <div id="imp-drop" class="imp-drop" tabindex="0" role="button" aria-label="Escolher arquivos para importar">
+              <input type="file" id="imp-arquivo" multiple accept=".csv,.txt,.tsv,text/csv,text/plain" class="oculto">
+              <div class="imp-drop-txt"><b>Arraste os arquivos aqui</b> ou <span class="imp-link">clique para escolher</span></div>
+              <div class="imp-drop-sub">CSV exportado do BlueSys · vários arquivos de uma vez · o tipo é reconhecido pelo cabeçalho</div>
+            </div>
+            <div id="imp-lista" class="imp-lista"></div>
+            <div class="imp-acoes">
+              <button type="button" id="imp-enviar" class="oculto">Enviar</button>
+              <button type="button" id="imp-limpar" class="btn-secundario oculto">Limpar lista</button>
+            </div>
+          </div>
+
+          <h3 class="grupo-titulo">Últimas importações</h3>
+          <div class="card-tabela">
+            <div class="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Quando</th>
+                    <th style="text-align:left;">Arquivo</th>
+                    <th style="text-align:left;">Tipo</th>
+                    <th>Linhas</th>
+                    <th>Situação</th>
+                    <th style="text-align:left;">Resultado</th>
+                    <th style="text-align:left;">Quem</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="imp-historico">
+                  <tr><td colspan="8" class="estado-vazio">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="rodape-nota">
+            Cada arquivo vira um lote. A rotina do painel (roda a cada minuto) valida, converte os formatos brasileiros (datas e vírgula decimal)
+            e grava nas tabelas do ERP dentro do painel. Se algo der errado, nada do lote é gravado e o motivo aparece em Situação.
+            Mandar o mesmo arquivo duas vezes não duplica nada: o que já existe é atualizado.
           </div>
         </div>
       </div>
@@ -3299,6 +3398,7 @@
   const tabBtnUsuarios = document.getElementById("tab-btn-usuarios");
   const tabBtnGastos = document.getElementById("tab-btn-gastos");
   const tabBtnFornecedores = document.getElementById("tab-btn-fornecedores");
+  const tabBtnImportar = document.getElementById("tab-btn-importar");
   const menuCadastros = document.getElementById("menu-cadastros");
   const btnMenuCadastros = document.getElementById("btn-menu-cadastros");
   const listaCadastros = document.getElementById("lista-cadastros");
@@ -3353,6 +3453,7 @@
   const viewMetas = document.getElementById("view-metas");
   const viewGastos = document.getElementById("view-gastos");
   const viewFornecedores = document.getElementById("view-fornecedores");
+  const viewImportar = document.getElementById("view-importar");
   const metasBloqueada = document.getElementById("metas-bloqueada");
   const metasSemPermissao = document.getElementById("metas-sem-permissao");
   const metasLiberada = document.getElementById("metas-liberada");
@@ -3711,17 +3812,17 @@
     const partes = [];
     let atrasada = false;
     if (s.carregadoEm) {
-      partes.push("ERP sincronizado em <b>" + fmtDiaHora(s.carregadoEm) + "</b>");
+      partes.push("ERP importado em <b>" + fmtDiaHora(s.carregadoEm) + "</b>");
       if (s.previstaAnterior && (new Date(s.previstaAnterior) - new Date(s.carregadoEm)) > 20 * 60 * 1000) atrasada = true;
     } else {
-      partes.push("ERP ainda sem sincronização registrada");
+      partes.push("ERP ainda sem importação registrada");
     }
     if (s.dtFatura) {
       const [ano, mes, dia] = s.dtFatura.split("-");
       partes.push("vendas faturadas até <b>" + dia + "/" + mes + "/" + ano + "</b>");
     }
-    if (s.proxima) partes.push("próxima sincronização <b>" + quandoProxima(s.proxima) + "</b>");
-    if (atrasada) partes.unshift("&#9888; Sincronização atrasada (prevista " + fmtDiaHora(s.previstaAnterior) + ")");
+    if (s.proxima) partes.push("próxima importação <b>" + quandoProxima(s.proxima) + "</b>");
+    if (atrasada) partes.unshift("&#9888; Importação atrasada (prevista " + fmtDiaHora(s.previstaAnterior) + ")");
     barraSinc.innerHTML = partes.join('<span class="sinc-sep">·</span>');
     barraSinc.classList.toggle("atrasada", atrasada);
     barraSinc.classList.remove("oculto");
@@ -3919,7 +4020,7 @@
       elFreshness.textContent = "";
       atualizarBarraSinc(sincronizacao);
       ligarBarraSinc();
-      notaRodape.textContent = "Meses automáticos usam os pedidos faturados no ERP (sincronizado nos horários da barra de baixo). Meses anteriores mantêm os valores lançados manualmente.";
+      notaRodape.textContent = "Meses automáticos usam os pedidos faturados no ERP (importados nos horários da barra de baixo). Meses anteriores mantêm os valores lançados manualmente.";
     } catch (err) {
       console.error("Erro ao carregar acompanhamento de resultados:", err);
       const mensagem = (err && err.message) ? err.message : String(err);
@@ -4386,6 +4487,7 @@
     viewMetas.classList.toggle("oculto", aba !== "metas");
     viewGastos.classList.toggle("oculto", aba !== "gastos");
     viewFornecedores.classList.toggle("oculto", aba !== "fornecedores");
+    viewImportar.classList.toggle("oculto", aba !== "importar");
     tabBtnResultados.classList.toggle("ativa", aba === "resultados");
     tabBtnVendas.classList.toggle("ativa", aba === "vendas");
     tabBtnReserva.classList.toggle("ativa", aba === "reserva");
@@ -4402,6 +4504,7 @@
     tabBtnMetas.classList.toggle("ativa", aba === "metas");
     tabBtnGastos.classList.toggle("ativa", aba === "gastos");
     tabBtnFornecedores.classList.toggle("ativa", aba === "fornecedores");
+    tabBtnImportar.classList.toggle("ativa", aba === "importar");
     if (aba === "vendas") iniciarVendas();
     if (aba === "reserva") Reserva.iniciar();
     if (aba === "clientes") iniciarClientes();
@@ -4417,6 +4520,7 @@
     if (aba === "metas") atualizarTelaMetas();
     if (aba === "gastos") atualizarTelaGastos();
     if (aba === "fornecedores") atualizarTelaFornecedores();
+    if (aba === "importar") ImportarErp.iniciar();
   }
 
   tabBtnResultados.addEventListener("click", () => mostrarAba("resultados"));
@@ -4444,6 +4548,7 @@
   tabBtnUsuarios.addEventListener("click", () => mostrarAba("usuarios"));
   tabBtnGastos.addEventListener("click", () => mostrarAba("gastos"));
   tabBtnFornecedores.addEventListener("click", () => mostrarAba("fornecedores"));
+  tabBtnImportar.addEventListener("click", () => mostrarAba("importar"));
 
   // --- menu Cadastros ---
   function fecharMenuCadastros() {
@@ -4754,6 +4859,7 @@
   const ABAS_CADASTRO = [
     ["gastos", () => tabBtnGastos], ["devolucao", () => tabBtnDevolucao],
     ["fornecedores", () => tabBtnFornecedores], ["metas", () => tabBtnMetas],
+    ["importar", () => tabBtnImportar],
     ["usuarios", () => tabBtnUsuarios]
   ];
   const ABAS = ABAS_VISUALIZACAO.concat(ABAS_CADASTRO);
@@ -11814,6 +11920,401 @@
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) revalidarSessao();
     });
+  })();
+  // ===== Importar do ERP (plano B, 12/11/2026) =====
+  // Os arquivos exportados pelo SQL do BlueSys/Vanguarda sobem daqui para import_erp.* (RPCs importacao_erp_*);
+  // a rotina import_erp.processar_pendentes() (pg_cron, a cada minuto) valida, converte e grava nas tabelas *_erp.
+  const ImportarErp = (() => {
+    const ROTULOS = {
+      pedidos: "Pedidos", produtos: "Produtos", contareceber: "Contas a receber", os: "Ordens de serviço", clientes: "Clientes",
+      vendedores_erp: "Vendedores", formas_pagamento_erp: "Formas de pagamento", clientes_tipo_erp: "Tipos de cliente",
+      atividades_erp: "Atividades", clientes_atividades_erp: "Cliente x atividade", contatos_erp: "Contatos",
+      produtos_tipo_erp: "Tipos de produto", produtos_categoria_erp: "Categorias", produtos_categoria_tipo_erp: "Categoria x tipo",
+      precos_tabela_erp: "Tabelas de preço", precos_lucrat_erp: "Faixas de lucratividade", precos_tab_lucrat_erp: "Fatores tabela x faixa",
+      produtos_kit_erp: "Kits", produtos_promocao_erp: "Promoções"
+    };
+    const TABELAS = {
+      pedidos_erp: "pedidos", pedidos_itens_erp: "itens de pedido", produtos_erp: "produtos", precos_tab_lucrat_erp: "fatores de preço",
+      produtos_promocao_erp: "promoções", contareceber_erp: "títulos", os_erp: "OS", os_itens_erp: "itens de OS",
+      clientes_erp: "clientes", clientes_atividades_erp: "atividades de cliente"
+    };
+    const RODADAS = [
+      ["09:50", ["pedidos", "produtos", "contareceber", "os"]],
+      ["12:40", ["pedidos", "produtos"]],
+      ["15:40", ["pedidos", "produtos", "os"]],
+      ["20:30", ["pedidos", "produtos", "contareceber", "clientes"]]
+    ];
+    const COLUNAS_DATA = ["dt_fatura", "data_entrada", "emissao", "vencimento", "dt_alteracao", "data"];
+    let contrato = null, arquivos = [], enviando = false, pollTimer = null, ligado = false, seq = 0;
+    let el = null;
+
+    function pegarElementos() {
+      if (el) return el;
+      el = {
+        semPermissao: document.getElementById("importar-sem-permissao"),
+        liberada: document.getElementById("importar-liberada"),
+        aviso: document.getElementById("aviso-importar"),
+        rodadas: document.getElementById("imp-rodadas"),
+        drop: document.getElementById("imp-drop"),
+        input: document.getElementById("imp-arquivo"),
+        lista: document.getElementById("imp-lista"),
+        btnEnviar: document.getElementById("imp-enviar"),
+        btnLimpar: document.getElementById("imp-limpar"),
+        historico: document.getElementById("imp-historico")
+      };
+      return el;
+    }
+
+    async function rpc(nome, corpo) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo || {})
+      });
+      if (!res.ok) { const t = await res.text(); let m = t; try { m = JSON.parse(t).message || t; } catch (e) {} throw new Error(String(m).slice(0, 300)); }
+      return res.json();
+    }
+    // o envio de linhas é idempotente (on conflict update): dá para repetir se a rede falhar no meio
+    async function rpcComRepeticao(nome, corpo, vezes) {
+      let ultimo = null;
+      for (let i = 0; i < (vezes || 3); i++) {
+        try { return await rpc(nome, corpo); }
+        catch (e) { ultimo = e; if (/permiss|sess|obrigat|desconhecido|incompleto|não está/i.test(e.message)) throw e; await new Promise(r => setTimeout(r, 1200 * (i + 1))); }
+      }
+      throw ultimo;
+    }
+
+    // ---------- leitura do arquivo ----------
+    function decodificar(buf) {
+      const bytes = new Uint8Array(buf);
+      if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) return { texto: new TextDecoder("utf-8").decode(bytes.subarray(3)), enc: "UTF-8" };
+      if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) return { texto: new TextDecoder("utf-16le").decode(bytes.subarray(2)), enc: "UTF-16" };
+      if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) return { texto: new TextDecoder("utf-16be").decode(bytes.subarray(2)), enc: "UTF-16" };
+      try { return { texto: new TextDecoder("utf-8", { fatal: true }).decode(bytes), enc: "UTF-8" }; }
+      catch (e) { return { texto: new TextDecoder("windows-1252").decode(bytes), enc: "Windows-1252" }; }
+    }
+    function detectarSeparador(texto) {
+      const primeira = (texto.slice(0, 50000).split(/\r?\n/).find((l) => l.trim()) || "");
+      let melhor = ";", maior = -1;
+      [";", "\t", ",", "|"].forEach((c) => { const n = primeira.split(c).length - 1; if (n > maior) { maior = n; melhor = c; } });
+      return melhor;
+    }
+    // CSV no padrão RFC 4180: aspas, aspas duplicadas e quebras de linha dentro de aspas
+    function lerCSV(texto, sep) {
+      const linhas = []; let campo = "", linha = [], aspas = false;
+      for (let i = 0; i < texto.length; i++) {
+        const ch = texto[i];
+        if (aspas) {
+          if (ch === '"') { if (texto[i + 1] === '"') { campo += '"'; i++; } else aspas = false; }
+          else campo += ch;
+        } else if (ch === '"') {
+          aspas = true;
+        } else if (ch === sep) {
+          linha.push(campo); campo = "";
+        } else if (ch === "\n" || ch === "\r") {
+          if (ch === "\r" && texto[i + 1] === "\n") i++;
+          linha.push(campo); campo = "";
+          if (linha.length > 1 || linha[0].trim() !== "") linhas.push(linha);
+          linha = [];
+        } else {
+          campo += ch;
+        }
+      }
+      if (campo !== "" || linha.length) { linha.push(campo); if (linha.length > 1 || linha[0].trim() !== "") linhas.push(linha); }
+      return linhas;
+    }
+    function normalizarCabecalho(h) {
+      return String(h || "").replace(/^﻿/, "").trim().toLowerCase().replace(/\s+/g, "_");
+    }
+    function dataDe(v) {
+      const s = String(v || "").trim(); let m;
+      if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/))) return (m[3].length === 2 ? "20" + m[3] : m[3]) + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+      if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1] + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0");
+      return null;
+    }
+    function dataBR(iso) { return iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : ""; }
+
+    // ---------- contrato (tipos de arquivo e colunas aceitas) ----------
+    function tipos() { return [...new Set(contrato.map((c) => c.tipo))]; }
+    function colunasAceitas(tipo) {
+      const set = new Set();
+      contrato.filter((c) => c.tipo === tipo).forEach((c) => (c.colunas || []).forEach((col) => set.add((c.prefixo || "") + col)));
+      return set;
+    }
+    function colunaExtra(tipo, h) {
+      if (tipo === "produtos") return /^fator_\d\d$/.test(h) || h.indexOf("promo_") === 0;
+      if (tipo === "clientes") return h === "cnae_principal";
+      return false;
+    }
+    function avaliarTipo(tipo, cabecalho) {
+      const principal = contrato.find((c) => c.tipo === tipo && c.papel === "principal");
+      const aceitas = colunasAceitas(tipo);
+      const faltam = principal.obrigatorias.filter((o) => cabecalho.indexOf(o) < 0);
+      const ignoradas = cabecalho.filter((h) => h && !aceitas.has(h) && !colunaExtra(tipo, h));
+      const reconhecidas = cabecalho.length - ignoradas.length;
+      return { tipo, faltam, ignoradas, reconhecidas, completo: faltam.length === 0 };
+    }
+    // ganha o tipo que reconhece mais colunas do arquivo (um arquivo de produtos sem uma coluna obrigatória
+    // continua sendo "produtos" com erro, e não vira um cadastro pequeno que por acaso tem codigo/descricao)
+    function detectarTipo(cabecalho) {
+      let melhor = null, melhorNota = -1;
+      tipos().forEach((tipo) => {
+        const c = avaliarTipo(tipo, cabecalho);
+        const nota = c.reconhecidas + (c.completo ? 0.5 : 0);
+        if (nota > melhorNota) { melhor = c; melhorNota = nota; }
+      });
+      return melhor;
+    }
+
+    async function adicionarArquivos(lista) {
+      const e = pegarElementos();
+      for (const f of lista) {
+        const a = { id: ++seq, nome: f.name, tamanho: f.size, estado: "lendo", problemas: [], avisos: [], progresso: 0 };
+        arquivos.push(a); render();
+        try {
+          if (/\.xlsx?$/i.test(f.name)) throw new Error("Planilha do Excel não entra direto: no BlueSys exporte como CSV (texto).");
+          if (f.size > 60 * 1024 * 1024) throw new Error("Arquivo acima de 60 MB. Quebre a consulta em partes.");
+          const { texto, enc } = decodificar(await f.arrayBuffer());
+          const sep = detectarSeparador(texto);
+          const tabela = lerCSV(texto, sep);
+          if (tabela.length < 2) throw new Error("Arquivo sem linhas (só o cabeçalho, ou vazio).");
+          const cabecalho = tabela[0].map(normalizarCabecalho);
+          const repetidas = cabecalho.filter((h, i) => h && cabecalho.indexOf(h) !== i);
+          if (repetidas.length) throw new Error("Coluna repetida no cabeçalho: " + [...new Set(repetidas)].join(", ") + ". Ajuste o SQL para ter nomes únicos.");
+          a.enc = enc; a.sep = sep === "\t" ? "TAB" : sep; a.cabecalho = cabecalho;
+          a.linhas = tabela.slice(1).map((l) => { if (l.length < cabecalho.length) { while (l.length < cabecalho.length) l.push(""); } return l.slice(0, cabecalho.length); });
+          aplicarTipo(a, detectarTipo(cabecalho).tipo);
+        } catch (err) {
+          a.estado = "invalido"; a.problemas = [err.message];
+        }
+        render();
+      }
+      e.input.value = "";
+    }
+    function aplicarTipo(a, tipo) {
+      const av = avaliarTipo(tipo, a.cabecalho);
+      a.tipo = tipo; a.problemas = []; a.avisos = [];
+      if (!av.completo) a.problemas.push("Faltam colunas obrigatórias de " + (ROTULOS[tipo] || tipo) + ": " + av.faltam.join(", "));
+      if (av.ignoradas.length) a.avisos.push("Colunas que o painel não conhece e vão ser ignoradas: " + av.ignoradas.join(", "));
+      // período (quando o arquivo tem uma coluna de data conhecida)
+      a.periodo = null;
+      const colData = COLUNAS_DATA.find((c) => a.cabecalho.indexOf(c) >= 0);
+      if (colData) {
+        const i = a.cabecalho.indexOf(colData); let min = null, max = null;
+        a.linhas.forEach((l) => { const d = dataDe(l[i]); if (!d) return; if (!min || d < min) min = d; if (!max || d > max) max = d; });
+        if (min) a.periodo = { coluna: colData, de: min, ate: max };
+      }
+      // chave: quantos registros distintos (pedidos, OS, produtos...)
+      const principal = contrato.find((c) => c.tipo === tipo && c.papel === "principal");
+      const idx = principal.chave.map((k) => a.cabecalho.indexOf(k)).filter((i) => i >= 0);
+      if (idx.length === principal.chave.length) {
+        const set = new Set(); a.linhas.forEach((l) => set.add(idx.map((i) => String(l[i] || "").trim()).join("\u0001")));
+        a.registros = set.size;
+      } else a.registros = null;
+      a.estado = a.problemas.length ? "invalido" : "pronto";
+    }
+
+    // ---------- envio ----------
+    function tamanhoBloco(a) {
+      const amostra = a.linhas.slice(0, 50);
+      const bytes = amostra.length ? JSON.stringify(amostra).length / amostra.length : 200;
+      return Math.max(200, Math.min(1500, Math.floor(350000 / bytes)));   // ~350 KB por chamada
+    }
+    async function enviarArquivo(a) {
+      a.estado = "enviando"; a.progresso = 0; a.problemas = []; render();
+      const r = await rpc("importacao_erp_abrir", { p_tipo: a.tipo, p_arquivo: a.nome, p_colunas: a.cabecalho, p_linhas: a.linhas.length });
+      a.lote = r.lote;
+      const ordem = r.colunas, idx = ordem.map((c) => a.cabecalho.indexOf(c));
+      const passo = tamanhoBloco(a);
+      for (let i = 0; i < a.linhas.length; i += passo) {
+        const bloco = a.linhas.slice(i, i + passo).map((l) => idx.map((j) => { const v = j >= 0 && l[j] != null ? String(l[j]).trim() : ""; return v === "" ? null : v; }));
+        await rpcComRepeticao("importacao_erp_enviar", { p_lote: a.lote, p_inicio: i + 1, p_linhas: bloco });
+        a.progresso = Math.min(1, (i + bloco.length) / a.linhas.length); render();
+      }
+      await rpc("importacao_erp_fechar", { p_lote: a.lote });
+      a.estado = "recebido"; a.progresso = 1; render();
+    }
+    async function enviarTodos() {
+      if (enviando) return;
+      const e = pegarElementos();
+      const prontos = arquivos.filter((a) => a.estado === "pronto");
+      if (!prontos.length) { avisar(e.aviso, "erro", "Nenhum arquivo pronto para enviar."); return; }
+      enviando = true; e.btnEnviar.disabled = true; e.aviso.className = "aviso";
+      for (const a of prontos) {
+        try { await enviarArquivo(a); }
+        catch (err) { a.estado = "falhou"; a.problemas = ["Envio não concluído: " + err.message]; if (a.lote) { try { await rpc("importacao_erp_cancelar", { p_lote: a.lote }); } catch (e2) {} } render(); }
+      }
+      enviando = false; e.btnEnviar.disabled = false;
+      ligarAcompanhamento();
+      render();
+    }
+    async function cancelarLote(lote) {
+      try { await rpc("importacao_erp_cancelar", { p_lote: lote }); } catch (err) { avisar(pegarElementos().aviso, "erro", "Não foi possível cancelar: " + err.message); }
+      const a = arquivos.find((x) => x.lote === lote); if (a) a.estado = "cancelado";
+      await acompanhar(true);
+    }
+
+    // ---------- acompanhamento (a rotina roda a cada minuto) ----------
+    function ligarAcompanhamento() {
+      if (pollTimer) return;
+      pollTimer = setInterval(() => acompanhar(false), 4000);
+    }
+    function pararAcompanhamento() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+    async function acompanhar(forcar) {
+      if (document.hidden && !forcar) return;
+      let lotes;
+      try { lotes = await rpc("importacao_erp_lotes", { p_limite: 30 }); }
+      catch (err) { pegarElementos().historico.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(err.message) + "</small></td></tr>"; return; }
+      arquivos.forEach((a) => {
+        if (!a.lote) return;
+        const l = lotes.find((x) => x.id === a.lote);
+        if (l) { a.estado = l.situacao; a.resultado = l; }
+      });
+      renderHistorico(lotes);
+      render();
+      if (!arquivos.some((a) => a.lote && (a.estado === "recebido" || a.estado === "processando" || a.estado === "enviando"))) pararAcompanhamento();
+    }
+
+    // ---------- tela ----------
+    function fmtQuando(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      return d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" }) + " " +
+        d.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+    }
+    function fmtN(n) { return Number(n || 0).toLocaleString("pt-BR"); }
+    function rotuloSituacao(s) {
+      return { enviando: "enviando", recebido: "na fila", processando: "processando", ok: "ok", parcial: "ok com avisos", erro: "erro", cancelado: "cancelado",
+               lendo: "lendo", pronto: "pronto", invalido: "não dá para enviar", falhou: "falhou" }[s] || s;
+    }
+    function resumoResultado(l) {
+      if (!l) return "";
+      if (l.situacao === "erro") return '<span style="color:var(--erro)">' + esc(l.erro || "erro") + "</span>";
+      if (l.situacao === "cancelado") return '<span style="color:var(--texto-suave)">' + esc(l.erro || "cancelado") + "</span>";
+      if (l.situacao === "recebido") return '<span style="color:var(--texto-suave)">aguardando a rotina (roda a cada minuto)</span>';
+      if (l.situacao === "processando") return '<span style="color:var(--texto-suave)">gravando…</span>';
+      if (l.situacao === "enviando") return '<span style="color:var(--texto-suave)">' + fmtN(l.linhas) + " linhas recebidas até agora</span>";
+      const d = l.detalhe || {}, partes = [];
+      Object.keys(d).forEach((k) => {
+        const v = d[k];
+        if (!v || typeof v !== "object" || Array.isArray(v)) return;
+        let t = (TABELAS[k] || k) + ": ";
+        const seg = [];
+        if (v.lidas != null) seg.push(fmtN(v.lidas) + " lidas");
+        if (v.gravadas != null) seg.push(fmtN(v.gravadas) + " gravadas");
+        if (v.apagadas) seg.push(fmtN(v.apagadas) + " apagadas");
+        if (v.mudancas_status) seg.push(fmtN(v.mudancas_status) + " mudanças de status");
+        if (v.de && v.ate) seg.push("janela " + dataBR(v.de) + " a " + dataBR(v.ate));
+        partes.push('<span class="imp-res-linha">' + esc(t + seg.join(" · ")) + "</span>");
+      });
+      (d.avisos || []).forEach((av) => partes.push('<span class="imp-res-linha" style="color:var(--amarelo)">&#9888; ' + esc(av) + "</span>"));
+      if (d.segundos != null) partes.push('<span class="imp-res-linha" style="color:var(--texto-suave)">' + d.segundos + " s</span>");
+      return partes.join("");
+    }
+    function renderRodadas() {
+      const e = pegarElementos();
+      const agora = new Date().toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+      let proxima = RODADAS.findIndex(([h]) => h >= agora); if (proxima < 0) proxima = 0;
+      e.rodadas.innerHTML = RODADAS.map(([h, ts], i) =>
+        '<div class="imp-rodada' + (i === proxima ? " agora" : "") + '"><b>' + h + "</b>" + ts.map((t) => ROTULOS[t]).join(", ") + "</div>").join("");
+    }
+    function render() {
+      const e = pegarElementos();
+      if (!arquivos.length) {
+        e.lista.innerHTML = "";
+        e.btnEnviar.classList.add("oculto"); e.btnLimpar.classList.add("oculto");
+        return;
+      }
+      e.lista.innerHTML = arquivos.map((a) => {
+        const cls = a.estado === "invalido" || a.estado === "falhou" || a.estado === "erro" ? " erro" : (a.estado === "ok" || a.estado === "parcial" ? " ok" : "");
+        const meta = [];
+        if (a.linhas) meta.push("<b>" + fmtN(a.linhas.length) + "</b> linhas" + (a.registros != null ? " · <b>" + fmtN(a.registros) + "</b> registros" : ""));
+        if (a.periodo) meta.push(a.periodo.coluna + " de <b>" + dataBR(a.periodo.de) + "</b> a <b>" + dataBR(a.periodo.ate) + "</b>");
+        if (a.enc) meta.push(a.enc + " · separador " + esc(a.sep));
+        meta.push((a.tamanho / 1024).toFixed(0) + " KB");
+        const podeTrocar = a.estado === "pronto" || a.estado === "invalido";
+        const tipoHtml = a.cabecalho
+          ? '<div class="imp-arq-tipo"><select data-id="' + a.id + '"' + (podeTrocar ? "" : " disabled") + ">" +
+              tipos().map((t) => '<option value="' + t + '"' + (t === a.tipo ? " selected" : "") + ">" + esc(ROTULOS[t] || t) + "</option>").join("") +
+            "</select></div>"
+          : "";
+        const st = '<span class="imp-st ' + esc(a.estado) + '">' + esc(rotuloSituacao(a.estado)) + "</span>";
+        const barra = a.estado === "enviando" ? '<div class="imp-barra"><div style="width:' + Math.round(a.progresso * 100) + '%"></div></div>' : "";
+        const cancel = (a.estado === "recebido" && a.lote) ? ' <button type="button" class="imp-btn-x" data-cancelar="' + a.lote + '">cancelar</button>' : "";
+        return '<div class="imp-arq' + cls + '">' +
+          '<div><div class="imp-arq-nome">' + esc(a.nome) + " " + st + cancel + '</div><div class="imp-arq-meta">' + meta.join(" · ") + "</div></div>" +
+          tipoHtml +
+          a.problemas.map((p) => '<div class="imp-arq-prob">&#10060; ' + esc(p) + "</div>").join("") +
+          a.avisos.map((p) => '<div class="imp-arq-aviso">&#9888; ' + esc(p) + "</div>").join("") +
+          barra +
+          (a.resultado ? '<div class="imp-arq-res">' + resumoResultado(a.resultado) + "</div>" : "") +
+          "</div>";
+      }).join("");
+      const prontos = arquivos.filter((a) => a.estado === "pronto").length;
+      e.btnEnviar.classList.toggle("oculto", prontos === 0);
+      e.btnEnviar.textContent = prontos === 1 ? "Enviar 1 arquivo" : "Enviar " + prontos + " arquivos";
+      e.btnLimpar.classList.toggle("oculto", enviando);
+    }
+    function renderHistorico(lotes) {
+      const e = pegarElementos();
+      e.historico.innerHTML = lotes.length ? lotes.map((l) =>
+        "<tr>" +
+          '<td style="text-align:left;white-space:nowrap;">' + fmtQuando(l.criado_em) + "</td>" +
+          '<td style="text-align:left;">' + esc(l.arquivo || "") + "</td>" +
+          '<td style="text-align:left;">' + esc(ROTULOS[l.tipo] || l.tipo) + "</td>" +
+          "<td>" + fmtN(l.linhas) + "</td>" +
+          '<td><span class="imp-st ' + esc(l.situacao) + '">' + esc(rotuloSituacao(l.situacao)) + "</span></td>" +
+          '<td style="text-align:left;font-size:0.8rem;">' + resumoResultado(l) + "</td>" +
+          '<td style="text-align:left;font-size:0.8rem;">' + esc((l.email || "").split("@")[0]) + "</td>" +
+          "<td>" + ((l.situacao === "enviando" || l.situacao === "recebido") ? '<button type="button" class="imp-btn-x" data-cancelar="' + l.id + '">cancelar</button>' : "") + "</td>" +
+        "</tr>").join("")
+        : '<tr><td colspan="8" class="estado-vazio">Nenhuma importação ainda.</td></tr>';
+    }
+
+    function ligarEventos() {
+      if (ligado) return; ligado = true;
+      const e = pegarElementos();
+      e.drop.addEventListener("click", () => e.input.click());
+      e.drop.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); e.input.click(); } });
+      e.input.addEventListener("change", () => adicionarArquivos(Array.from(e.input.files || [])));
+      ["dragenter", "dragover"].forEach((t) => e.drop.addEventListener(t, (ev) => { ev.preventDefault(); e.drop.classList.add("sobre"); }));
+      ["dragleave", "drop"].forEach((t) => e.drop.addEventListener(t, (ev) => { ev.preventDefault(); e.drop.classList.remove("sobre"); }));
+      e.drop.addEventListener("drop", (ev) => adicionarArquivos(Array.from(ev.dataTransfer.files || [])));
+      e.lista.addEventListener("change", (ev) => {
+        const sel = ev.target.closest("select[data-id]"); if (!sel) return;
+        const a = arquivos.find((x) => x.id === Number(sel.dataset.id)); if (a && a.cabecalho) { aplicarTipo(a, sel.value); render(); }
+      });
+      document.getElementById("view-importar").addEventListener("click", (ev) => {
+        const b = ev.target.closest("button[data-cancelar]"); if (!b) return;
+        b.disabled = true; cancelarLote(Number(b.dataset.cancelar));
+      });
+      e.btnEnviar.addEventListener("click", enviarTodos);
+      e.btnLimpar.addEventListener("click", () => { if (enviando) return; arquivos = arquivos.filter((a) => a.estado === "enviando" || a.estado === "recebido" || a.estado === "processando"); render(); });
+      document.addEventListener("visibilitychange", () => { if (!document.hidden && pollTimer) acompanhar(true); });
+    }
+
+    async function iniciar() {
+      const e = pegarElementos();
+      const pode = podeVerAba("importar");
+      e.semPermissao.classList.toggle("oculto", pode);
+      e.liberada.classList.toggle("oculto", !pode);
+      if (!pode) return;
+      ligarEventos();
+      renderRodadas();
+      try {
+        if (!contrato) contrato = await rpc("importacao_erp_contrato", {});
+        if (!contrato || !contrato.length) throw new Error("contrato de importação vazio");
+      } catch (err) {
+        avisar(e.aviso, "erro", "Não foi possível carregar a lista de arquivos aceitos: " + err.message);
+        return;
+      }
+      render();
+      acompanhar(true);
+    }
+
+    return { iniciar, _teste: { lerCSV, detectarSeparador, normalizarCabecalho, dataDe, decodificar } };
   })();
 </script>
 </body>
