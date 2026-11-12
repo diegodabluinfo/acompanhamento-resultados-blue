@@ -3845,10 +3845,14 @@
   async function renovarBarraSinc() {
     if (!sessao || document.hidden) return;
     atualizarBarraSinc(await buscarUltimaSincronizacao());
+    // 12/11/2026: a tabela de Resultados também é renovada aqui. Antes ela só carregava ao abrir a página,
+    // então uma importação do ERP ou uma devolução lançada em outro computador não apareciam na linha do
+    // vendedor (o detalhe, que busca na hora, mostrava — e os dois ficavam diferentes).
+    atualizarResultadosSilencioso();
   }
   function ligarBarraSinc() {
     if (barraSincTimer) return;
-    barraSincTimer = setInterval(renovarBarraSinc, 5 * 60 * 1000); // a cada 5 min enquanto a aba estiver aberta
+    barraSincTimer = setInterval(renovarBarraSinc, 2 * 60 * 1000); // a cada 2 min enquanto a aba estiver aberta
     document.addEventListener("visibilitychange", () => { if (!document.hidden) renovarBarraSinc(); });
   }
 
@@ -4041,6 +4045,33 @@
       const mensagem = (err && err.message) ? err.message : String(err);
       corpoTabela.innerHTML = `<tr><td colspan="9" class="estado-vazio">Não foi possível carregar os dados.<br><small style="color:var(--erro)">${mensagem.replace(/</g,"&lt;")}</small></td></tr>`;
     }
+  }
+
+  // 12/11/2026: renova a tabela de Resultados sem piscar. Busca os mesmos dados do iniciarApp, mas só redesenha
+  // se algo mudou (importação nova do ERP, devolução/meta lançada em outro computador). Mantém o mês escolhido
+  // e reabre o detalhe do vendedor que estava aberto. Chamada pela barra de sincronização (a cada 2 min, ao voltar
+  // para a aba) e pela tela Importar quando um arquivo termina de ser gravado.
+  let atualizandoResultados = false;
+  async function atualizarResultadosSilencioso() {
+    if (!appIniciado || atualizandoResultados || !sessao) return;
+    atualizandoResultados = true;
+    try {
+      const [linhas, equipe, lucr] = await Promise.all([buscarResultados(), buscarMetasEquipe(), buscarLucratividade()]);
+      const mudou = JSON.stringify(linhas) !== JSON.stringify(todasAsLinhas)
+        || JSON.stringify(equipe) !== JSON.stringify(metasEquipe)
+        || JSON.stringify(lucr) !== JSON.stringify(lucrMap);
+      if (!mudou) return;
+      const mesEscolhido = seletorMes.value;
+      const aberta = corpoTabela.querySelector("tr.vend-clicavel.aberta");
+      const vendedorAberto = aberta ? aberta.dataset.vendedor : null;
+      todasAsLinhas = linhas; metasEquipe = equipe; lucrMap = lucr;
+      preencherSeletorMes(linhas);
+      if (mesEscolhido && [...seletorMes.options].some((o) => o.value === mesEscolhido)) seletorMes.value = mesEscolhido;
+      if (seletorMes.value) renderizarTabela(seletorMes.value);
+      if (vendedorAberto) { const tr = corpoTabela.querySelector(`tr.vend-clicavel[data-vendedor="${vendedorAberto}"]`); if (tr) tr.click(); }
+    } catch (err) {
+      console.warn("Não foi possível renovar a tabela de Resultados:", err);
+    } finally { atualizandoResultados = false; }
   }
 
   seletorMes.addEventListener("change", () => renderizarTabela(seletorMes.value));
@@ -12312,15 +12343,20 @@
       let lotes;
       try { lotes = await rpc("importacao_erp_lotes", { p_limite: 60 }); }
       catch (err) { pegarElementos().historico.innerHTML = '<tr><td colspan="8" class="estado-vazio">Não foi possível carregar.<br><small style="color:var(--erro)">' + esc(err.message) + "</small></td></tr>"; return; }
+      let terminouAlgum = false;
       arquivos.forEach((a) => {
         if (!a.lote) return;
         const l = lotes.find((x) => x.id === a.lote);
-        if (l) { a.estado = l.situacao; a.resultado = l; }
+        if (!l) return;
+        if ((a.estado === "recebido" || a.estado === "processando" || a.estado === "enviando") && (l.situacao === "ok" || l.situacao === "parcial")) terminouAlgum = true;
+        a.estado = l.situacao; a.resultado = l;
       });
       ultimosLotes = lotes;
       renderHistorico(lotes);
       renderRodadas();
       render();
+      // um arquivo acabou de ser gravado: a barra de baixo e a tabela de Resultados já mostram o dado novo
+      if (terminouAlgum && typeof renovarBarraSinc === "function") renovarBarraSinc();
       if (!arquivos.some((a) => a.lote && (a.estado === "recebido" || a.estado === "processando" || a.estado === "enviando"))) pararAcompanhamento();
     }
 
