@@ -1271,6 +1271,176 @@
   .imp-st.processando, .imp-st.recebido, .imp-st.enviando, .imp-st.lendo { background: #e4eefc; color: #1a4f94; }
   .imp-btn-x { background: transparent; color: var(--erro); border: 1px solid #f2b8b0; padding: 3px 9px; font-size: 0.74rem; border-radius: 8px; font-weight: 600; }
   .imp-btn-x:active { background: var(--erro-fundo); }
+  /* ===== Aba Tabela de Preços (17/11/2026): a Tabela de Preços Blue V2.4.2 dentro do painel ===== */
+  /* Tudo preso em #view-precos para não brigar com os estilos gerais (button, select, label, table). */
+  #view-precos { --tp-azul: #1768c8; --tp-azul-esc: #1257ae; --tp-tinta: #17253b; --tp-sub: #607088; --tp-borda: #dfe6ef; --tp-sombra: 0 8px 26px rgba(29,50,76,.055); color: var(--tp-tinta); font-size: 14px; line-height: 1.45; }
+  #view-precos button { background: none; color: inherit; border: 0; border-radius: 0; padding: 0; font: inherit; font-weight: inherit; cursor: pointer; }
+  #view-precos button:active { background: none; }
+  #view-precos button:disabled { cursor: not-allowed; opacity: .46; }
+  #view-precos label { display: inline; margin: 0; font-size: inherit; font-weight: inherit; }
+  #view-precos button:focus-visible, #view-precos input:focus-visible, #view-precos select:focus-visible { outline: 3px solid #87b9f9; outline-offset: 2px; }
+  #view-precos .painel-controles .btn-2via { font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); }
+  #view-precos .painel-controles .btn-2via:hover:not(:disabled) { background: var(--azul); color: #fff; }
+  #view-precos .tp-hidden { display: none !important; }
+  .tp-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tp-stat { border: 1px solid var(--tp-borda); background: #fff; border-radius: 14px; padding: 13px 18px; box-shadow: var(--tp-sombra); }
+  .tp-stat .k { font-size: 12px; color: var(--tp-sub); font-weight: 520; }
+  .tp-stat .v { font-size: 24px; font-weight: 780; letter-spacing: -.8px; line-height: 1.2; margin-top: 4px; }
+  .tp-stat .v.preco { font-size: 18px; color: var(--tp-azul); letter-spacing: 0; }
+  .tp-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+  .tp-panel { background: #fff; border: 1px solid var(--tp-borda); box-shadow: var(--tp-sombra); border-radius: 14px; overflow: hidden; }
+  .tp-catalog { min-width: 0; overflow: visible; }
+  .tp-panel-title { padding: 18px 20px 0; }
+  .tp-panel-title h3 { margin: 0; font-size: 16px; }
+  .tp-panel-title p { font-size: 12px; margin: 4px 0 0; color: var(--tp-sub); }
+  .tp-controls { padding: 16px 19px 15px; border-bottom: 1px solid var(--tp-borda); position: relative; z-index: 10; }
+  .tp-search-row { display: flex; gap: 10px; align-items: center; }
+  .tp-search-wrap { display: flex; align-items: center; flex: 1; gap: 9px; border: 1px solid #ccd8e6; border-radius: 10px; background: #fafcff; padding: 0 13px; min-width: 0; }
+  .tp-search-wrap svg { flex: none; color: #758ba3; }
+  #view-precos .tp-search-wrap input { border: 0; background: transparent; outline: 0; min-width: 0; width: 100%; height: 45px; color: var(--tp-tinta); font: inherit; font-size: 14px; padding: 0; box-shadow: none; }
+  .tp-search-wrap:focus-within { box-shadow: 0 0 0 3px #d7eaff; border-color: #75a9e8; }
+  .tp-dica { margin-top: 8px; font-size: 11.5px; color: var(--tp-sub); line-height: 1.5; }
+  .tp-dica code { font: 11px/1.4 ui-monospace, Consolas, monospace; color: #245c9c; background: #eef5ff; border-radius: 4px; padding: 1px 4px; }
+  .tp-filters { margin-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .tp-label { font-size: 12px; color: var(--tp-sub); font-weight: 660; }
+  #view-precos .tp-switch { display: inline-flex; align-items: center; gap: 8px; color: #4c5d72; font-size: 12px; cursor: pointer; user-select: none; }
+  .tp-switch input { accent-color: var(--tp-azul); width: 15px; height: 15px; margin: 0; }
+  .tp-price-line { margin-top: 13px; display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+  .tp-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  #view-precos .tp-pill { border: 1px solid #dce5ef; border-radius: 999px; background: #f8fafc; color: #52637b; font-size: 12px; font-weight: 720; padding: 7px 12px; }
+  #view-precos .tp-pill.ativa { color: #0a58b0; border-color: #85b6f1; background: #e6f1ff; }
+  /* ordenação: título fixo em cima e valor embaixo */
+  .tp-sort-box { position: relative; flex: 0 0 170px; width: 170px; min-width: 132px; height: 45px; }
+  #view-precos .tp-sort-select { display: block; width: 100%; height: 100%; padding: 17px 30px 3px 10px; border: 1px solid #ccd8e6; border-radius: 10px; background: #fff; color: #30445f; font-size: 13px; line-height: 18px; appearance: none; -webkit-appearance: none; cursor: pointer; box-shadow: none; }
+  .tp-sort-caption { position: absolute; top: 5px; left: 10px; z-index: 1; pointer-events: none; color: #66758b; font-size: 11px; line-height: 13px; }
+  .tp-sort-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #253955; }
+  /* fabricantes: seleção múltipla */
+  .tp-fab-picker { position: relative; flex: 0 0 180px; width: 180px; min-width: 132px; max-width: 190px; }
+  #view-precos .tp-fab-trigger { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 45px; width: 100%; background: #fff; border: 1px solid #ccd8e6; border-radius: 10px; color: #30445f; text-align: left; padding: 0 11px 0 12px; font-size: 13px; font-weight: 400; white-space: nowrap; }
+  .tp-fab-trigger span { overflow: hidden; text-overflow: ellipsis; }
+  .tp-fab-trigger svg { flex: none; }
+  #view-precos .tp-fab-trigger[aria-expanded="true"] { border-color: #7eaae7; box-shadow: 0 0 0 3px #d7eaff; }
+  .tp-fab-menu { position: absolute; z-index: 40; top: calc(100% + 5px); left: 0; width: 280px; max-width: calc(100vw - 24px); border: 1px solid #cddbe9; border-radius: 10px; background: #fff; box-shadow: 0 10px 28px #14294333; overflow: hidden; }
+  .tp-fab-menu[hidden] { display: none; }
+  .tp-fab-search { padding: 10px 10px 8px; border-bottom: 1px solid #e7edf5; }
+  #view-precos .tp-fab-search input { width: 100%; border: 1px solid #d1dce8; border-radius: 7px; padding: 8px 10px; color: #30445f; font-size: 12px; background: #fff; }
+  .tp-fab-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 11px; background: #f7fbff; border-bottom: 1px solid #e7edf5; color: #607088; font-size: 11px; }
+  #view-precos .tp-fab-toolbar button { color: #1664bb; font-weight: 700; font-size: 11px; padding: 4px 0; white-space: nowrap; }
+  #view-precos .tp-fab-toolbar button:hover:not(:disabled) { text-decoration: underline; }
+  .tp-fab-options { max-height: 310px; overflow-y: auto; padding: 5px 0; overscroll-behavior: contain; }
+  #view-precos .tp-fab-options label { display: flex; align-items: center; gap: 9px; padding: 7px 11px; color: #30445f; cursor: pointer; font-size: 12px; line-height: 1.3; }
+  #view-precos .tp-fab-options label:hover { background: #eef6ff; }
+  #view-precos .tp-fab-options label:has(input:checked) { background: #eaf3ff; color: #155da6; }
+  .tp-fab-options input { margin: 0; accent-color: #1768c8; width: 15px; height: 15px; flex: none; }
+  .tp-fab-vazio { padding: 15px 11px; color: #607088; font-size: 12px; }
+  .tp-notice { padding: 9px 18px; font-size: 12px; }
+  .tp-notice.aviso-amarelo { background: #fff6e5; color: #7b5a19; border-bottom: 1px solid #f4dfab; }
+  .tp-notice.aviso-erro { background: #fff1f0; color: #933c35; border-bottom: 1px solid #f4cfca; }
+  /* catálogo: faixa de cópia em cima, títulos logo abaixo, código e descrição fixos à esquerda */
+  .tp-grid-scroll { overflow: auto; max-height: 600px; }
+  .tp-copy-toolbar { width: 100%; min-width: 1500px; height: 42px; padding: 6px 0; background: #fff; position: sticky; top: 0; z-index: 8; border-bottom: 1px solid #d8e1ec; }
+  .tp-bulk { margin-left: calc(90px + 330px + 83px); width: 157px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 4px; }
+  #view-precos .tp-add-all { display: flex; align-items: center; justify-content: center; min-width: 0; width: 100%; min-height: 30px; padding: 6px 2px; background: #e5f1ff; border: 1px solid #9bc6f8; color: #095dab; border-radius: 6px; font-size: 10px; font-weight: 750; white-space: nowrap; line-height: 1.15; }
+  #view-precos .tp-add-all:hover:not(:disabled) { background: #d1e7ff; border-color: #70a9ed; }
+  #view-precos .tp-add-all:disabled { background: #f1f5f9; color: #8999ac; border-color: #dce5ef; opacity: 1; }
+  #view-precos table.tp-table { width: 100%; min-width: 1500px; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 12px; }
+  #view-precos .tp-table thead th { position: sticky; top: 42px; z-index: 2; background: #eff3f8; color: #4b5b71; font-size: 11px; font-weight: 700; letter-spacing: .15px; text-transform: none; text-align: left; padding: 12px 10px; border-bottom: 1px solid #d8e1ec; white-space: nowrap; }
+  #view-precos .tp-table tbody td { padding: 11px 10px; border-bottom: 1px solid #edf0f5; vertical-align: middle; white-space: nowrap; text-align: left; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
+  #view-precos .tp-table tbody tr:last-child td { border-bottom: 1px solid #edf0f5; }
+  #view-precos .tp-table tbody tr:hover td { background: #f8fbff; }
+  #view-precos .tp-table th:nth-child(1), #view-precos .tp-table td:nth-child(1) { width: 90px; position: sticky; left: 0; z-index: 3; background: #fff; }
+  #view-precos .tp-table th:nth-child(2), #view-precos .tp-table td:nth-child(2) { width: 330px; position: sticky; left: 90px; z-index: 3; background: #fff; box-shadow: 2px 0 5px #173f6210; }
+  #view-precos .tp-table thead th:nth-child(1), #view-precos .tp-table thead th:nth-child(2) { z-index: 5; background: #eff3f8; }
+  #view-precos .tp-table th:nth-child(3), #view-precos .tp-table td:nth-child(3) { width: 83px; }
+  #view-precos .tp-table th:nth-child(4), #view-precos .tp-table td:nth-child(4) { width: 157px; }
+  #view-precos .tp-table th:nth-child(n+5):nth-child(-n+10), #view-precos .tp-table td:nth-child(n+5):nth-child(-n+10) { width: 112px; }
+  #view-precos .tp-table th:nth-child(11), #view-precos .tp-table td:nth-child(11) { width: 115px; }
+  #view-precos .tp-table th:nth-child(12), #view-precos .tp-table td:nth-child(12) { width: 90px; }
+  #view-precos .tp-table th:nth-child(13), #view-precos .tp-table td:nth-child(13) { width: 106px; }
+  #view-precos .tp-table .code { font-weight: 780; color: #153e73; font-variant-numeric: tabular-nums; }
+  #view-precos .tp-table .desc { white-space: normal; overflow-wrap: anywhere; line-height: 1.48; font-weight: 570; color: #24374f; }
+  #view-precos .tp-table .money { font-variant-numeric: tabular-nums; }
+  #view-precos .tp-table .active-price { background: #ecf5ff !important; color: #075cae; font-weight: 770; }
+  #view-precos .tp-table .internal { color: #a06931; }
+  #view-precos .tp-table td.stock-ok { color: #0c855c; font-weight: 700; }
+  #view-precos .tp-table td.stock-zero { color: #be5555; font-weight: 700; }
+  .tp-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 17px; vertical-align: 1px; white-space: nowrap; }
+  .tp-tag.promo { background: #fff3d6; color: #8a5a00; }
+  .tp-tag.kit { background: #eef1f6; color: #4b5b71; }
+  .tp-actions { display: flex; align-items: center; gap: 1px; }
+  #view-precos .tp-add { border: 1px solid #a5c9ef; background: #ecf5ff; color: #1260b3; padding: 7px 10px; border-radius: 7px; font-size: 11px; font-weight: 800; min-width: 71px; }
+  #view-precos .tp-add:hover:not(:disabled) { background: #d8ebff; }
+  #view-precos .tp-add.added { border-color: #c5e5d8; color: #08724d; background: #e9f8f1; }
+  #view-precos .tp-add:disabled { background: #f4f6f8; color: #95a3b3; border-color: #e5eaf0; }
+  #view-precos .tp-copy-one { color: #2868b1; padding: 7px 4px; font-size: 11px; font-weight: 720; margin-left: 5px; }
+  #view-precos .tp-copy-one:hover:not(:disabled) { color: #104983; text-decoration: underline; }
+  .tp-empty { padding: 46px; text-align: center; color: #6b7c90; white-space: normal; }
+  .tp-grid-foot { border-top: 1px solid #e7edf5; display: flex; justify-content: space-between; padding: 12px 18px; color: #697b90; font-size: 11px; gap: 14px; flex-wrap: wrap; }
+  #view-precos .tp-table tbody tr[data-id] { cursor: pointer; }
+  #view-precos .tp-table tbody tr.preview-active td:not(.active-price) { background: #f0f7ff; }
+  #view-precos .tp-table tbody tr.preview-active td.active-price { background: #e0efff !important; }
+  #view-precos .tp-table tbody tr[data-id]:focus-visible { outline: 2px solid #75a9e8; outline-offset: -2px; }
+  /* lateral: orçamento em texto e foto */
+  .tp-side { position: sticky; top: 12px; }
+  .tp-quote-head { background: #f7faff; border-bottom: 1px solid var(--tp-borda); padding: 17px 19px 14px; }
+  .tp-quote-head-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tp-quote-head h3 { font-size: 16px; margin: 0; }
+  .tp-counter { background: #e1efff; color: #145eab; border-radius: 100px; padding: 3px 9px; font-size: 12px; font-weight: 750; }
+  .tp-quote-head p { margin: 7px 0 0; color: var(--tp-sub); font-size: 12px; }
+  .tp-quote-list { max-height: 300px; overflow: auto; padding: 0 18px; }
+  .tp-quote-empty { padding: 28px 8px; text-align: center; color: #74859a; }
+  .tp-quote-empty .big { font-size: 28px; margin-bottom: 7px; }
+  .tp-quote-empty p { font-size: 12px; line-height: 1.6; margin: 0; }
+  .tp-quote-item { border-bottom: 1px solid #edf0f4; padding: 13px 0; }
+  .tp-quote-item-top { display: flex; justify-content: space-between; gap: 8px; }
+  .tp-quote-item .sku { font-size: 11px; color: #1260a8; font-weight: 800; }
+  .tp-quote-item .item-name { font-size: 12px; line-height: 1.5; font-weight: 610; margin: 4px 0 7px; overflow-wrap: anywhere; }
+  .tp-quote-item .item-price { font-size: 13px; font-weight: 780; color: #1c4d82; }
+  .tp-quote-item .miss { color: #b23a3a; font-weight: 650; font-size: 11px; }
+  #view-precos .tp-remove { color: #a4afbd; padding: 0 3px; font-size: 21px; line-height: 1; }
+  #view-precos .tp-remove:hover { color: #bd4343; }
+  .tp-total { border-top: 1px solid var(--tp-borda); padding: 15px 19px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .tp-total .t { font-size: 12px; color: var(--tp-sub); }
+  .tp-total .num { font-size: 23px; font-weight: 800; letter-spacing: -.7px; }
+  .tp-side-actions { padding: 9px 19px 18px; }
+  #view-precos .tp-btn-primario { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--tp-azul); background: var(--tp-azul); color: #fff; border-radius: 9px; padding: 10px 15px; font-weight: 670; }
+  #view-precos .tp-btn-primario:hover:not(:disabled) { background: var(--tp-azul-esc); }
+  .tp-minor { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; }
+  #view-precos .tp-minor button { color: var(--tp-azul); padding: 8px; font-size: 12px; font-weight: 670; }
+  .tp-preview { padding: 16px 19px; margin-top: 14px; background: #fafdff; }
+  .tp-preview h4 { font-size: 12px; letter-spacing: .1px; margin: 0 0 8px; color: #193b68; }
+  .tp-preview-hint { font-size: 12px; line-height: 1.55; color: #6b7d91; margin: 0; }
+  .tp-preview-frame { width: 100%; height: 225px; border: 1px solid #e2e9f1; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 4px; }
+  .tp-preview-frame img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+  .tp-preview-status { padding: 16px; text-align: center; color: #657990; font-size: 12px; line-height: 1.6; }
+  .tp-preview-info { margin-top: 10px; }
+  .tp-preview-code { font-size: 12px; font-weight: 800; color: #1768c8; }
+  .tp-preview-desc { font-size: 12px; color: #344960; font-weight: 580; margin: 4px 0 0; overflow-wrap: anywhere; line-height: 1.45; }
+  .tp-toast { position: fixed; right: 26px; bottom: 64px; background: #172b45; color: #fff; padding: 12px 18px; border-radius: 10px; box-shadow: 0 12px 40px #213c5666; font-weight: 600; font-size: 14px; z-index: 99; transition: opacity .2s; max-width: 380px; }
+  .tp-toast.ok { background: #145d49; }
+  .tp-toast.err { background: #953d3d; }
+  .tp-toast.inactive { opacity: 0; pointer-events: none; }
+  @media (max-width: 1180px) { .tp-workspace { grid-template-columns: minmax(0, 1fr) 290px; } }
+  @media (max-width: 850px) {
+    .tp-workspace { grid-template-columns: 1fr; }
+    .tp-side { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+    .tp-side .tp-preview { margin-top: 0; }
+    .tp-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  /* celular: só o código fica preso à esquerda, senão código + descrição tomam a tela e os preços não aparecem */
+  @media (max-width: 700px) {
+    #view-precos .tp-table th:nth-child(2), #view-precos .tp-table td:nth-child(2) { width: 220px; position: static; box-shadow: none; }
+    #view-precos table.tp-table, .tp-copy-toolbar { min-width: 1390px; }
+    .tp-bulk { margin-left: calc(90px + 220px + 83px); }
+  }
+  @media (max-width: 580px) {
+    .tp-stats { gap: 8px; } .tp-stat { padding: 12px; } .tp-stat .v { font-size: 20px; }
+    .tp-search-row { flex-wrap: wrap; } .tp-search-wrap { flex: 1 1 100%; }
+    .tp-sort-box, .tp-fab-picker { flex: 1 1 45%; width: auto; max-width: 100%; }
+    .tp-fab-menu { left: auto; right: 0; }
+    .tp-side { display: block; } .tp-side .tp-preview { margin-top: 12px; }
+    .tp-controls { padding: 13px; }
+  }
 </style>
 </head>
 <body>
@@ -1333,6 +1503,7 @@
         <button class="tab-btn" data-tab="ritmo" id="tab-btn-ritmo">Ritmo Comercial</button>
         <button class="tab-btn" data-tab="lista" id="tab-btn-lista">Lista do Dia</button>
         <button class="tab-btn" data-tab="ranking" id="tab-btn-ranking">Ranking</button>
+        <button class="tab-btn" data-tab="tabela_precos" id="tab-btn-precos">Tabela de Preços</button>
         <button class="tab-btn" data-tab="orcamento" id="tab-btn-orcamento">Montar Orçamento</button>
         <button class="tab-btn" data-tab="assistencia" id="tab-btn-assistencia">Gastos e Assistência</button>
         <div class="menu-cadastros" id="menu-cadastros">
@@ -2154,6 +2325,87 @@
         </div>
       </div>
 
+      <!-- ===== ABA: Tabela de Preços (Tabela de Preços Blue V2.4.2 no painel; tabela_precos_produtos, trava pode_ver_aba('tabela_precos')) ===== -->
+      <div id="view-precos" class="oculto">
+        <div class="painel-controles">
+          <span id="tp-status" class="cod-cliente">Preços e estoque direto do ERP</span>
+          <button type="button" id="tp-atualizar" class="btn-2via">Atualizar preços</button>
+          <span id="freshness-precos" class="freshness"></span>
+        </div>
+
+        <section class="tp-stats" aria-label="Resumo da tabela">
+          <div class="tp-stat"><div class="k">Produtos carregados</div><div class="v" id="tp-stat-produtos">—</div></div>
+          <div class="tp-stat"><div class="k">Com saldo disponível</div><div class="v" id="tp-stat-saldo">—</div></div>
+          <div class="tp-stat"><div class="k">Itens no orçamento</div><div class="v" id="tp-stat-sel">0</div></div>
+          <div class="tp-stat"><div class="k">Tabela ativa para cópia</div><div class="v preco" id="tp-stat-preco">TAB 04</div></div>
+        </section>
+
+        <div class="tp-workspace">
+          <section class="tp-catalog tp-panel" aria-label="Catálogo de produtos">
+            <div class="tp-panel-title"><h3>Catálogo de produtos</h3><p>Busque pelo código, descrição, fabricante ou NCM. Clique em “Selecionar” para compor o texto do orçamento.</p></div>
+            <div class="tp-controls">
+              <div class="tp-search-row">
+                <div class="tp-search-wrap">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                  <input id="tp-busca" type="search" title="Use * para buscar termos na ordem em que aparecem na descrição. Exemplo: HDMI*VGA." placeholder="Pesquisar código, descrição, fabricante ou NCM…" autocomplete="off" aria-label="Pesquisar produtos">
+                </div>
+                <div class="tp-fab-picker" id="tp-fab-picker">
+                  <button class="tp-fab-trigger" id="tp-fab-toggle" type="button" aria-label="Filtrar fabricantes" aria-haspopup="true" aria-expanded="false" aria-controls="tp-fab-menu"><span id="tp-fab-resumo">Todos os fabricantes</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                  <div class="tp-fab-menu" id="tp-fab-menu" hidden>
+                    <div class="tp-fab-search"><input type="search" id="tp-fab-busca" placeholder="Buscar fabricante…" aria-label="Pesquisar fabricantes" autocomplete="off"></div>
+                    <div class="tp-fab-toolbar"><span id="tp-fab-contagem">Todos os fabricantes</span><button type="button" id="tp-fab-limpar">Limpar filtro</button></div>
+                    <div class="tp-fab-options" id="tp-fab-opcoes" role="group" aria-label="Fabricantes disponíveis"></div>
+                  </div>
+                </div>
+                <div class="tp-sort-box">
+                  <span class="tp-sort-caption" aria-hidden="true">Ordenar por</span>
+                  <select class="tp-sort-select" id="tp-ordem" aria-label="Ordenar por">
+                    <option value="codigo">Código</option>
+                    <option value="priceAsc">Menor preço</option>
+                    <option value="priceDesc">Maior preço</option>
+                    <option value="az">Descrição A–Z</option>
+                    <option value="za">Descrição Z–A</option>
+                    <option value="fabricante">Fabricante</option>
+                    <option value="stockDesc">Maior saldo</option>
+                  </select>
+                  <svg class="tp-sort-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+              </div>
+              <div class="tp-dica">Palavras em qualquer ordem, sem acento e sem diferença de maiúsculas · trechos do código valem (<code>14268</code> acha 014268) · modelo junto ou separado (<code>AX3000</code> acha AX-3000) · use <code>*</code> para exigir a ordem na descrição: <code>HDMI*VGA</code></div>
+              <div class="tp-filters"><label class="tp-switch"><input type="checkbox" id="tp-so-saldo"><span>Somente produtos com saldo</span></label><span class="tp-label">• Preço copiado conforme a tabela selecionada abaixo</span></div>
+              <div class="tp-price-line"><span class="tp-label">Tabela de venda</span><div class="tp-pills" id="tp-pills"></div></div>
+            </div>
+            <div class="tp-notice tp-hidden" id="tp-aviso"></div>
+            <div class="tp-grid-scroll" role="region" aria-label="Tabela de produtos" tabindex="0">
+              <div class="tp-copy-toolbar"><div class="tp-bulk"><button type="button" class="tp-add-all" id="tp-copiar-sel" disabled title="Copiar os itens selecionados e limpar a seleção após a cópia">Copiar Selec.</button><button type="button" class="tp-add-all" id="tp-copiar-todos" disabled title="Copiar todos os produtos encontrados na pesquisa e nos filtros">Copiar todos</button></div></div>
+              <table class="tp-table"><thead><tr id="tp-cab"></tr></thead><tbody id="tp-corpo"></tbody></table>
+            </div>
+            <div class="tp-grid-foot"><span id="tp-contagem">Carregando…</span><span>Deslize horizontalmente para consultar todas as 12 colunas · CUSTO é apenas informativo e nunca entra na cópia</span></div>
+          </section>
+
+          <aside class="tp-side" aria-label="Montagem do orçamento">
+            <div class="tp-panel">
+              <div class="tp-quote-head"><div class="tp-quote-head-top"><h3>Orçamento em texto</h3><span class="tp-counter" id="tp-contador">0 itens</span></div><p>Código + descrição + valor, uma linha por item.</p></div>
+              <div class="tp-quote-list" id="tp-lista"></div>
+              <div class="tp-total"><div class="t">Soma dos itens</div><div class="num" id="tp-total">R$ 0,00</div></div>
+              <div class="tp-side-actions">
+                <button type="button" class="tp-btn-primario" id="tp-copiar-orc" disabled>▣ Copiar orçamento</button>
+                <div class="tp-minor"><button type="button" id="tp-baixar" disabled>Baixar texto (.txt)</button><button type="button" id="tp-limpar" disabled>Limpar seleção</button></div>
+              </div>
+            </div>
+            <div class="tp-panel tp-preview" aria-label="Visualização da foto do produto">
+              <h4>IMAGEM DO PRODUTO</h4>
+              <p class="tp-preview-hint" id="tp-foto-dica">Clique em uma linha do catálogo para visualizar a foto do produto.</p>
+              <div class="tp-hidden" id="tp-foto-conteudo">
+                <div class="tp-preview-frame" id="tp-foto-moldura"></div>
+                <div class="tp-preview-info"><span class="tp-preview-code" id="tp-foto-cod"></span><p class="tp-preview-desc" id="tp-foto-desc"></p></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div class="tp-toast inactive" role="status" id="tp-toast"></div>
+      </div>
+
       <!-- ===== ABA: Montar Orçamento (Montador de PC Blue) ===== -->
       <div id="view-orcamento" class="oculto">
         <div class="painel-controles orc-noprint">
@@ -2313,7 +2565,7 @@
           <main class="orc-painel orc-catalogo orc-noprint">
             <h2 id="orc-cat-titulo">Processador</h2>
             <div class="orc-controles">
-              <input type="search" id="orc-busca" placeholder="Buscar código ou descrição..." autocomplete="off">
+              <input type="search" id="orc-busca" placeholder="Buscar código, descrição ou marca…" title="Palavras em qualquer ordem e trechos do código. Use * para exigir a ordem na descrição. Exemplo: HDMI*VGA." autocomplete="off">
               <select id="orc-ordem">
                 <option value="asc">Menor preço primeiro</option>
                 <option value="desc">Maior preço primeiro</option>
@@ -3442,6 +3694,7 @@
   const tabBtnRitmo = document.getElementById("tab-btn-ritmo");
   const tabBtnLista = document.getElementById("tab-btn-lista");
   const tabBtnRanking = document.getElementById("tab-btn-ranking");
+  const tabBtnPrecos = document.getElementById("tab-btn-precos");
   const tabBtnOrcamento = document.getElementById("tab-btn-orcamento");
   const tabBtnAssistencia = document.getElementById("tab-btn-assistencia");
   const tabBtnDevolucao = document.getElementById("tab-btn-devolucao");
@@ -3474,6 +3727,7 @@
   const viewRitmo = document.getElementById("view-ritmo");
   const viewLista = document.getElementById("view-lista");
   const viewRanking = document.getElementById("view-ranking");
+  const viewPrecos = document.getElementById("view-precos");
   const viewOrcamento = document.getElementById("view-orcamento");
   const viewAssistencia = document.getElementById("view-assistencia");
   const viewDevolucao = document.getElementById("view-devolucao");
@@ -4560,6 +4814,7 @@
     viewRitmo.classList.toggle("oculto", aba !== "ritmo");
     viewLista.classList.toggle("oculto", aba !== "lista");
     viewRanking.classList.toggle("oculto", aba !== "ranking");
+    viewPrecos.classList.toggle("oculto", aba !== "tabela_precos");
     viewOrcamento.classList.toggle("oculto", aba !== "orcamento");
     viewAssistencia.classList.toggle("oculto", aba !== "assistencia");
     viewDevolucao.classList.toggle("oculto", aba !== "devolucao");
@@ -4577,6 +4832,7 @@
     tabBtnRitmo.classList.toggle("ativa", aba === "ritmo");
     tabBtnLista.classList.toggle("ativa", aba === "lista");
     tabBtnRanking.classList.toggle("ativa", aba === "ranking");
+    tabBtnPrecos.classList.toggle("ativa", aba === "tabela_precos");
     tabBtnOrcamento.classList.toggle("ativa", aba === "orcamento");
     tabBtnAssistencia.classList.toggle("ativa", aba === "assistencia");
     tabBtnDevolucao.classList.toggle("ativa", aba === "devolucao");
@@ -4593,6 +4849,7 @@
     if (aba === "ritmo") iniciarRitmo();
     if (aba === "lista") ListaDia.iniciar();
     if (aba === "ranking") Ranking.iniciar();
+    if (aba === "tabela_precos") TabelaPrecos.iniciar();
     if (aba === "orcamento") Orcamento.iniciar();
     if (aba === "assistencia") iniciarAssistencia();
     if (aba === "devolucao") atualizarTelaDevolucao();
@@ -4648,6 +4905,7 @@
   tabBtnRitmo.addEventListener("click", () => mostrarAba("ritmo"));
   tabBtnLista.addEventListener("click", () => mostrarAba("lista"));
   tabBtnRanking.addEventListener("click", () => mostrarAba("ranking"));
+  tabBtnPrecos.addEventListener("click", () => mostrarAba("tabela_precos"));
   tabBtnOrcamento.addEventListener("click", () => mostrarAba("orcamento"));
   tabBtnAssistencia.addEventListener("click", () => mostrarAba("assistencia"));
   tabBtnDevolucao.addEventListener("click", () => mostrarAba("devolucao"));
@@ -4931,7 +5189,7 @@
   // barra de cima: só consulta e relatório
   const ABAS_VISUALIZACAO = [
     ["resultados", () => tabBtnResultados], ["vendas", () => tabBtnVendas], ["reserva", () => tabBtnReserva], ["clientes", () => tabBtnClientes], ["clientes_cad", () => tabBtnClientesCad],
-    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo], ["lista", () => tabBtnLista], ["ranking", () => tabBtnRanking], ["orcamento", () => tabBtnOrcamento],
+    ["cobranca", () => tabBtnCobranca], ["performance", () => tabBtnPerformance], ["ritmo", () => tabBtnRitmo], ["lista", () => tabBtnLista], ["ranking", () => tabBtnRanking], ["tabela_precos", () => tabBtnPrecos], ["orcamento", () => tabBtnOrcamento],
     ["assistencia", () => tabBtnAssistencia]
   ];
   // menu Cadastros: tudo que grava alguma coisa
@@ -9251,6 +9509,469 @@
     return { iniciar };
   })();
 
+  // ===== Busca de produtos (17/11/2026) =====
+  // Mesma regra da Tabela de Preços Blue V2.4.2 (e do Montador de PC V1.9), usada na Tabela de Preços e no Montar Orçamento:
+  // - palavras em qualquer ordem, sem precisar estarem juntas; acento e maiúscula/minúscula não contam;
+  // - trecho do código e código sem zeros à esquerda; busca "compactada" (USB3.0 acha USB 3.0, AX3000 acha AX-3000);
+  // - com *, os termos precisam aparecer nessa ordem na DESCRIÇÃO (HDMI*VGA acha "HDMI X VGA", não "VGA X HDMI"),
+  //   e podem vir junto com outras palavras livres (CABO HDMI*VGA).
+  // campos(item) devolve {codigo, descricao, fabricante, ncm}; a chave normalizada fica guardada por item.
+  const BuscaProdutos = (() => {
+    const norm = (s) => String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+    const cache = new WeakMap();
+    function chave(item, campos) {
+      let d = cache.get(item);
+      if (d) return d;
+      const c = campos(item);
+      const code = norm(c.codigo), description = norm(c.descricao), maker = norm(c.fabricante), ncm = norm(c.ncm);
+      d = {
+        description,
+        shortCode: code.replace(/^0+(?=\d)/, ""),
+        full: [code, description, maker, ncm].join(" "),
+        compactFields: [description, maker, ncm].map((v) => v.replace(/ /g, ""))
+      };
+      cache.set(item, d);
+      return d;
+    }
+    function emOrdem(texto, partes) {
+      let cursor = 0;
+      for (const parte of partes) {
+        const pos = texto.indexOf(parte, cursor);
+        if (pos < 0) return false;
+        cursor = pos + parte.length;
+      }
+      return true;
+    }
+    function termoLivre(d, t) { return d.full.includes(t) || d.shortCode.includes(t) || d.compactFields.some((f) => f.includes(t)); }
+    function confere(item, consulta, campos) {
+      const raw = String(consulta == null ? "" : consulta).trim();
+      if (!raw) return true;
+      const d = chave(item, campos);
+      if (!raw.includes("*")) return norm(raw).split(" ").filter(Boolean).every((t) => termoLivre(d, t));
+      // aceita HDMI*VGA, HDMI * VGA e termos a mais, como CABO HDMI*VGA
+      const termos = raw.replace(/\s*\*\s*/g, "*").split(/\s+/).filter(Boolean);
+      return termos.every((termo) => {
+        if (!termo.includes("*")) return norm(termo).split(" ").filter(Boolean).every((t) => termoLivre(d, t));
+        const partes = termo.split("*").map(norm).filter(Boolean);
+        if (!partes.length) return true;
+        // com *, a sequência tem de estar na descrição (não junta campos diferentes)
+        const compacta = d.description.replace(/ /g, "");
+        return emOrdem(d.description, partes) || emOrdem(compacta, partes.map((p) => p.replace(/ /g, "")));
+      });
+    }
+    return { norm, confere };
+  })();
+
+  // ===== Aba Tabela de Preços (Tabela de Preços Blue V2.4.2 dentro do painel, 17/11/2026) =====
+  // A mesma tela da Tabela de Preços (catálogo, busca, fabricantes, ordenação, tabelas de venda, cópia e orçamento em texto),
+  // mas os preços e o estoque vêm do ERP pela função tabela_precos_produtos (copiados nos horários de sincronização),
+  // em vez de importar a planilha XLSX. Colunas: TAB 04 = tabela 04 · TABELA 01 = 01 · À VISTA = 05 · SEM IE = 08
+  // (preço com promoção, se houver) · Valor Sugestão do cadastro · CUSTO = tabela 07 (o mesmo custo do Montar Orçamento).
+  // CUSTO é só informativo: nunca entra na cópia, no texto do orçamento nem no .txt.
+  const TabelaPrecos = (() => {
+    const el = (id) => document.getElementById(id);
+    // [chave, título]; os cinco primeiros são as tabelas de venda que podem ser copiadas
+    const PRECOS = [["t04", "TAB 04"], ["t01", "TABELA 01"], ["avista", "À VISTA"], ["semie", "SEM IE"], ["sug", "Valor Sugestão"]];
+    const COLUNAS_FIM = PRECOS.concat([["custo", "CUSTO"], ["fab", "Fabricante"], ["gar", "Garantia"], ["ncm", "NCM"]]);
+    const LIMITE_TELA = 600;
+    const FOTOS_BASE = SUPABASE_URL + "/storage/v1/object/public/produtos-fotos/";
+    const camposBusca = (r) => ({ codigo: r.cod, descricao: r.d, fabricante: r.fab, ncm: r.ncm });
+    let dados = [], porId = new Map(), carregando = false, ligado = false, carregadoEm = null, atualizadoErp = null;
+    let preco = "t04", selecionados = new Map(), fabricantes = [], fabSel = new Set(), previewId = null, fotoReq = 0, indiceFotos = null;
+
+    const moeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+    const valor = (n) => typeof n === "number" && Number.isFinite(n) ? moeda.format(n).replace(/ /g, " ") : "—";
+    const precoDe = (r) => r[preco];
+    const nomePreco = (k) => (PRECOS.find(([c]) => c === k) || [k, k])[1];
+    const numero = (v) => v == null || v === "" ? null : (Number.isFinite(Number(v)) ? Number(v) : null);
+    const garantia = (m) => !m ? "—" : m + (m === 1 ? " mês" : " meses");
+
+    function toast(msg, tipo) {
+      const t = el("tp-toast");
+      t.textContent = msg;
+      t.className = "tp-toast " + (tipo || "ok");
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => { t.className = "tp-toast inactive"; }, 2800);
+    }
+    function aviso(texto, tipo) {
+      const a = el("tp-aviso");
+      a.textContent = texto || "";
+      a.className = "tp-notice " + (tipo === "erro" ? "aviso-erro" : "aviso-amarelo") + (texto ? "" : " tp-hidden");
+    }
+
+    // --- dados do ERP ---
+    async function rpc(nome, corpo, parametros) {
+      sessao = await garantirSessaoValida();
+      if (!sessao) throw new Error("Sessão expirada. Entre de novo.");
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + nome + (parametros ? "?" + parametros : ""), {
+        method: "POST",
+        headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + sessao.access_token, "Content-Type": "application/json" },
+        body: JSON.stringify(corpo || {})
+      });
+      if (!res.ok) {
+        const t = await res.text(); let m = t;
+        try { m = JSON.parse(t).message || t; } catch (e) {}
+        if (res.status === 401 || res.status === 403 || /permiss/i.test(m)) m = "Sua conta não tem permissão para a Tabela de Preços.";
+        throw new Error(String(m).slice(0, 200));
+      }
+      return res.json();
+    }
+    // o Supabase devolve no máximo 1.000 linhas por chamada: busca em páginas, numa ordem fixa (grupo + código)
+    async function buscarProdutos() {
+      const PAGINA = 1000, linhas = [];
+      for (let offset = 0; ; offset += PAGINA) {
+        const lote = await rpc("tabela_precos_produtos", {}, "order=grupo.asc,codigo.asc&limit=" + PAGINA + "&offset=" + offset);
+        linhas.push(...lote);
+        if (lote.length < PAGINA) return linhas;
+      }
+    }
+    async function carregarIndiceFotos() {
+      try {
+        const res = await fetch(FOTOS_BASE + "indice.json", { cache: "no-cache" });
+        if (res.ok) indiceFotos = (await res.json()).fotos || {};
+      } catch (e) {}
+    }
+    // grupo 002 é outro cadastro no ERP e pode repetir o código do grupo 001
+    function montarItem(r) {
+      return {
+        id: r.grupo === "001" ? r.codigo : r.grupo + "-" + r.codigo,
+        cod: String(r.codigo || "").trim(),
+        grupo: r.grupo,
+        d: String(r.descricao || "").trim(),
+        fab: String(r.fabricante || "").trim(),
+        ncm: String(r.ncm || "").trim(),
+        gar: r.garantia == null ? null : Number(r.garantia),
+        s: r.disponivel == null ? null : Math.floor(Number(r.disponivel)),
+        t04: numero(r.tab04), t01: numero(r.tabela01), avista: numero(r.a_vista), semie: numero(r.sem_ie),
+        sug: numero(r.valor_sugestao), custo: numero(r.custo),
+        promo: r.promocao_ate || null,
+        kit: !!r.kit
+      };
+    }
+
+    async function carregar() {
+      if (carregando) return;
+      carregando = true;
+      el("tp-atualizar").disabled = true;
+      el("tp-status").textContent = "Carregando preços do ERP…";
+      if (!dados.length) el("tp-contagem").textContent = "Carregando…";
+      try {
+        const [linhas] = await Promise.all([buscarProdutos(), indiceFotos ? null : carregarIndiceFotos()]);
+        dados = linhas.map(montarItem);
+        porId = new Map(dados.map((r) => [r.id, r]));
+        atualizadoErp = linhas.reduce((m, r) => (r.atualizado_em && (!m || r.atualizado_em > m) ? r.atualizado_em : m), null);
+        carregadoEm = new Date();
+        // a seleção continua com os preços novos; o que saiu da tabela é retirado
+        const sairam = [];
+        for (const id of [...selecionados.keys()]) {
+          const r = porId.get(id);
+          if (r) selecionados.set(id, r); else { selecionados.delete(id); sairam.push(id); }
+        }
+        if (previewId && !porId.has(previewId)) limparFoto();
+        const fabsAntes = new Set(fabSel);
+        montarFabricantes();
+        fabsAntes.forEach((f) => { if (fabricantes.includes(f)) fabSel.add(f); });
+        atualizarResumoFab();
+        aviso(sairam.length ? "Saíram da tabela e foram retirados da seleção: " + sairam.join(", ") + "." : "");
+      } catch (e) {
+        aviso("Não foi possível carregar a tabela de preços: " + (e.message || e), "erro");
+      } finally {
+        carregando = false;
+        el("tp-atualizar").disabled = false;
+        renderStatus();
+        render();
+      }
+    }
+    function renderStatus() {
+      const hora = (d) => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      el("tp-status").textContent = atualizadoErp
+        ? "Preços e estoque do ERP de " + new Date(atualizadoErp).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " às " + hora(new Date(atualizadoErp))
+        : "Preços e estoque direto do ERP";
+      el("freshness-precos").textContent = carregadoEm ? "Carregado às " + hora(carregadoEm) : "";
+    }
+
+    // --- filtros e ordenação (como na Tabela de Preços) ---
+    function filtrados() {
+      const q = el("tp-busca").value, soSaldo = el("tp-so-saldo").checked;
+      const rows = dados.filter((r) => {
+        if (fabSel.size && !fabSel.has(r.fab)) return false;
+        if (soSaldo && !(typeof r.s === "number" && r.s > 0)) return false;
+        return BuscaProdutos.confere(r, q, camposBusca);
+      });
+      const ordem = el("tp-ordem").value;
+      if (ordem === "az") rows.sort((a, b) => a.d.localeCompare(b.d, "pt-BR"));
+      if (ordem === "za") rows.sort((a, b) => b.d.localeCompare(a.d, "pt-BR"));
+      if (ordem === "fabricante") rows.sort((a, b) => {
+        if (!a.fab) return b.fab ? 1 : 0;
+        if (!b.fab) return -1;
+        return a.fab.localeCompare(b.fab, "pt-BR", { sensitivity: "base" }) || a.d.localeCompare(b.d, "pt-BR");
+      });
+      if (ordem === "priceAsc" || ordem === "priceDesc") rows.sort((a, b) => {
+        const x = precoDe(a), y = precoDe(b);
+        if (x == null) return y == null ? 0 : 1;
+        if (y == null) return -1;
+        return ordem === "priceAsc" ? x - y : y - x;
+      });
+      if (ordem === "stockDesc") rows.sort((a, b) => (b.s == null ? -Infinity : b.s) - (a.s == null ? -Infinity : a.s));
+      return rows;
+    }
+
+    // --- cópia ---
+    const linhaOrc = (r) => r.cod + "\t" + r.d + "\t" + valor(precoDe(r));
+    const comPreco = (r) => typeof precoDe(r) === "number";
+    const textoOrcamento = () => [...selecionados.values()].filter(comPreco).map(linhaOrc).join("\n");
+    async function copiarTexto(texto) {
+      if (!texto) return false;
+      try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(texto); return true; } } catch (e) {}
+      const ta = document.createElement("textarea");
+      ta.value = texto; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.append(ta); ta.focus(); ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      ta.remove();
+      return ok;
+    }
+    function copiarUm(r) {
+      if (!comPreco(r)) { toast("Este item não possui valor na tabela selecionada.", "err"); return; }
+      copiarTexto(linhaOrc(r)).then((ok) => toast(ok ? "Item copiado no formato Código + Descrição + Valor." : "Não foi possível copiar. Selecione o texto manualmente.", ok ? "ok" : "err"));
+    }
+    // todos os resultados filtrados, inclusive os que não aparecem entre os primeiros 600
+    async function copiarTodos() {
+      const rows = filtrados(), aptos = rows.filter(comPreco);
+      if (!aptos.length) { toast("Nenhum produto com preço disponível para copiar.", "err"); return; }
+      if (aptos.length > 30 && !window.confirm("Copiar " + aptos.length.toLocaleString("pt-BR") + " produtos?\n\nSerão copiados todos os resultados da busca e dos filtros atuais (inclusive os que não aparecem entre os primeiros " + LIMITE_TELA + "). O orçamento selecionado não será alterado.")) return;
+      const ok = await copiarTexto(aptos.map(linhaOrc).join("\n"));
+      if (!ok) { toast("Não foi possível copiar os produtos.", "err"); return; }
+      const sem = rows.length - aptos.length;
+      toast(aptos.length.toLocaleString("pt-BR") + " produto(s) copiado(s)" + (sem ? " · " + sem.toLocaleString("pt-BR") + " sem preço ignorado(s)" : "") + ".");
+    }
+    // só os selecionados; limpa a seleção depois que a cópia deu certo
+    async function copiarSelecionadosELimpar() {
+      const rows = [...selecionados.values()];
+      if (!rows.length) { toast("Selecione pelo menos um produto para copiar.", "err"); return; }
+      if (rows.some((r) => !comPreco(r))) { toast("Há itens selecionados sem preço nesta tabela. Verifique a seleção antes de copiar.", "err"); return; }
+      const ok = await copiarTexto(rows.map(linhaOrc).join("\n"));
+      if (!ok) { toast("Não foi possível copiar os itens. A seleção foi mantida.", "err"); return; }
+      selecionados.clear();
+      renderTabela(); renderOrcamento();
+      toast(rows.length.toLocaleString("pt-BR") + " item(ns) copiado(s). Seleção limpa.");
+    }
+
+    // --- foto (bucket produtos-fotos; só busca quando clica na linha) ---
+    function limparFoto() {
+      fotoReq++;
+      previewId = null;
+      el("tp-foto-dica").classList.remove("tp-hidden");
+      el("tp-foto-conteudo").classList.add("tp-hidden");
+      el("tp-foto-moldura").replaceChildren();
+    }
+    function mostrarFoto(r) {
+      if (!r) return;
+      previewId = r.id;
+      const req = ++fotoReq;
+      el("tp-foto-dica").classList.add("tp-hidden");
+      el("tp-foto-conteudo").classList.remove("tp-hidden");
+      el("tp-foto-cod").textContent = r.cod;
+      el("tp-foto-desc").textContent = r.d;
+      const moldura = el("tp-foto-moldura");
+      const msg = document.createElement("div");
+      msg.className = "tp-preview-status";
+      msg.setAttribute("role", "status");
+      msg.textContent = "Carregando imagem…";
+      moldura.replaceChildren(msg);
+      el("tp-corpo").querySelectorAll("tr[data-id]").forEach((tr) => tr.classList.toggle("preview-active", tr.dataset.id === r.id));
+      if (r.grupo !== "001" || !/^\d{6}$/.test(r.cod)) { msg.textContent = "Foto não disponível para este código."; return; }
+      let url = FOTOS_BASE + "fotos/" + encodeURIComponent(r.cod) + ".jpg";
+      if (indiceFotos) {
+        const v = indiceFotos[r.cod];
+        if (!v) { msg.textContent = "Foto não disponível para este produto."; return; }
+        url += "?v=" + encodeURIComponent(v);
+      }
+      const img = new Image();
+      img.alt = "Foto do produto " + r.cod + " — " + r.d;
+      img.decoding = "async";
+      img.onload = () => { if (req === fotoReq) moldura.replaceChildren(img); };
+      img.onerror = () => { if (req === fotoReq) { msg.textContent = "Foto não disponível para este produto ou sem conexão com a internet."; moldura.replaceChildren(msg); } };
+      img.src = url;
+    }
+
+    // --- fabricantes (seleção múltipla) ---
+    function montarFabricantes() {
+      fabricantes = [...new Set(dados.map((r) => r.fab).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+      fabSel.clear();
+      el("tp-fab-busca").value = "";
+      fecharFab();
+      atualizarResumoFab();
+      renderOpcoesFab();
+    }
+    function atualizarResumoFab() {
+      const n = fabSel.size;
+      el("tp-fab-resumo").textContent = n === 0 ? "Todos os fabricantes" : n === 1 ? [...fabSel][0] : n + " fabricantes";
+      el("tp-fab-toggle").title = n === 0 ? "Todos os fabricantes" : [...fabSel].join(", ");
+      el("tp-fab-contagem").textContent = n === 0 ? "Todos os fabricantes" : n + " " + (n === 1 ? "selecionado" : "selecionados");
+      el("tp-fab-limpar").disabled = n === 0;
+    }
+    function renderOpcoesFab() {
+      const q = BuscaProdutos.norm(el("tp-fab-busca").value);
+      const vis = fabricantes.filter((f) => BuscaProdutos.norm(f).includes(q));
+      el("tp-fab-opcoes").innerHTML = vis.length
+        ? vis.map((f) => '<label><input type="checkbox" value="' + esc(f) + '"' + (fabSel.has(f) ? " checked" : "") + "><span>" + esc(f) + "</span></label>").join("")
+        : '<div class="tp-fab-vazio">Nenhum fabricante encontrado.</div>';
+    }
+    function fecharFab() {
+      el("tp-fab-menu").hidden = true;
+      el("tp-fab-toggle").setAttribute("aria-expanded", "false");
+    }
+
+    // --- tela ---
+    function renderCabecalho() {
+      const th = (t, cls) => '<th scope="col"' + (cls ? ' class="' + cls + '"' : "") + ">" + esc(t) + "</th>";
+      el("tp-cab").innerHTML = th("Código") + th("Descrição") + th("SldDisp") + th("AÇÃO") +
+        COLUNAS_FIM.map(([k, t]) => th(k === "avista" ? "A VISTA" : t, k === preco ? "active-price" : "")).join("");
+    }
+    function renderPills() {
+      el("tp-pills").innerHTML = PRECOS.map(([k, t]) => '<button class="tp-pill' + (k === preco ? " ativa" : "") + '" type="button" data-preco="' + k + '">' + esc(t) + "</button>").join("");
+    }
+    function renderStats() {
+      el("tp-stat-produtos").textContent = dados.length.toLocaleString("pt-BR");
+      el("tp-stat-saldo").textContent = dados.length ? dados.filter((r) => r.s != null && r.s > 0).length.toLocaleString("pt-BR") : "—";
+      el("tp-stat-preco").textContent = nomePreco(preco);
+    }
+    function celula(r, k) {
+      let v = r[k], cls = "";
+      if (k === "cod") cls = "code";
+      if (k === "d") cls = "desc";
+      if (k === "custo" || PRECOS.some(([c]) => c === k)) {
+        v = valor(v);
+        cls = "money" + (k === preco ? " active-price" : "") + (k === "custo" ? " internal" : "");
+      }
+      if (k === "s") { cls = v == null ? "" : v > 0 ? "stock-ok" : "stock-zero"; v = v == null ? "—" : v.toLocaleString("pt-BR"); }
+      if (k === "gar") v = garantia(v);
+      if (v == null || v === "") v = "—";
+      let extra = "";
+      if (k === "d") {
+        if (r.promo) extra += '<span class="tp-tag promo" title="Preço em promoção no ERP">promoção até ' + esc(new Date(r.promo).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })) + "</span>";
+        if (r.kit) extra += '<span class="tp-tag kit" title="Kit do ERP: o saldo é quanto dá para montar com os componentes">kit</span>';
+      }
+      return '<td class="' + cls + '" title="' + esc(v) + '">' + esc(v) + extra + "</td>";
+    }
+    function renderTabela() {
+      const rows = filtrados();
+      const aptos = rows.filter(comPreco).length;
+      const todos = el("tp-copiar-todos");
+      todos.disabled = aptos === 0;
+      todos.title = aptos ? "Copiar " + aptos.toLocaleString("pt-BR") + " produto(s) dos resultados filtrados." : "Nenhum produto com preço disponível para copiar.";
+      const vis = rows.slice(0, LIMITE_TELA);
+      el("tp-contagem").textContent = carregando && !dados.length ? "Carregando…" :
+        rows.length.toLocaleString("pt-BR") + " resultado(s)" + (rows.length > LIMITE_TELA ? " • exibindo os primeiros " + LIMITE_TELA + "; refine a busca" : "");
+      el("tp-corpo").innerHTML = vis.length ? vis.map((r) => {
+        const temPreco = comPreco(r), sel = selecionados.has(r.id);
+        return '<tr data-id="' + esc(r.id) + '" class="' + (previewId === r.id ? "preview-active" : "") + '" tabindex="0" title="Clique para visualizar a imagem do produto">' +
+          celula(r, "cod") + celula(r, "d") + celula(r, "s") +
+          '<td><div class="tp-actions"><button type="button" class="tp-add' + (sel ? " added" : "") + '" data-add="' + esc(r.id) + '"' + (temPreco ? "" : ' disabled title="Sem preço nesta tabela"') + ">" + (sel ? "✓ Selecionado" : "Selecionar") + "</button>" +
+          '<button type="button" class="tp-copy-one" title="Copiar somente este produto" data-copy="' + esc(r.id) + '"' + (temPreco ? "" : " disabled") + ">Copiar</button></div></td>" +
+          COLUNAS_FIM.map(([k]) => celula(r, k)).join("") + "</tr>";
+      }).join("") : '<tr><td colspan="13"><div class="tp-empty">' + (carregando ? "Carregando a tabela de preços…" : dados.length ? "Nenhum produto encontrado. Tente outro código ou termo de pesquisa." : "Tabela de preços ainda não carregada.") + "</div></td></tr>";
+    }
+    function renderOrcamento() {
+      const rows = [...selecionados.values()];
+      let total = 0, semPreco = 0;
+      const btnSel = el("tp-copiar-sel");
+      btnSel.disabled = rows.length === 0 || rows.some((r) => !comPreco(r));
+      btnSel.title = rows.length ? rows.length.toLocaleString("pt-BR") + " item(ns) selecionado(s) para copiar. A seleção será limpa após copiar." : "Selecione produtos na tabela para copiar";
+      el("tp-stat-sel").textContent = rows.length.toLocaleString("pt-BR");
+      el("tp-contador").textContent = rows.length + " " + (rows.length === 1 ? "item" : "itens");
+      el("tp-lista").innerHTML = rows.length ? rows.map((r) => {
+        const n = precoDe(r);
+        if (n == null) semPreco++; else total += n;
+        return '<div class="tp-quote-item"><div class="tp-quote-item-top"><span class="sku">' + esc(r.cod) + '</span><button class="tp-remove" type="button" aria-label="Remover item ' + esc(r.cod) + '" data-remove="' + esc(r.id) + '">×</button></div>' +
+          '<div class="item-name">' + esc(r.d) + '</div><div class="' + (n == null ? "miss" : "item-price") + '">' + (n == null ? "Sem preço nesta tabela" : valor(n)) + "</div></div>";
+      }).join("") : '<div class="tp-quote-empty"><div class="big">▤</div><p>Seu orçamento está vazio.<br>Adicione produtos no catálogo.</p></div>';
+      el("tp-total").textContent = valor(total);
+      el("tp-copiar-orc").disabled = rows.length === 0 || semPreco > 0;
+      el("tp-baixar").disabled = rows.length === 0 || semPreco > 0;
+      el("tp-limpar").disabled = rows.length === 0;
+      el("tp-copiar-orc").textContent = semPreco ? "⚠ " + semPreco + " item(ns) sem preço" : "▣ Copiar orçamento";
+    }
+    function render() { renderPills(); renderCabecalho(); renderStats(); renderTabela(); renderOrcamento(); }
+
+    function ligar() {
+      if (ligado) return;
+      ligado = true;
+      el("tp-atualizar").addEventListener("click", () => carregar());
+      el("tp-busca").addEventListener("input", renderTabela);
+      el("tp-ordem").addEventListener("change", renderTabela);
+      el("tp-so-saldo").addEventListener("change", renderTabela);
+      el("tp-pills").addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-preco]");
+        if (!b) return;
+        preco = b.dataset.preco;
+        render();
+      });
+      // um clique na linha mostra a foto; Selecionar/Copiar agem no item (e também mostram a foto, como na Tabela de Preços)
+      el("tp-corpo").addEventListener("click", (ev) => {
+        const add = ev.target.closest("[data-add]"), cp = ev.target.closest("[data-copy]"), tr = ev.target.closest("tr[data-id]");
+        if (add) {
+          const r = porId.get(add.dataset.add);
+          if (r) { if (selecionados.has(r.id)) selecionados.delete(r.id); else selecionados.set(r.id, r); }
+          renderTabela(); renderOrcamento();
+        } else if (cp) {
+          const r = porId.get(cp.dataset.copy);
+          if (r) copiarUm(r);
+        }
+        if (tr) mostrarFoto(porId.get(tr.dataset.id));
+      });
+      el("tp-corpo").addEventListener("keydown", (ev) => {
+        if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches("tr[data-id]")) { ev.preventDefault(); mostrarFoto(porId.get(ev.target.dataset.id)); }
+      });
+      el("tp-lista").addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-remove]");
+        if (!b) return;
+        selecionados.delete(b.dataset.remove);
+        renderTabela(); renderOrcamento();
+      });
+      el("tp-copiar-todos").addEventListener("click", copiarTodos);
+      el("tp-copiar-sel").addEventListener("click", copiarSelecionadosELimpar);
+      el("tp-copiar-orc").addEventListener("click", () => copiarTexto(textoOrcamento()).then((ok) => toast(ok ? "Orçamento copiado! Cole diretamente no WhatsApp ou e-mail." : "Não foi possível copiar o texto.", ok ? "ok" : "err")));
+      el("tp-limpar").addEventListener("click", () => { selecionados.clear(); renderTabela(); renderOrcamento(); });
+      el("tp-baixar").addEventListener("click", () => {
+        const blob = new Blob(["﻿" + textoOrcamento()], { type: "text/plain;charset=utf-8" });
+        const a = document.createElement("a"), url = URL.createObjectURL(blob);
+        a.href = url; a.download = "orcamento_blue.txt"; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+      // fabricantes
+      el("tp-fab-toggle").addEventListener("click", () => {
+        const menu = el("tp-fab-menu");
+        if (!menu.hidden) { fecharFab(); return; }
+        menu.hidden = false;
+        el("tp-fab-toggle").setAttribute("aria-expanded", "true");
+        el("tp-fab-busca").value = "";
+        renderOpcoesFab();
+      });
+      el("tp-fab-busca").addEventListener("input", renderOpcoesFab);
+      el("tp-fab-opcoes").addEventListener("change", (ev) => {
+        const i = ev.target;
+        if (!i.matches('input[type="checkbox"]')) return;
+        if (i.checked) fabSel.add(i.value); else fabSel.delete(i.value);
+        atualizarResumoFab(); renderTabela();
+      });
+      el("tp-fab-limpar").addEventListener("click", () => { fabSel.clear(); atualizarResumoFab(); renderOpcoesFab(); renderTabela(); });
+      document.addEventListener("pointerdown", (ev) => { if (!el("tp-fab-picker").contains(ev.target)) fecharFab(); });
+      document.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape" && !el("tp-fab-menu").hidden) { fecharFab(); el("tp-fab-toggle").focus(); }
+      });
+    }
+
+    function iniciar() {
+      ligar();
+      // recarrega sozinho ao voltar para a aba depois de 30 minutos (os preços entram nos horários de sincronização)
+      if (!carregando && (!carregadoEm || Date.now() - carregadoEm.getTime() > 30 * 60 * 1000)) carregar();
+      render();
+    }
+    return { iniciar };
+  })();
+
   // ===== Aba Montar Orçamento (Montador de PC Blue) =====
   // Estoque e preços vêm do ERP pela função orcamento_produtos (copiados nos horários de sincronização; ver barra de baixo).
   // As peças são classificadas pela descrição, com a mesma regra do Montador de PC Blue.
@@ -9300,6 +10021,7 @@
     let encomendas = [], seqEncomenda = 0;   // itens sob encomenda do orçamento na tela (não vêm do ERP)
     const byId = (id) => dados.find((p) => p.id === id) || encomendas.find((p) => p.id === id);
     const price = (p) => Number(p.p[tabela] || 0);
+    const camposBuscaOrc = (p) => ({ codigo: p.cod, descricao: p.d, fabricante: p.marca, ncm: "" });
     const dataCurta = (s) => new Date(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
     // --- regras do Montador (classificação e compatibilidade pela descrição) ---
@@ -9409,7 +10131,8 @@
         c: classificar(r.descricao),
         cost: r.custo == null ? null : Number(r.custo),
         promo: r.promocao_ate || null,
-        kit: !!r.kit   // kit do ERP (computador montado, kit CPU…): o estoque é quanto dá para montar com os componentes
+        kit: !!r.kit,   // kit do ERP (computador montado, kit CPU…): o estoque é quanto dá para montar com os componentes
+        marca: String(r.marca || "").trim()   // entra só na busca
       };
     }
 
@@ -9672,8 +10395,8 @@
         el("orc-produtos").innerHTML = "";
         return;
       }
-      const t = termo.toUpperCase();
-      const subset = dados.filter((p) => p.c === ativa && compativel(p) && (p.cod + " " + p.d).toUpperCase().includes(t));
+      // busca igual à da Tabela de Preços (BuscaProdutos): palavras em qualquer ordem, código parcial, compacta e *
+      const subset = dados.filter((p) => p.c === ativa && compativel(p) && BuscaProdutos.confere(p, termo, camposBuscaOrc));
       subset.sort((a, b) => ordem === "az" ? a.d.localeCompare(b.d, "pt-BR") || a.id.localeCompare(b.id)
         : ordem === "za" ? b.d.localeCompare(a.d, "pt-BR") || a.id.localeCompare(b.id)
         : ((price(a) - price(b)) * (ordem === "asc" ? 1 : -1) || a.d.localeCompare(b.d, "pt-BR")));
