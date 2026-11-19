@@ -87,8 +87,9 @@
 
   /* ---------- App ---------- */
   #app { padding: 20px 16px 72px; } /* 72px: espaço para a barra de sincronização fixa embaixo (31/10/2026) */
-  .wrap { max-width: 1340px; margin: 0 auto; } /* mesma largura em todas as abas (28/10/2026) */
-  .wrap.largo { max-width: 1340px; }
+  /* tela cheia em todas as abas (19/11/2026): o painel usa a largura toda da janela, sem coluna centralizada */
+  .wrap, .wrap.largo { max-width: none; margin: 0; }
+  @media (max-width: 700px) { #app { padding: 16px 10px 72px; } } /* celular: menos margem lateral, mais área útil */
   .cabecalho {
     display: flex;
     align-items: flex-start;
@@ -112,18 +113,18 @@
 
   .tabs {
     display: flex;
-    gap: 8px;
+    gap: 5px;
     margin-bottom: 16px;
     flex-wrap: wrap;
   }
-  .tab-btn {
-    padding: 9px 16px;
+  .tab-btn { /* 19/11/2026: um pouco mais justas, para as 14 abas caberem numa linha em tela larga */
+    padding: 8px 11px;
     border-radius: 9px;
     border: 1px solid var(--borda);
     background: #fff;
     color: var(--texto-suave);
     font-weight: 600;
-    font-size: 0.86rem;
+    font-size: 0.85rem;
     cursor: pointer;
   }
   .tab-btn.ativa { background: var(--azul); color: #fff; border-color: var(--azul); }
@@ -1295,30 +1296,31 @@
   .tp-panel-title { padding: 18px 20px 0; }
   .tp-panel-title h3 { margin: 0; font-size: 16px; }
   .tp-panel-title p { font-size: 12px; margin: 4px 0 0; color: var(--tp-sub); }
-  .tp-controls { padding: 16px 19px 15px; border-bottom: 1px solid var(--tp-borda); position: relative; z-index: 10; }
+  .tp-controls { padding: 14px 16px 12px; border-bottom: 1px solid var(--tp-borda); position: relative; z-index: 10; }
   .tp-search-row { display: flex; gap: 10px; align-items: center; }
   .tp-search-wrap { display: flex; align-items: center; flex: 1; gap: 9px; border: 1px solid #ccd8e6; border-radius: 10px; background: #fafcff; padding: 0 13px; min-width: 0; }
   .tp-search-wrap svg { flex: none; color: #758ba3; }
-  #view-precos .tp-search-wrap input { border: 0; background: transparent; outline: 0; min-width: 0; width: 100%; height: 45px; color: var(--tp-tinta); font: inherit; font-size: 14px; padding: 0; box-shadow: none; }
+  #view-precos .tp-search-wrap input { border: 0; background: transparent; outline: 0; min-width: 0; width: 100%; height: 42px; color: var(--tp-tinta); font: inherit; font-size: 14px; padding: 0; box-shadow: none; }
   .tp-search-wrap:focus-within { box-shadow: 0 0 0 3px #d7eaff; border-color: #75a9e8; }
-  .tp-dica { margin-top: 8px; font-size: 11.5px; color: var(--tp-sub); line-height: 1.5; }
+  .tp-dica { margin-top: 7px; font-size: 11.5px; color: var(--tp-sub); line-height: 1.45; }
   .tp-dica code { font: 11px/1.4 ui-monospace, Consolas, monospace; color: #245c9c; background: #eef5ff; border-radius: 4px; padding: 1px 4px; }
-  .tp-filters { margin-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .tp-label { font-size: 12px; color: var(--tp-sub); font-weight: 660; }
   #view-precos .tp-switch { display: inline-flex; align-items: center; gap: 8px; color: #4c5d72; font-size: 12px; cursor: pointer; user-select: none; }
   .tp-switch input { accent-color: var(--tp-azul); width: 15px; height: 15px; margin: 0; }
-  .tp-price-line { margin-top: 13px; display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+  .tp-price-line { margin-top: 11px; display: flex; align-items: center; gap: 8px 11px; flex-wrap: wrap; }
+  .tp-price-line .tp-nota-preco { font-weight: 500; }
+  .tp-price-line .tp-switch { margin-left: auto; }
   .tp-pills { display: flex; flex-wrap: wrap; gap: 6px; }
   #view-precos .tp-pill { border: 1px solid #dce5ef; border-radius: 999px; background: #f8fafc; color: #52637b; font-size: 12px; font-weight: 720; padding: 7px 12px; }
   #view-precos .tp-pill.ativa { color: #0a58b0; border-color: #85b6f1; background: #e6f1ff; }
   /* ordenação: título fixo em cima e valor embaixo */
-  .tp-sort-box { position: relative; flex: 0 0 170px; width: 170px; min-width: 132px; height: 45px; }
-  #view-precos .tp-sort-select { display: block; width: 100%; height: 100%; padding: 17px 30px 3px 10px; border: 1px solid #ccd8e6; border-radius: 10px; background: #fff; color: #30445f; font-size: 13px; line-height: 18px; appearance: none; -webkit-appearance: none; cursor: pointer; box-shadow: none; }
-  .tp-sort-caption { position: absolute; top: 5px; left: 10px; z-index: 1; pointer-events: none; color: #66758b; font-size: 11px; line-height: 13px; }
+  .tp-sort-box { position: relative; flex: 0 0 170px; width: 170px; min-width: 132px; height: 42px; }
+  #view-precos .tp-sort-select { display: block; width: 100%; height: 100%; padding: 16px 30px 2px 10px; border: 1px solid #ccd8e6; border-radius: 10px; background: #fff; color: #30445f; font-size: 13px; line-height: 18px; appearance: none; -webkit-appearance: none; cursor: pointer; box-shadow: none; }
+  .tp-sort-caption { position: absolute; top: 4px; left: 10px; z-index: 1; pointer-events: none; color: #66758b; font-size: 11px; line-height: 13px; }
   .tp-sort-chevron { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #253955; }
   /* fabricantes: seleção múltipla */
   .tp-fab-picker { position: relative; flex: 0 0 180px; width: 180px; min-width: 132px; max-width: 190px; }
-  #view-precos .tp-fab-trigger { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 45px; width: 100%; background: #fff; border: 1px solid #ccd8e6; border-radius: 10px; color: #30445f; text-align: left; padding: 0 11px 0 12px; font-size: 13px; font-weight: 400; white-space: nowrap; }
+  #view-precos .tp-fab-trigger { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 42px; width: 100%; background: #fff; border: 1px solid #ccd8e6; border-radius: 10px; color: #30445f; text-align: left; padding: 0 11px 0 12px; font-size: 13px; font-weight: 400; white-space: nowrap; }
   .tp-fab-trigger span { overflow: hidden; text-overflow: ellipsis; }
   .tp-fab-trigger svg { flex: none; }
   #view-precos .tp-fab-trigger[aria-expanded="true"] { border-color: #7eaae7; box-shadow: 0 0 0 3px #d7eaff; }
@@ -1338,27 +1340,38 @@
   .tp-notice { padding: 9px 18px; font-size: 12px; }
   .tp-notice.aviso-amarelo { background: #fff6e5; color: #7b5a19; border-bottom: 1px solid #f4dfab; }
   .tp-notice.aviso-erro { background: #fff1f0; color: #933c35; border-bottom: 1px solid #f4cfca; }
-  /* catálogo: faixa de cópia em cima, títulos logo abaixo, código e descrição fixos à esquerda */
+  /* catálogo: faixa de cópia em cima, títulos logo abaixo, código e descrição fixos à esquerda.
+     19/11/2026 (tela cheia): a grade ocupa a largura toda do quadro. A descrição estica e as outras colunas têm largura
+     fixa (variáveis abaixo), então a rolagem para o lado só aparece quando a janela é menor que a soma (--tp-min).
+     As larguras vão pela classe da coluna (c-cod, c-desc, c-sld, c-acao, c-preco, c-fab, c-gar, c-ncm), não pela posição:
+     a ordem muda com a tabela de venda escolhida e no celular (ver colunas() no script). A altura vem de ajustarGrade(). */
+  #view-precos {
+    --tp-c-cod: 68px; --tp-c-desc: 200px; --tp-c-sld: 60px; --tp-c-acao: 142px; --tp-c-preco: 96px; --tp-c-fab: 124px; --tp-c-gar: 68px; --tp-c-ncm: 76px;
+    --tp-depois: calc(6 * var(--tp-c-preco) + var(--tp-c-fab) + var(--tp-c-gar) + var(--tp-c-ncm)); /* o que vem depois da AÇÃO */
+    --tp-min: calc(var(--tp-c-cod) + var(--tp-c-desc) + var(--tp-c-sld) + var(--tp-c-acao) + var(--tp-depois));
+  }
   .tp-grid-scroll { overflow: auto; max-height: 600px; }
-  .tp-copy-toolbar { width: 100%; min-width: 1500px; height: 42px; padding: 6px 0; background: #fff; position: sticky; top: 0; z-index: 8; border-bottom: 1px solid #d8e1ec; }
-  .tp-bulk { margin-left: calc(90px + 330px + 83px); width: 157px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 4px; }
+  .tp-copy-toolbar { display: flex; justify-content: flex-end; width: 100%; min-width: var(--tp-min); height: 42px; padding: 6px var(--tp-depois) 6px 0; background: #fff; position: sticky; top: 0; z-index: 8; border-bottom: 1px solid #d8e1ec; }
+  .tp-bulk { flex: none; width: calc(var(--tp-c-acao) + 36px); padding: 0 6px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 6px; } /* termina junto com a coluna AÇÃO */
   #view-precos .tp-add-all { display: flex; align-items: center; justify-content: center; min-width: 0; width: 100%; min-height: 30px; padding: 6px 2px; background: #e5f1ff; border: 1px solid #9bc6f8; color: #095dab; border-radius: 6px; font-size: 10px; font-weight: 750; white-space: nowrap; line-height: 1.15; }
   #view-precos .tp-add-all:hover:not(:disabled) { background: #d1e7ff; border-color: #70a9ed; }
   #view-precos .tp-add-all:disabled { background: #f1f5f9; color: #8999ac; border-color: #dce5ef; opacity: 1; }
-  #view-precos table.tp-table { width: 100%; min-width: 1500px; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 12px; }
-  #view-precos .tp-table thead th { position: sticky; top: 42px; z-index: 2; background: #eff3f8; color: #4b5b71; font-size: 11px; font-weight: 700; letter-spacing: .15px; text-transform: none; text-align: left; padding: 12px 10px; border-bottom: 1px solid #d8e1ec; white-space: nowrap; }
-  #view-precos .tp-table tbody td { padding: 11px 10px; border-bottom: 1px solid #edf0f5; vertical-align: middle; white-space: nowrap; text-align: left; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
+  #view-precos table.tp-table { width: 100%; min-width: var(--tp-min); border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 12px; }
+  #view-precos .tp-table thead th { position: sticky; top: 42px; z-index: 2; background: #eff3f8; color: #4b5b71; font-size: 11px; font-weight: 700; letter-spacing: .15px; text-transform: none; text-align: left; padding: 9px 6px; border-bottom: 1px solid #d8e1ec; white-space: normal; line-height: 1.2; height: 40px; vertical-align: middle; }
+  #view-precos .tp-table tbody td { padding: 10px 6px; border-bottom: 1px solid #edf0f5; vertical-align: middle; white-space: nowrap; text-align: left; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
   #view-precos .tp-table tbody tr:last-child td { border-bottom: 1px solid #edf0f5; }
   #view-precos .tp-table tbody tr:hover td { background: #f8fbff; }
-  #view-precos .tp-table th:nth-child(1), #view-precos .tp-table td:nth-child(1) { width: 90px; position: sticky; left: 0; z-index: 3; background: #fff; }
-  #view-precos .tp-table th:nth-child(2), #view-precos .tp-table td:nth-child(2) { width: 330px; position: sticky; left: 90px; z-index: 3; background: #fff; box-shadow: 2px 0 5px #173f6210; }
-  #view-precos .tp-table thead th:nth-child(1), #view-precos .tp-table thead th:nth-child(2) { z-index: 5; background: #eff3f8; }
-  #view-precos .tp-table th:nth-child(3), #view-precos .tp-table td:nth-child(3) { width: 83px; }
-  #view-precos .tp-table th:nth-child(4), #view-precos .tp-table td:nth-child(4) { width: 157px; }
-  #view-precos .tp-table th:nth-child(n+5):nth-child(-n+10), #view-precos .tp-table td:nth-child(n+5):nth-child(-n+10) { width: 112px; }
-  #view-precos .tp-table th:nth-child(11), #view-precos .tp-table td:nth-child(11) { width: 115px; }
-  #view-precos .tp-table th:nth-child(12), #view-precos .tp-table td:nth-child(12) { width: 90px; }
-  #view-precos .tp-table th:nth-child(13), #view-precos .tp-table td:nth-child(13) { width: 106px; }
+  #view-precos .tp-table th.c-cod { width: var(--tp-c-cod); }
+  #view-precos .tp-table th.c-sld { width: var(--tp-c-sld); }
+  #view-precos .tp-table th.c-acao { width: var(--tp-c-acao); }
+  #view-precos .tp-table th.c-preco { width: var(--tp-c-preco); }
+  #view-precos .tp-table th.c-fab { width: var(--tp-c-fab); }
+  #view-precos .tp-table th.c-gar { width: var(--tp-c-gar); }
+  #view-precos .tp-table th.c-ncm { width: var(--tp-c-ncm); }
+  /* a descrição (c-desc) fica sem largura: recebe o que sobrar; no mínimo --tp-c-desc, garantido pelo min-width da tabela */
+  #view-precos .tp-table .c-cod { position: sticky; left: 0; z-index: 3; background: #fff; padding-left: 12px; }
+  #view-precos .tp-table .c-desc { position: sticky; left: var(--tp-c-cod); z-index: 3; background: #fff; box-shadow: 2px 0 5px #173f6210; }
+  #view-precos .tp-table thead th.c-cod, #view-precos .tp-table thead th.c-desc { z-index: 5; background: #eff3f8; }
   #view-precos .tp-table .code { font-weight: 780; color: #153e73; font-variant-numeric: tabular-nums; }
   #view-precos .tp-table .desc { white-space: normal; overflow-wrap: anywhere; line-height: 1.48; font-weight: 570; color: #24374f; }
   #view-precos .tp-table .money { font-variant-numeric: tabular-nums; }
@@ -1370,11 +1383,11 @@
   .tp-tag.promo { background: #fff3d6; color: #8a5a00; }
   .tp-tag.kit { background: #eef1f6; color: #4b5b71; }
   .tp-actions { display: flex; align-items: center; gap: 1px; }
-  #view-precos .tp-add { border: 1px solid #a5c9ef; background: #ecf5ff; color: #1260b3; padding: 7px 10px; border-radius: 7px; font-size: 11px; font-weight: 800; min-width: 71px; }
+  #view-precos .tp-add { border: 1px solid #a5c9ef; background: #ecf5ff; color: #1260b3; padding: 7px 6px; border-radius: 7px; font-size: 11px; font-weight: 800; min-width: 78px; }
   #view-precos .tp-add:hover:not(:disabled) { background: #d8ebff; }
   #view-precos .tp-add.added { border-color: #c5e5d8; color: #08724d; background: #e9f8f1; }
   #view-precos .tp-add:disabled { background: #f4f6f8; color: #95a3b3; border-color: #e5eaf0; }
-  #view-precos .tp-copy-one { color: #2868b1; padding: 7px 4px; font-size: 11px; font-weight: 720; margin-left: 5px; }
+  #view-precos .tp-copy-one { color: #2868b1; padding: 7px 4px; font-size: 11px; font-weight: 720; margin-left: 3px; }
   #view-precos .tp-copy-one:hover:not(:disabled) { color: #104983; text-decoration: underline; }
   .tp-empty { padding: 46px; text-align: center; color: #6b7c90; white-space: normal; }
   .tp-grid-foot { border-top: 1px solid #e7edf5; display: flex; justify-content: space-between; padding: 12px 18px; color: #697b90; font-size: 11px; gap: 14px; flex-wrap: wrap; }
@@ -1422,6 +1435,12 @@
   .tp-toast.ok { background: #145d49; }
   .tp-toast.err { background: #953d3d; }
   .tp-toast.inactive { opacity: 0; pointer-events: none; }
+  /* monitor bem largo: sobra espaço, então as colunas de valor e a lateral ganham folga */
+  @media (min-width: 2100px) {
+    #view-precos { --tp-c-cod: 80px; --tp-c-sld: 70px; --tp-c-acao: 150px; --tp-c-preco: 112px; --tp-c-fab: 150px; --tp-c-gar: 84px; --tp-c-ncm: 92px; }
+    .tp-workspace { grid-template-columns: minmax(0, 1fr) 360px; }
+  }
+  @media (max-width: 1500px) { .tp-price-line .tp-nota-preco { display: none; } } /* sem espaço: fica só o filtro de saldo ao lado das tabelas */
   @media (max-width: 1180px) { .tp-workspace { grid-template-columns: minmax(0, 1fr) 290px; } }
   @media (max-width: 850px) {
     .tp-workspace { grid-template-columns: 1fr; }
@@ -1429,11 +1448,18 @@
     .tp-side .tp-preview { margin-top: 0; }
     .tp-stats { grid-template-columns: repeat(2, 1fr); }
   }
-  /* celular: só o código fica preso à esquerda, senão código + descrição tomam a tela e os preços não aparecem */
+  /* celular (19/11/2026): só o código fica preso à esquerda e a ordem das colunas muda (colunas() no script) —
+     código, descrição, preço da tabela escolhida e saldo cabem na tela sem rolar; o resto vem deslizando para o lado */
   @media (max-width: 700px) {
-    #view-precos .tp-table th:nth-child(2), #view-precos .tp-table td:nth-child(2) { width: 220px; position: static; box-shadow: none; }
-    #view-precos table.tp-table, .tp-copy-toolbar { min-width: 1390px; }
-    .tp-bulk { margin-left: calc(90px + 220px + 83px); }
+    #view-precos { --tp-c-cod: 62px; --tp-c-desc: 154px; --tp-c-sld: 46px; --tp-c-acao: 138px; --tp-c-preco: 86px; --tp-c-fab: 100px; }
+    #view-precos table.tp-table { font-size: 11.5px; }
+    #view-precos .tp-table thead th { font-size: 10px; padding: 8px 5px; }
+    #view-precos .tp-table tbody td { padding: 9px 5px; }
+    #view-precos .tp-table .c-cod { padding-left: 8px; padding-right: 3px; }
+    #view-precos .tp-table th.c-desc { width: var(--tp-c-desc); }
+    #view-precos .tp-table .c-desc { position: static; box-shadow: none; }
+    .tp-copy-toolbar { justify-content: flex-start; padding-right: 0; }
+    .tp-bulk { position: sticky; left: 8px; width: 170px; padding: 0; }
   }
   @media (max-width: 580px) {
     .tp-stats { gap: 8px; } .tp-stat { padding: 12px; } .tp-stat .v { font-size: 20px; }
@@ -2367,15 +2393,14 @@
                 </div>
               </div>
               <div class="tp-dica">Palavras em qualquer ordem, sem acento e sem diferença de maiúsculas · trechos do código valem (<code>14268</code> acha 014268) · modelo junto ou separado (<code>AX3000</code> acha AX-3000) · use <code>*</code> para exigir a ordem na descrição: <code>HDMI*VGA</code></div>
-              <div class="tp-filters"><label class="tp-switch"><input type="checkbox" id="tp-so-saldo"><span>Somente produtos com saldo</span></label><span class="tp-label">• Preço copiado conforme a tabela selecionada abaixo</span></div>
-              <div class="tp-price-line"><span class="tp-label">Tabela de venda</span><div class="tp-pills" id="tp-pills"></div></div>
+              <div class="tp-price-line"><span class="tp-label">Tabela de venda</span><div class="tp-pills" id="tp-pills"></div><span class="tp-label tp-nota-preco">a escolhida vem primeiro na grade e é o preço que vai na cópia</span><label class="tp-switch"><input type="checkbox" id="tp-so-saldo"><span>Somente produtos com saldo</span></label></div>
             </div>
             <div class="tp-notice tp-hidden" id="tp-aviso"></div>
-            <div class="tp-grid-scroll" role="region" aria-label="Tabela de produtos" tabindex="0">
+            <div class="tp-grid-scroll" id="tp-grade" role="region" aria-label="Tabela de produtos" tabindex="0">
               <div class="tp-copy-toolbar"><div class="tp-bulk"><button type="button" class="tp-add-all" id="tp-copiar-sel" disabled title="Copiar os itens selecionados e limpar a seleção após a cópia">Copiar Selec.</button><button type="button" class="tp-add-all" id="tp-copiar-todos" disabled title="Copiar todos os produtos encontrados na pesquisa e nos filtros">Copiar todos</button></div></div>
               <table class="tp-table"><thead><tr id="tp-cab"></tr></thead><tbody id="tp-corpo"></tbody></table>
             </div>
-            <div class="tp-grid-foot"><span id="tp-contagem">Carregando…</span><span>Deslize horizontalmente para consultar todas as 12 colunas · CUSTO é apenas informativo e nunca entra na cópia</span></div>
+            <div class="tp-grid-foot" id="tp-pe"><span id="tp-contagem">Carregando…</span><span><span id="tp-dica-rolar" class="tp-hidden">Deslize para o lado para ver as outras colunas · </span>CUSTO é apenas informativo e nunca entra na cópia</span></div>
           </section>
 
           <aside class="tp-side" aria-label="Montagem do orçamento">
@@ -9568,6 +9593,18 @@
     // [chave, título]; os cinco primeiros são as tabelas de venda que podem ser copiadas
     const PRECOS = [["t04", "TAB 04"], ["t01", "TABELA 01"], ["avista", "À VISTA"], ["semie", "SEM IE"], ["sug", "Valor Sugestão"]];
     const COLUNAS_FIM = PRECOS.concat([["custo", "CUSTO"], ["fab", "Fabricante"], ["gar", "Garantia"], ["ncm", "NCM"]]);
+    // Ordem das colunas depois de Código e Descrição (19/11/2026): a tabela de venda escolhida é sempre a primeira coluna
+    // de preço. No celular ela e o saldo vêm antes da AÇÃO, para aparecerem sem rolar para o lado.
+    const telaEstreita = window.matchMedia("(max-width: 700px)");
+    const CLASSE_COL = { cod: "c-cod", d: "c-desc", s: "c-sld", acao: "c-acao", fab: "c-fab", gar: "c-gar", ncm: "c-ncm" };
+    const classeCol = (k) => CLASSE_COL[k] || "c-preco";
+    function colunas() {
+      const escolhida = PRECOS.find(([k]) => k === preco) || PRECOS[0];
+      const resto = COLUNAS_FIM.filter(([k]) => k !== escolhida[0]);
+      return telaEstreita.matches
+        ? [escolhida, ["s", "SldDisp"], ["acao", "AÇÃO"]].concat(resto)
+        : [["s", "SldDisp"], ["acao", "AÇÃO"], escolhida].concat(resto);
+    }
     const LIMITE_TELA = 600;
     const FOTOS_BASE = SUPABASE_URL + "/storage/v1/object/public/produtos-fotos/";
     const camposBusca = (r) => ({ codigo: r.cod, descricao: r.d, fabricante: r.fab, ncm: r.ncm });
@@ -9820,9 +9857,8 @@
 
     // --- tela ---
     function renderCabecalho() {
-      const th = (t, cls) => '<th scope="col"' + (cls ? ' class="' + cls + '"' : "") + ">" + esc(t) + "</th>";
-      el("tp-cab").innerHTML = th("Código") + th("Descrição") + th("SldDisp") + th("AÇÃO") +
-        COLUNAS_FIM.map(([k, t]) => th(k === "avista" ? "A VISTA" : t, k === preco ? "active-price" : "")).join("");
+      const th = (k, t) => '<th scope="col" class="' + classeCol(k) + (k === preco ? " active-price" : "") + '">' + esc(k === "avista" ? "A VISTA" : t) + "</th>";
+      el("tp-cab").innerHTML = th("cod", "Código") + th("d", "Descrição") + colunas().map(([k, t]) => th(k, t)).join("");
     }
     function renderPills() {
       el("tp-pills").innerHTML = PRECOS.map(([k, t]) => '<button class="tp-pill' + (k === preco ? " ativa" : "") + '" type="button" data-preco="' + k + '">' + esc(t) + "</button>").join("");
@@ -9839,7 +9875,8 @@
         v = valor(v);
         cls = "money" + (k === preco ? " active-price" : "") + (k === "custo" ? " internal" : "");
       }
-      if (k === "s") { cls = v == null ? "" : v > 0 ? "stock-ok" : "stock-zero"; v = v == null ? "—" : v.toLocaleString("pt-BR"); }
+      cls = classeCol(k) + (cls ? " " + cls : "");
+      if (k === "s") { cls += v == null ? "" : v > 0 ? " stock-ok" : " stock-zero"; v = v == null ? "—" : v.toLocaleString("pt-BR"); }
       if (k === "gar") v = garantia(v);
       if (v == null || v === "") v = "—";
       let extra = "";
@@ -9858,14 +9895,29 @@
       const vis = rows.slice(0, LIMITE_TELA);
       el("tp-contagem").textContent = carregando && !dados.length ? "Carregando…" :
         rows.length.toLocaleString("pt-BR") + " resultado(s)" + (rows.length > LIMITE_TELA ? " • exibindo os primeiros " + LIMITE_TELA + "; refine a busca" : "");
+      const cols = colunas();
       el("tp-corpo").innerHTML = vis.length ? vis.map((r) => {
         const temPreco = comPreco(r), sel = selecionados.has(r.id);
+        const acao = '<td class="c-acao"><div class="tp-actions"><button type="button" class="tp-add' + (sel ? " added" : "") + '" data-add="' + esc(r.id) + '"' + (temPreco ? "" : ' disabled title="Sem preço nesta tabela"') + ">" + (sel ? "✓ Selecionado" : "Selecionar") + "</button>" +
+          '<button type="button" class="tp-copy-one" title="Copiar somente este produto" data-copy="' + esc(r.id) + '"' + (temPreco ? "" : " disabled") + ">Copiar</button></div></td>";
         return '<tr data-id="' + esc(r.id) + '" class="' + (previewId === r.id ? "preview-active" : "") + '" tabindex="0" title="Clique para visualizar a imagem do produto">' +
-          celula(r, "cod") + celula(r, "d") + celula(r, "s") +
-          '<td><div class="tp-actions"><button type="button" class="tp-add' + (sel ? " added" : "") + '" data-add="' + esc(r.id) + '"' + (temPreco ? "" : ' disabled title="Sem preço nesta tabela"') + ">" + (sel ? "✓ Selecionado" : "Selecionar") + "</button>" +
-          '<button type="button" class="tp-copy-one" title="Copiar somente este produto" data-copy="' + esc(r.id) + '"' + (temPreco ? "" : " disabled") + ">Copiar</button></div></td>" +
-          COLUNAS_FIM.map(([k]) => celula(r, k)).join("") + "</tr>";
+          celula(r, "cod") + celula(r, "d") + cols.map(([k]) => k === "acao" ? acao : celula(r, k)).join("") + "</tr>";
       }).join("") : '<tr><td colspan="13"><div class="tp-empty">' + (carregando ? "Carregando a tabela de preços…" : dados.length ? "Nenhum produto encontrado. Tente outro código ou termo de pesquisa." : "Tabela de preços ainda não carregada.") + "</div></td></tr>";
+      ajustarGrade();
+    }
+    // Altura da grade (19/11/2026): vai até o fim da janela, para a barra de rolagem lateral, quando existe, ficar sempre
+    // à vista (antes ficava no fim de uma área fixa de 600px e era preciso descer a página para achar).
+    // Em janela baixa ou no celular a grade fica com uma altura que cabe inteira na tela depois de rolar a página.
+    function ajustarGrade() {
+      const grade = el("tp-grade");
+      if (!grade || !grade.offsetParent) return; // aba fechada
+      // embaixo da grade ficam o rodapé dela e o espaço que o painel reserva para a barra fixa de sincronização
+      const pe = el("tp-pe").offsetHeight + (parseFloat(getComputedStyle(document.getElementById("app")).paddingBottom) || 72) + 4;
+      const livre = window.innerHeight - (grade.getBoundingClientRect().top + window.scrollY) - pe;
+      const umaTela = window.innerHeight - pe - 12;
+      const alvo = livre >= 420 ? livre : Math.max(300, Math.min(umaTela, telaEstreita.matches ? window.innerHeight * 0.72 : 640));
+      grade.style.maxHeight = Math.round(alvo) + "px";
+      el("tp-dica-rolar").classList.toggle("tp-hidden", grade.scrollWidth <= grade.clientWidth + 1);
     }
     function renderOrcamento() {
       const rows = [...selecionados.values()];
@@ -9892,6 +9944,13 @@
       if (ligado) return;
       ligado = true;
       el("tp-atualizar").addEventListener("click", () => carregar());
+      // a grade acompanha a janela: altura ao redimensionar, ordem das colunas ao cruzar a largura de celular
+      let quadro = 0;
+      const reajustar = () => { cancelAnimationFrame(quadro); quadro = requestAnimationFrame(ajustarGrade); };
+      window.addEventListener("resize", reajustar);
+      if (window.ResizeObserver) new ResizeObserver(reajustar).observe(document.querySelector("#view-precos .tp-controls"));
+      const aoCruzar = () => { renderCabecalho(); renderTabela(); };
+      if (telaEstreita.addEventListener) telaEstreita.addEventListener("change", aoCruzar); else if (telaEstreita.addListener) telaEstreita.addListener(aoCruzar);
       el("tp-busca").addEventListener("input", renderTabela);
       el("tp-ordem").addEventListener("change", renderTabela);
       el("tp-so-saldo").addEventListener("change", renderTabela);
