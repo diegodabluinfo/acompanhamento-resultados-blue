@@ -1282,6 +1282,8 @@
   #view-precos .painel-controles .btn-2via { font-size: 0.74rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--azul); background: #fff; color: var(--azul); }
   #view-precos .painel-controles .btn-2via:hover:not(:disabled) { background: var(--azul); color: #fff; }
   #view-precos .tp-hidden { display: none !important; }
+  .tp-resumo { font-size: 0.8rem; color: var(--tp-sub); white-space: nowrap; }
+  .tp-resumo b { color: var(--tp-tinta); font-weight: 700; margin-left: 2px; }
   .tp-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
   .tp-stat { border: 1px solid var(--tp-borda); background: #fff; border-radius: 14px; padding: 13px 18px; box-shadow: var(--tp-sombra); }
   .tp-stat .k { font-size: 12px; color: var(--tp-sub); font-weight: 520; }
@@ -2330,19 +2332,12 @@
         <div class="painel-controles">
           <span id="tp-status" class="cod-cliente">Preços e estoque direto do ERP</span>
           <button type="button" id="tp-atualizar" class="btn-2via">Atualizar preços</button>
+          <span class="tp-resumo" aria-label="Resumo da tabela">Produtos carregados <b id="tp-stat-produtos">—</b> · Com saldo disponível <b id="tp-stat-saldo">—</b></span>
           <span id="freshness-precos" class="freshness"></span>
         </div>
 
-        <section class="tp-stats" aria-label="Resumo da tabela">
-          <div class="tp-stat"><div class="k">Produtos carregados</div><div class="v" id="tp-stat-produtos">—</div></div>
-          <div class="tp-stat"><div class="k">Com saldo disponível</div><div class="v" id="tp-stat-saldo">—</div></div>
-          <div class="tp-stat"><div class="k">Itens no orçamento</div><div class="v" id="tp-stat-sel">0</div></div>
-          <div class="tp-stat"><div class="k">Tabela ativa para cópia</div><div class="v preco" id="tp-stat-preco">TAB 04</div></div>
-        </section>
-
         <div class="tp-workspace">
           <section class="tp-catalog tp-panel" aria-label="Catálogo de produtos">
-            <div class="tp-panel-title"><h3>Catálogo de produtos</h3><p>Busque pelo código, descrição, fabricante ou NCM. Clique em “Selecionar” para compor o texto do orçamento.</p></div>
             <div class="tp-controls">
               <div class="tp-search-row">
                 <div class="tp-search-wrap">
@@ -9835,7 +9830,6 @@
     function renderStats() {
       el("tp-stat-produtos").textContent = dados.length.toLocaleString("pt-BR");
       el("tp-stat-saldo").textContent = dados.length ? dados.filter((r) => r.s != null && r.s > 0).length.toLocaleString("pt-BR") : "—";
-      el("tp-stat-preco").textContent = nomePreco(preco);
     }
     function celula(r, k) {
       let v = r[k], cls = "";
@@ -9879,7 +9873,6 @@
       const btnSel = el("tp-copiar-sel");
       btnSel.disabled = rows.length === 0 || rows.some((r) => !comPreco(r));
       btnSel.title = rows.length ? rows.length.toLocaleString("pt-BR") + " item(ns) selecionado(s) para copiar. A seleção será limpa após copiar." : "Selecione produtos na tabela para copiar";
-      el("tp-stat-sel").textContent = rows.length.toLocaleString("pt-BR");
       el("tp-contador").textContent = rows.length + " " + (rows.length === 1 ? "item" : "itens");
       el("tp-lista").innerHTML = rows.length ? rows.map((r) => {
         const n = precoDe(r);
